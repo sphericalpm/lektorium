@@ -1,5 +1,5 @@
 # What is Lektorium? 
-Lektorium _will be_ a web content management management solution for those with many little and/or similar websites. A typical user would be a large and loosely governed organisation with departments having a strong mandate to communicate externally and independently publish on the web. 
+Lektorium _will be_ a web content management solution for those with many little and/or similar websites. A typical user would be a large and loosely governed organisation with departments having a strong mandate to communicate externally and independently publish on the web. 
 
 We will use Lektor, a great static site generator, as the source of basic content management and organisation functionality, and augment it with everything necessary for the business setting described above. 
 
