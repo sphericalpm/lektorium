@@ -3,8 +3,7 @@ Lektorium _will be_ a web content management solution for those with many little
 A typical user would be a large and loosely governed organisation with departments having a strong mandate to 
 communicate externally and independently publish on the web. 
 
-We will use Lektor, a great static site generator, as the source of basic content management and organisation functionality, 
-and augment it with everything necessary for the business setting described above. 
+We will use Lektor (https://github.com/lektor/lektor), a great static site generator, as the source of basic content management and organisation functionality, and augment it with everything necessary for the business setting described above. 
 
 # Design goals
 If you are responsible for the web presence, corporate branding, design and consistency in communications in an organisation 
