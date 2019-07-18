@@ -6,7 +6,7 @@
 [What should I know before I get started?](#what-should-i-know-before-i-get-started)
 
 ## What should I know before I get started?
-1. We treat everyone and each as a friend and with respect. Particularly: taking it personally, insulting, indignity by any reason, critics and compilation personal attributes, which receiver cannot change (such as sex, age, health condition, sexual orientation, etc) are not allowed. We keep close to each other, joke, fool around and have fun from interaction, but in the frame what's written above.
+1. We treat everyone and each as a friend and with respect. In particular: personal attacks, insulting, indignity for any reason, critics and stereotyping on the basis of personal attributes the receiver cannot change (such as gender, age, health condition, sexual orientation, etc) are not allowed. We keep close to each other, joke, fool around and have fun from our interaction, keeping within the limits described above.
 
 2. We work as a team. Do not compete and not measure by any quality, except how well we give support to others and how we share our knowledge. Help your colleagues is the most important KPI!
 
