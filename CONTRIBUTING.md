@@ -10,7 +10,7 @@
 
 2. We work as a team. Do not compete and not measure by any quality, except how well we give support to others and how we share our knowledge. Help your colleagues is the most important KPI!
 
-3. We speak what we think and do accordingly. [Self-] deception, especially in measuring own abilities does not make any sense: everything here exists to learn something new, but one needs to know basics.
+3. We say what we think and do what we say. [Self-] deception, especially in assessing own abilities does not make any sense: everything is here to learn something new, and in order to improve one needs to know the true baseline.
 
 4. Nobody owes anything, except what he had promised. Consequently, we do not promise what we can not handle or not going to do.
 
