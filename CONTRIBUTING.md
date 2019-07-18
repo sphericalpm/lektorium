@@ -12,7 +12,7 @@
 
 3. We say what we think and do what we say. [Self-] deception, especially in assessing own abilities does not make any sense: everything is here to learn something new, and in order to improve one needs to know the true baseline.
 
-4. Nobody owes anything, except what he had promised. Consequently, we do not promise what we can not handle or not going to do.
+4. We don't owe anything to one anothe, except what we had promised. Consequently, we do not promise what we can not handle or are not going to do.
 
 5. While point 4 above is very important, we understand that everyone has their day job, study, family, and other  sources of unforeseen circumstances. If something affects work to be done, we do not quarrel but try to find ways to help our colleague and the project. If such "oopses" occur too often, we review how much time this colleague can actually contribute to the project, and act accordingly.
 
