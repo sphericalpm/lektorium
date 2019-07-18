@@ -22,4 +22,4 @@
 
 8. We accept [Michael](https://github.com/mvartanyan) and [Max](https://github.com/jekoff) as an imaginary customer voice. Technical decision making we make together.
 
-9. All proposals may and must be expressed, considered and argued. When the decision is established we are moving accordingly without deviation, except something previously was unknown what affects on the entire landscape. In such cases we reconsider the decision. It happens and that is totally fine!
+9. Any proposals can and should be voiced, considered and debated. When the decision is taken,  we are moving accordingly without deviation, except something previously unknown affects on the context in which the decision was taken. In such cases, we reconsider the decision. It happens and that is totally fine!
