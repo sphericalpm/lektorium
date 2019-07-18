@@ -8,7 +8,7 @@
 ## What should I know before I get started?
 1. We treat everyone and each as a friend and with respect. In particular: personal attacks, insulting, indignity for any reason, critics and stereotyping on the basis of personal attributes the receiver cannot change (such as gender, age, health condition, sexual orientation, etc) are not allowed. We keep close to each other, joke, fool around and have fun from our interaction, keeping within the limits described above.
 
-2. We work as a team. Do not compete and not measure by any quality, except how well we give support to others and how we share our knowledge. Help your colleagues is the most important KPI!
+2. We work as a team. Do not compete or brag about any of our qualities, except the one of how well we support others and how we share our knowledge. Help to your colleagues is the most important KPI!
 
 3. We say what we think and do what we say. [Self-] deception, especially in assessing own abilities does not make any sense: everything is here to learn something new, and in order to improve one needs to know the true baseline.
 
