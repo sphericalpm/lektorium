@@ -16,7 +16,7 @@
 
 5. While point 4 above is very important, we understand that everyone has their day job, study, family, and other  sources of unforeseen circumstances. If something affects work to be done, we do not quarrel but try to find ways to help our colleague and the project. If such "oopses" occur too often, we review how much time this colleague can actually contribute to the project, and act accordingly.
 
-6. Code quality is the most important characteristic. It is better longer than the worst. It is worth to ask for help from your teammate than insist on code that you are not quite sure. We respect each other and do not declare code finished, which does not meet basic quality requirements (does not compile, launch, cover adequately by tests, fit with basic style guides, etc).
+6. Code quality is its most important characteristic. It is always better to take longer than to contribute produce substandard code. It is worth to ask for help from your teammate than declare code you are not sure about as done. We respect each other's time and we do not declare code finished unless it meets basic quality requirements (it builds, runs, is adequately covered with tests, complies to basic style guides, etc).
 
 7. The whole codebase belongs to all of us. Everyone looks at their own code as critically as at someone else's, and  does not defend own code from legitimate criticism. The author is always eager to receive critique of their code and is grateful for such critique.
 
