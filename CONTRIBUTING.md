@@ -14,7 +14,7 @@
 
 4. Nobody owes anything, except what he had promised. Consequently, we do not promise what we can not handle or not going to do.
 
-5. Point 4 is very important. We understand that everyone has his main work, study, family, and other bunch sources of unforeseen circumstances. If something affects work to be done we do not argue but try to find ways to help person particularly and overall project. If such "unforeseen" occur too often - we discuss how much time this person can truly spend on the project and act accordingly.
+5. While point 4 above is very important, we understand that everyone has their day job, study, family, and other  sources of unforeseen circumstances. If something affects work to be done, we do not quarrel but try to find ways to help our colleague and the project. If such "oopses" occur too often, we review how much time this colleague can actually contribute to the project, and act accordingly.
 
 6. Code quality is the most important characteristic. It is better longer than the worst. It is worth to ask for help from your teammate than insist on code that you are not quite sure. We respect each other and do not declare code finished, which does not meet basic quality requirements (does not compile, launch, cover adequately by tests, fit with basic style guides, etc).
 
