@@ -18,7 +18,7 @@
 
 6. Code quality is the most important characteristic. It is better longer than the worst. It is worth to ask for help from your teammate than insist on code that you are not quite sure. We respect each other and do not declare code finished, which does not meet basic quality requirements (does not compile, launch, cover adequately by tests, fit with basic style guides, etc).
 
-7. All codebase is our common code. Everyone threat his code as critical as someone's else code does not protect it from legitimate criticism. Eager for someone to criticize his code and thank for such criticizing.
+7. The whole codebase belongs to all of us. Everyone looks at their own code as critically as at someone else's, and  does not defend own code from legitimate criticism. The author is always eager to receive critique of their code and is grateful for such critique.
 
 8. We accept [Michael](https://github.com/mvartanyan) and [Max](https://github.com/jekoff) as an imaginary customer voice. Technical decision making we make together.
 
