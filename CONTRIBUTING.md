@@ -20,6 +20,6 @@
 
 7. All codebase is our common code. Everyone threat his code as critical as someone's else code does not protect it from legitimate criticism. Eager for someone to criticize his code and thank for such criticizing.
 
-8. We accept https://github.com/mvartanyan and https://github.com/jekoff as an imaginary customer voice. Technical decision making we make together.
+8. We accept [Michael](https://github.com/mvartanyan) and [Max](https://github.com/jekoff) as an imaginary customer voice. Technical decision making we make together.
 
 9. All proposals may and must be expressed, considered and argued. When the decision is established we are moving accordingly without deviation, except something previously was unknown what affects on the entire landscape. In such cases we reconsider the decision. It happens and that is totally fine!
