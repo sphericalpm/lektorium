@@ -44,3 +44,15 @@ This project and everyone participating in it is governed by the Atom Code of Co
 ## How Can I Contribute
 
 ## Styleguides
+### Python Styleguide
+* We use [PEP-8](https://www.python.org/dev/peps/pep-0008/) in out project.
+* Additions
+  * Use `4 spaces indentation` please!
+  * avoid `\` at the end of line as much as possible
+  * 100 symbols => `soft limit for line length`
+  * 120 symbols => `hard limit for line length`
+* It is also recommended to use following code analysis tools:
+  * [flake8](https://pypi.org/project/flake8/)
+  * [pylint](https://pypi.org/project/pylint/)
+ 
+
