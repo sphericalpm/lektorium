@@ -7,7 +7,15 @@ The following is a set of guidelines for contributing to [Lektorium](https://git
 
 #### Table Of Contents
 
-[Code Of Conduct](#what-should-i-know-before-i-get-started)
+[Code Of Conduct](#code-of-conduct)
+
+[What should I know before I get started?](#what-should-know-before-i-get-started)
+
+
+[How Can I Contribute](#how-can-i-contribute)
+
+
+[Styleguides](#styleguides)
 
 ## Code Of Conduct
 
@@ -30,3 +38,9 @@ This project and everyone participating in it is governed by the Atom Code of Co
 8. We accept [Michael](https://github.com/mvartanyan) and [Max](https://github.com/jekoff) as an imaginary customer voice. Technical decision making we make together.
 
 9. Any proposals can and should be voiced, considered and debated. When the decision is taken,  we are moving accordingly without deviation, except something previously unknown affects on the context in which the decision was taken. In such cases, we reconsider the decision. It happens and that is totally fine!
+
+## What should I know before I get started?
+
+## How Can I Contribute
+
+## Styleguides
