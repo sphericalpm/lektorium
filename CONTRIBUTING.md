@@ -9,7 +9,7 @@ The following is a set of guidelines for contributing to [Lektorium](https://git
 
 [Code Of Conduct](#code-of-conduct)
 
-[What should I know before I get started?](#what-should-know-before-i-get-started?)
+[What should I know before I get started?](#what-should-i-know-before-i-get-started)
 
 
 [How Can I Contribute](#how-can-i-contribute)
