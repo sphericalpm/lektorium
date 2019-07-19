@@ -45,7 +45,7 @@ This project and everyone participating in it is governed by the Atom Code of Co
 
 ## Styleguides
 ### Python Styleguide
-* We use [PEP-8](https://www.python.org/dev/peps/pep-0008/) in out project.
+* We use [PEP-8](https://www.python.org/dev/peps/pep-0008/) in our project.
 * Additions
   * Use 4 spaces indentation please!
   * avoid `\` at the end of line as much as possible
