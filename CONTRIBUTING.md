@@ -3,9 +3,16 @@
 
 :+1::tada: First off, thanks for taking the time to contribute! :tada::+1:
 
-[What should I know before I get started?](#what-should-i-know-before-i-get-started)
+The following is a set of guidelines for contributing to [Lektorium](https://github.com/sphericalpm/lektorium). These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
 
-## What should I know before I get started?
+#### Table Of Contents
+
+[Code Of Conduct](#what-should-i-know-before-i-get-started)
+
+## Code Of Conduct
+
+This project and everyone participating in it is governed by the Atom Code of Conduct. By participating, you are expected to uphold this code.
+
 1. We treat everyone and each as a friend and with respect. In particular: personal attacks, insulting, indignity for any reason, critics and stereotyping on the basis of personal attributes the receiver cannot change (such as gender, age, health condition, sexual orientation, etc) are not allowed. We keep close to each other, joke, fool around and have fun from our interaction, keeping within the limits described above.
 
 2. We work as a team. Do not compete or brag about any of our qualities, except the one of how well we support others and how we share our knowledge. Help to your colleagues is the most important KPI!
