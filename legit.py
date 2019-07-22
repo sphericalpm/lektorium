@@ -44,5 +44,6 @@ class Repository:
         merge_base = self.repo.merge_base(branch_name, master)
         self.repo.index.merge_tree(master, base=merge_base)
         self.commit(msg_for_merging, parent_commits=(current.commit, master.commit))
-        # At this point, we have successfully merged the two branches but we have not modified the working directory.
+        # At this point, we have successfully merged the two branches
+        # but we have not modified the working directory.
         current.checkout(force=True)  # We need to perform a checkout of the new commit
