@@ -5,7 +5,7 @@ def clone_repo(url, path):
     return Repo.clone_from(url, path, branch='master')
  
 def create_branch(repo, branch_name):
-    repo.checkout('HEAD', b=branch_name)
+    repo.git.checkout('HEAD', b=branch_name)
  
 def commit(repo, meaningful_msg):
     repo.index.commit(meaningful_msg)
