@@ -1,13 +1,16 @@
 FROM ubuntu:18.04
 
-RUN apt update && apt install upgrades -y
+RUN apt update && apt upgrade -y
 
 RUN apt install python3 python3-pip -y
 
-WORKDIR /website_folder
+WORKDIR /lektor_site_folder
 
-ADD t1 t1
+# t_sites/t1 - will be changed to site path from config file
+ADD t_sites/t1 site/
 
-RUN ls
+# install site requirements
+RUN cd site/ && pip3 install -r requirements.txt
 
-RUN cd t1 && pip3 install -r requirements.txt
+# run site
+CMD ["echo", "Hello from site!"]
