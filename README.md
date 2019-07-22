@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/sphericalpm/lektorium.svg?style=svg)](https://circleci.com/gh/sphericalpm/lektorium)
+
 # What is Lektorium? 
 Lektorium _will be_ a web content management solution for those with many little and/or similar websites. 
 A typical user would be a large and loosely governed organisation with departments having a strong mandate to 
