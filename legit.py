@@ -1,5 +1,5 @@
-import git
 from git import Actor, Repo
+from git.exc import GitCommandError, InvalidGitRepositoryError
 
 
 author = Actor("An author", "katridi@yandex.ru")
@@ -15,15 +15,16 @@ class Repository:
     def clone(cls, url, path):
         try:
             Repo(path)
-        except git.exc.InvalidGitRepositoryError:
-            Repo.clone_from(url, path, branch='master')  # clone from remote
+        except InvalidGitRepositoryError:
+            Repo.clone_from(url, path, branch='master')
         return cls(path)
 
     def create_branch(self, branch_name):
+        # Check if branch exist in other case create new branch
         try:
-            self.repo.git.checkout('-b', branch_name)  # branch exists
-        except git.exc.GitCommandError:
-            self.repo.git.checkout(branch_name)  # create new
+            self.repo.git.checkout('-b', branch_name)
+        except GitCommandError:
+            self.repo.git.checkout(branch_name)
 
     def commit(self, meaningful_msg, parent_commits=(), author=author, committer=committer):
         self.repo.index.commit(meaningful_msg)
