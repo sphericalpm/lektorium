@@ -25,12 +25,14 @@ def build_new_image(site_name: str, site_dir: str):
     datetime_now = datetime.datetime.now()
     # build new image for selected website
     result_image, logs_data = client.images.build(
-        path="docker_app",
+        path='.',
+        dockerfile='docker_app/Dockerfile',
         tag=f"{clean_site_name}_{datetime_now.strftime('%-Hh-%-Mm-%-Ss')}:{datetime_now.strftime('%Y.%m.%d')}",
         quiet=True,
+        # TODO change to True
         nocache=False,
         rm=True,
-        forcerm=True,
+        forcerm=True
     )
     return result_image, logs_data
 
