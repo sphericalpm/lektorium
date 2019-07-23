@@ -49,6 +49,3 @@ class Repository:
         # At this point, we have successfully merged the two branches
         # but we have not modified the working directory.
         current.checkout(force=True)  # We need to perform a checkout of the new commit
-
-
-        
