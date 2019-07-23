@@ -5,14 +5,13 @@ import logging
 
 # parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author,
 # committer: Tuple[str, str] = committer
-# TODO Consider author and commiter param
-# debug and rewrite clone method and others
 # author = Actor("An author", "katridi@yandex.ru")
 # committer = Actor("A committer", "katridi@yandex.ru")
+# TODO Consider author and commiter param
+# debug and rewrite clone method and others, add logging
 
 
 class Repository:
-
 
     def __init__(self, path: str) -> None:
         self.repo = Repo.init(path)
@@ -42,7 +41,6 @@ class Repository:
             self.repo.git.add(A=True)
 
     def push_to_origin(self, branch_name: str) -> None:
-        print(self.repo.untracked_files)
         self.repo.head.reset(index=True, working_tree=True)
         self.repo.git.pull("origin", branch_name)
         self.repo.git.push("origin", 'HEAD:' + branch_name)
