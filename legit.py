@@ -1,9 +1,11 @@
-from git import Actor, Repo
+from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
 from typing import List, Iterable, Tuple
 
-author = Actor("An author", "katridi@yandex.ru")
-committer = Actor("A committer", "katridi@yandex.ru")
+# parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author, committer: Tuple[str, str] = committer
+#TODO Consider author and commiter param
+# author = Actor("An author", "katridi@yandex.ru")
+# committer = Actor("A committer", "katridi@yandex.ru")
 
 
 class Repository:
@@ -26,7 +28,7 @@ class Repository:
         except GitCommandError:
             self.repo.git.checkout(branch_name)
 
-    def commit(self, meaningful_msg: str, parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author, committer: Tuple[str, str] = committer) -> None:
+    def commit(self, meaningful_msg: str) -> None:
         self.repo.index.commit(meaningful_msg)
 
     def add_changes(self, files: Iterable[str] = ()) -> None:
@@ -43,7 +45,7 @@ class Repository:
         master = self.repo.branches[parent_branch]
         merge_base = self.repo.merge_base(branch_name, master)
         self.repo.index.merge_tree(master, base=merge_base)
-        self.commit(msg_for_merging, parent_commits=(current.commit, master.commit))
+        self.commit(msg_for_merging)
         # At this point, we have successfully merged the two branches
         # but we have not modified the working directory.
         current.checkout(force=True)  # We need to perform a checkout of the new commit
