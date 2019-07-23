@@ -5,13 +5,14 @@ from typing import Iterable
 # parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author,
 # committer: Tuple[str, str] = committer
 # TODO Consider author and commiter param
+# debug and rewrite clone method and others
 # author = Actor("An author", "katridi@yandex.ru")
 # committer = Actor("A committer", "katridi@yandex.ru")
 
 
 class Repository:
 
-    def __init__(self, path) -> None:
+    def __init__(self, path: str) -> None:
         self.repo = Repo.init(path)
 
     @classmethod
