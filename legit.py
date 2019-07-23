@@ -1,7 +1,7 @@
 from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
 from typing import Iterable
-import logging
+#import logging
 
 # parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author,
 # committer: Tuple[str, str] = committer
@@ -34,10 +34,10 @@ class Repository:
         self.repo.index.commit(message)
 
     def add_changes(self, files: Iterable[str] = None) -> None:
-        if files: 
+        if files:
             for file in files:
                 self.repo.index.add(file) 
-        else: 
+        else:
             self.repo.git.add(A=True)
 
     def push_to_origin(self, branch_name: str) -> None:
@@ -45,7 +45,7 @@ class Repository:
         self.repo.git.pull("origin", branch_name)
         self.repo.git.push("origin", 'HEAD:' + branch_name)
 
-    def merge_branch(self, merge_from: str,  merge_into: str,  message_for_merging: str) -> None:
+    def merge_branch(self, merge_from: str, merge_into: str, message_for_merging: str) -> None:
         branch_from = self.repo.branches[merge_from]
         branch_into = self.repo.branches[merge_into]
         merge_base = self.repo.merge_base(merge_from, branch_into)
