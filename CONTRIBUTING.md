@@ -53,6 +53,8 @@ This project and everyone participating in it is governed by the Atom Code of Co
   * avoid `\` at the end of line as much as possible
   * 100 symbols are soft limit for line length
   * 120 symbols are hard limit for line length
+* docstrings according to google style
+http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html
 * It is also recommended to use following code analysis tools:
   * [flake8](https://pypi.org/project/flake8/)
   * [pylint](https://pypi.org/project/pylint/)
