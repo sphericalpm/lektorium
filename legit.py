@@ -1,7 +1,7 @@
 from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
 from typing import Iterable
-#import logging
+# import logging
 
 # parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author,
 # committer: Tuple[str, str] = committer
@@ -36,7 +36,7 @@ class Repository:
     def add_changes(self, files: Iterable[str] = None) -> None:
         if files:
             for file in files:
-                self.repo.index.add(file) 
+                self.repo.index.add(file)
         else:
             self.repo.git.add(A=True)
 
