@@ -1,5 +1,5 @@
 from git import Repo
-from git.exc import GitCommandError, InvalidGitRepositoryError
+from git.exc import GitCommandError
 from typing import Iterable
 # import logging
 
@@ -8,7 +8,7 @@ from typing import Iterable
 # author = Actor("An author", "katridi@yandex.ru")
 # committer = Actor("A committer", "katridi@yandex.ru")
 # TODO Consider author and commiter param
-# debug and rewrite clone method and others, add logging
+# debug, add logging, write tests
 
 
 class Repository:
@@ -19,9 +19,9 @@ class Repository:
     @classmethod
     def clone(cls, url: str, path: str) -> str:
         try:
-            Repo(path)
-        except InvalidGitRepositoryError:
             Repo.clone_from(url, path)
+        except GitCommandError:
+            return None
         return cls(path)
 
     def create_branch(self, branch_name: str) -> None:
