@@ -45,7 +45,7 @@ class Repository:
         self.repo.git.pull("origin", branch_name)
         self.repo.git.push("origin", 'HEAD:' + branch_name)
 
-    def merge_branch(self, merge_from: str, merge_into: str, message_for_merging: str) -> None:
+    def merge_branch(self, merge_from: str, merge_into: str, merge_commit_message: str) -> None:
         branch_from = self.repo.branches[merge_from]
         branch_into = self.repo.branches[merge_into]
         merge_base = self.repo.merge_base(merge_from, branch_into)
