@@ -34,8 +34,12 @@ class Repository:
     def commit(self, message: str) -> None:
         self.repo.index.commit(message)
 
-    def add_changes(self, files: Iterable[str] = ()) -> None:
-        [self.repo.index.add(file) for file in files] or self.repo.git.add(A=True)
+    def add_changes(self, files: Iterable[str] = None) -> None:
+        if files: 
+            for file in files:
+                self.repo.index.add(file) 
+        else: 
+            self.repo.git.add(A=True)
 
     def push_to_origin(self, branch_name: str) -> None:
         print(self.repo.untracked_files)
