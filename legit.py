@@ -1,9 +1,10 @@
 from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
-from typing import List, Iterable, Tuple
+from typing import Iterable
 
-# parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author, committer: Tuple[str, str] = committer
-#TODO Consider author and commiter param
+# parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author,
+# committer: Tuple[str, str] = committer
+# TODO Consider author and commiter param
 # author = Actor("An author", "katridi@yandex.ru")
 # committer = Actor("A committer", "katridi@yandex.ru")
 
