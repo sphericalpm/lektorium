@@ -50,5 +50,5 @@ class Repository:
         branch_into = self.repo.branches[merge_into]
         merge_base = self.repo.merge_base(merge_from, branch_into)
         self.repo.index.merge_tree(branch_into, base=merge_base)
-        self.commit(message_for_merging)
+        self.commit(merge_commit_message)
         branch_from.checkout(force=True)
