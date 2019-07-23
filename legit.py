@@ -23,8 +23,7 @@ class Repository:
             Repo.clone_from(url, path)
         return cls(path)
 
-    def create_branch(self, branch_name: str) -> None:
-        # Check if branch exist in other case create new branch
+    def create_branch(self, branch_name: str) -> None: 
         try:
             self.repo.git.checkout('-b', branch_name)
         except GitCommandError:
