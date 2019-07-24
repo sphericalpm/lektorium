@@ -43,6 +43,9 @@ def test_cloning_empty_dir():
 
 
 def test_cloning_non_empty_dir():
+    if isdir(folder):
+        change_mod_recursively(folder)
+        rmtree(folder)
     legit.Repository.init(create_folder(folder))
     repository = legit.Repository.clone(url, create_folder(folder))
     assert repository is None
