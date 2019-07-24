@@ -1,7 +1,11 @@
-import legit
-from os.path import expanduser, isdir, exists, join
+import sys
+from os.path import expanduser, isdir, exists, join, abspath, dirname
 from os import makedirs, chmod, walk
 from shutil import rmtree
+path = abspath(dirname(dirname(abspath(__file__))))
+sys.path.append(path)
+import legit
+
 
 url = 'https://github.com/katridi/test_folder'
 folder = join(expanduser('~'), 'Desktop\\folder2')
