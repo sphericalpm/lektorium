@@ -13,7 +13,7 @@ def create_folder(folder: str) -> str:
     return folder
 
 
-def change_mod_recursivly(fodler: str, permissions: oct = 0o777) -> None:
+def change_mod_recursively(fodler: str, permissions: oct = 0o777) -> None:
     for root, dirs, files in walk(folder):
         for d in dirs:
             chmod(join(root, d), permissions)
@@ -35,7 +35,7 @@ def test_initialization_dot_attr():
 
 def test_cloning_empty_dir():
     if isdir(folder):
-        change_mod_recursivly(folder)
+        change_mod_recursively(folder)
         rmtree(folder)
     repository = legit.Repository.clone(url, create_folder(folder)).repo
     assert isdir(repository.working_tree_dir)
