@@ -1,6 +1,6 @@
 import legit
 from os.path import expanduser, isdir, exists, join
-from os import makedirs, chmod
+from os import makedirs, chmod, walk
 from shutil import rmtree
 
 url = 'https://github.com/katridi/test_folder'
@@ -11,6 +11,14 @@ def create_folder(folder: str) -> str:
     if not exists(folder):
         makedirs(folder)
     return folder
+
+
+def change_mod_recursivly(fodler: str, permissions: oct = 0o777) -> None:
+    for root, dirs, files in walk(folder):
+        for d in dirs:
+            chmod(join(root, d), permissions)
+        for f in files:
+            chmod(join(root, f), permissions)
 
 
 def test_initialization():
@@ -27,17 +35,17 @@ def test_initialization_dot_attr():
 
 def test_cloning_empty_dir():
     if isdir(folder):
-        chmod(folder, 0o777)
+        change_mod_recursivly(folder)
         rmtree(folder)
     repository = legit.Repository.clone(url, create_folder(folder)).repo
     assert isdir(repository.working_tree_dir)
     assert repository.git_dir.startswith(repository.working_tree_dir)
 
 
-# def test_cloning_non_empty_dir():
-#     legit.Repository.init(create_folder(folder))
-#     repository = legit.Repository.clone(url, create_folder(folder))
-#     assert repository is None
+def test_cloning_non_empty_dir():
+    legit.Repository.init(create_folder(folder))
+    repository = legit.Repository.clone(url, create_folder(folder))
+    assert repository is None
 
 
 def test_branching():
