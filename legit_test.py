@@ -14,7 +14,7 @@ def test_initialization():
 
 
 def test_initialization_dot_attr():
-    repository = legit.Repository(folder).repo
+    repository = legit.Repository.init(folder).repo
     assert isdir(repository.working_tree_dir)
     assert repository.git_dir.startswith(repository.working_tree_dir)
 
