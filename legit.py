@@ -24,6 +24,14 @@ class Repository:
             return None
         return cls(path)
 
+    @classmethod
+    def init(cls, path: str) -> str:
+        try:
+            Repo.init(path)
+        except GitCommandError:
+            return None
+        return cls(path)
+
     def create_branch(self, branch_name: str) -> None:
         try:
             self.repo.git.checkout('-b', branch_name)
