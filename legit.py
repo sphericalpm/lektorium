@@ -1,14 +1,6 @@
 from git import Repo
 from git.exc import GitCommandError
 from typing import Iterable
-# import logging
-
-# parent_commits: Tuple[str, str] = (), author: Tuple[str, str] = author,
-# committer: Tuple[str, str] = committer
-# author = Actor("An author", "katridi@yandex.ru")
-# committer = Actor("A committer", "katridi@yandex.ru")
-# TODO Consider author and commiter param
-# debug, add logging, write tests
 
 
 class Repository:
