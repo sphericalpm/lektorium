@@ -1,11 +1,22 @@
-# import sys
-# path_to_legit = ''
-# sys.path.append(path_to_legit)
 import legit
+from os.path import expanduser, isdir, exists, join
+from os import makedirs
+
+folder = join(expanduser('~'), '/Desktop/folder2')
+if not exists(folder):
+    makedirs(folder)
 
 
 def test_initialization():
-    pass
+    repository = legit.Repository(folder).repo
+    assert isdir(repository.working_tree_dir)
+    assert repository.git_dir.startswith(repository.working_tree_dir)
+
+
+def test_initialization_dot_attr():
+    repository = legit.Repository(folder).repo
+    assert isdir(repository.working_tree_dir)
+    assert repository.git_dir.startswith(repository.working_tree_dir)
 
 
 def test_cloning():
