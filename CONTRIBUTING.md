@@ -57,6 +57,8 @@ This project and everyone participating in it is governed by the Atom Code of Co
 
 ### Python Styleguide
 * We use [PEP-8](https://www.python.org/dev/peps/pep-0008/) in our project.
+* Also we use [PEP-484](https://www.python.org/dev/peps/pep-0484/) for type hints
+* We use [google-style](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) docstrings
 * Additions
   * Use 4 spaces indentation please!
   * avoid `\` at the end of line as much as possible
