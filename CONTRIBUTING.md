@@ -46,6 +46,15 @@ This project and everyone participating in it is governed by the Atom Code of Co
 ## How Can I Contribute
 
 ## Styleguides
+
+### Git Commit Messages
+
+* Use the present tense ("Add feature" not "Added feature")
+* Use the imperative mood ("Move cursor to..." not "Moves cursor to...")
+* Limit the first line to 72 characters or less
+* Reference issues and pull requests liberally after the first line
+* When only changing documentation, include `[ci skip]` in the commit title
+
 ### Python Styleguide
 * We use [PEP-8](https://www.python.org/dev/peps/pep-0008/) in our project.
 * Additions
