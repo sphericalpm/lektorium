@@ -104,3 +104,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+test/legit.log
+test/test_legit.py
+test/repo_legit.py
