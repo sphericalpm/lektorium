@@ -15,11 +15,13 @@ The following is a set of guidelines for contributing to [Lektorium](https://git
 [How Can I Contribute](#how-can-i-contribute)
 
 
-[Styleguides](#styleguides)
+[Style Guides](#styleguides)
 
 * [Git Commit Messages](###Git-Commit-Messages)
 
-* [Python Styleguide](###Python-Styleguide)
+* [Python Style Guide](###Python-Styleguide)
+
+* [HTML/CSS Style Guide](###HTML/CSS-Styleguide)
 
 ## Code Of Conduct
 
@@ -49,7 +51,7 @@ This project and everyone participating in it is governed by the Atom Code of Co
 
 ## How Can I Contribute
 
-## Styleguides
+## Style Guides
 
 ### Git Commit Messages
 
@@ -59,7 +61,7 @@ This project and everyone participating in it is governed by the Atom Code of Co
 * Reference issues and pull requests liberally after the first line
 * When only changing documentation, include `[ci skip]` in the commit title
 
-### Python Styleguide
+### Python Style Guide
 * We use [PEP-8](https://www.python.org/dev/peps/pep-0008/) in our project.
 * Also we use [PEP-484](https://www.python.org/dev/peps/pep-0484/) for type hints
 * We use [google-style](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) docstrings
@@ -72,4 +74,6 @@ This project and everyone participating in it is governed by the Atom Code of Co
   * [flake8](https://pypi.org/project/flake8/)
   * [pylint](https://pypi.org/project/pylint/)
  
+### HTML/CSS Style Guide
+* We stick to Google [HTML/CSS Style Guide](https://google.github.io/styleguide/htmlcssguide.html)
 
