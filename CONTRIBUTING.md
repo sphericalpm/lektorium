@@ -17,6 +17,10 @@ The following is a set of guidelines for contributing to [Lektorium](https://git
 
 [Styleguides](#styleguides)
 
+* [Git Commit Messages](###Git-Commit-Messages)
+
+* [Python Styleguide](###Python-Styleguide)
+
 ## Code Of Conduct
 
 This project and everyone participating in it is governed by the Atom Code of Conduct. By participating, you are expected to uphold this code.
