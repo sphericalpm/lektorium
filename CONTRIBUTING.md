@@ -23,6 +23,8 @@ The following is a set of guidelines for contributing to [Lektorium](https://git
 
 * [HTML/CSS Style Guide](###HTML/CSS-Styleguide)
 
+* [JS Style Guide](###Java-Script-Style-Guide)
+
 ## Code Of Conduct
 
 This project and everyone participating in it is governed by the Atom Code of Conduct. By participating, you are expected to uphold this code.
@@ -77,3 +79,5 @@ This project and everyone participating in it is governed by the Atom Code of Co
 ### HTML/CSS Style Guide
 * We stick to Google [HTML/CSS Style Guide](https://google.github.io/styleguide/htmlcssguide.html)
 
+### Java Script Style Guide
+* We use [Airbnb style guide for JS](https://github.com/airbnb/javascript)
