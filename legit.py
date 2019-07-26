@@ -23,7 +23,7 @@ class Repository(object):
 
     @classmethod
     def clone(cls, url: str, path: str) -> str:
-        log.debug(f"Clone to {path}")
+        log.debug("Clone to ", path)
         try:
             Repo.clone_from(url, path)
         except GitCommandError:
@@ -33,7 +33,7 @@ class Repository(object):
 
     @classmethod
     def init(cls, path: str) -> str:
-        log.debug(f"init path {path}")
+        log.debug("init path ", path)
         try:
             Repo.init(path)
         except GitCommandError:
@@ -50,13 +50,13 @@ class Repository(object):
             self.repo.git.checkout(branch_name)
 
     def commit(self, message: str) -> None:
-        log.debug(f"git commit {message}")
         self.repo.index.commit(message)
+        log.debug(f"git commit: {message}")
 
     def add_changes(self, files: Iterable[str] = None) -> None:
         if files:
             for file in files:
-                log.debug(f"git add_changes {file}")
+                log.debug("git add file: ", file)
                 self.repo.index.add(file)
         else:
             self.repo.git.add(A=True)
@@ -74,5 +74,5 @@ class Repository(object):
         merge_base = self.repo.merge_base(merge_from, branch_into)
         self.repo.index.merge_tree(branch_into, base=merge_base)
         self.commit(merge_commit_message)
-        log.debug(f"merge from {merge_from} into {merge_into} merge_commit_message {merge_commit_message}")
+        log.debug(f"merge from {merge_from} into {merge_into} merge commit message: {merge_commit_message}")
         branch_from.checkout(force=True)
