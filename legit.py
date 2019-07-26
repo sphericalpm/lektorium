@@ -19,11 +19,12 @@ log.addHandler(fh)
 class Repository(object):
 
     def __init__(self, path: str) -> None:
+        log.debug(f"git init {path}")
         self.repo = Repo.init(path)
 
     @classmethod
     def clone(cls, url: str, path: str) -> str:
-        log.debug("Clone to ", path)
+        log.debug(f"git clone {url} {path}")
         try:
             Repo.clone_from(url, path)
         except GitCommandError:
@@ -33,7 +34,7 @@ class Repository(object):
 
     @classmethod
     def init(cls, path: str) -> str:
-        log.debug("init path ", path)
+        log.debug(f"git init {path}")
         try:
             Repo.init(path)
         except GitCommandError:
@@ -42,7 +43,7 @@ class Repository(object):
         return cls(path)
 
     def create_branch(self, branch_name: str) -> None:
-        log.debug(f"git create branch {branch_name}")
+        log.debug(f"git checkout -b {branch_name}")
         try:
             self.repo.git.checkout('-b', branch_name)
         except GitCommandError:
@@ -51,22 +52,23 @@ class Repository(object):
 
     def commit(self, message: str) -> None:
         self.repo.index.commit(message)
-        log.debug(f"git commit: {message}")
+        log.debug(f"git commit -m \"{message}\"")
 
     def add_changes(self, files: Iterable[str] = None) -> None:
         if files:
             for file in files:
-                log.debug("git add file: ", file)
+                log.debug(f"git add {file}")
                 self.repo.index.add(file)
         else:
+            log.debug(f"git add .")
             self.repo.git.add(A=True)
 
     def push_to_origin(self, branch_name: str) -> None:
         self.repo.head.reset(index=True, working_tree=True)
+        log.debug(f"git pull origin {branch_name}")
         self.repo.git.pull("origin", branch_name)
-        log.debug(f"git pull to origin {branch_name}")
-        self.repo.git.push("origin", 'HEAD:' + branch_name)
         log.debug(f"git push to origin, HEAD: {branch_name}")
+        self.repo.git.push(f"git push origin \'HEAD:\' {branch_name}")
 
     def merge_branch(self, merge_from: str, merge_into: str, merge_commit_message: str) -> None:
         branch_from = self.repo.branches[merge_from]
