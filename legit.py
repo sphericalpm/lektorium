@@ -17,8 +17,30 @@ log.addHandler(fh)
 
 
 class Repository(object):
+    """GitPython provides object model access to your git repository. 
+    This class wrap up some fuctions of GitPython
+
+    Attributes:
+        repo : This is path to git repository. Most of the GitPython functions
+        use it to operate with repository.
+        
+    """
 
     def __init__(self, path: str) -> None:
+        """This command creates an empty Git repository - basically
+        a .git directory with subdirectories for objects,
+        refs/heads, refs/tags, and template files.
+        An initial HEAD file that references the HEAD
+        of the master branch is also created.
+
+        Note:
+            Git accordance is "git init `path`"
+            https://git-scm.com/docs/git-init
+
+        Args:
+            path: Path to the repository you want to be git repository
+
+        """
         log.debug(f"git init {path}")
         self.repo = Repo.init(path)
 
