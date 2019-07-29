@@ -74,6 +74,21 @@ class Repository(object):
         return cls(path)
 
     def create_branch(self, branch_name: str) -> None:
+        """Git function which provides interface to create a new branch 
+        or to switch between them.
+        
+        Note:
+            Git accordance is "git checkout -b `branch_name`"
+        
+        Args:
+            branch_name: The name for branch you want to create/switch.
+        
+        
+        Examples:
+            >>> path_to_repo = Repository.init(path).repo
+            >>> path_to_repo.create_branch(`branch_name`)
+        
+        """
         log.debug(f"git checkout -b {branch_name}")
         try:
             self.repo.git.checkout('-b', branch_name)
