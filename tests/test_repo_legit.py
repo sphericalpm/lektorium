@@ -1,4 +1,4 @@
-from os.path import expanduser, isdir, exists, join, abspath, dirname
+from os import path
 from os import makedirs, chmod, walk
 from git import Repo
 import sys
