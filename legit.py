@@ -38,6 +38,7 @@ class Repository(object):
         
         Examples:
             >>> path_to_repo = Repository.clone(url, path).repo
+        
         """
         log.debug(f"git clone {url} {path}")
         try:
@@ -49,6 +50,21 @@ class Repository(object):
 
     @classmethod
     def init(cls, path: str) -> str:
+        """Git function which provides interface to initialize repository as git repository.
+        
+        Note:
+            Git accordance is "git init `path`"
+        
+        Args:
+            path: The path to initialize repo as git repository.
+        
+        Returns:
+            The return value is path to repo. Str for success, None otherwise.
+        
+        Examples:
+            >>> path_to_repo = Repository.init(path).repo
+        
+        """
         log.debug(f"git init {path}")
         try:
             Repo.init(path)
