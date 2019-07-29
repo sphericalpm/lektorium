@@ -3,6 +3,7 @@ from git.exc import GitCommandError
 from typing import Iterable
 import logging
 
+
 log = logging.getLogger("legit")
 log.setLevel(logging.DEBUG)
 fh = logging.FileHandler("legit.log")
@@ -68,7 +69,7 @@ class Repository(object):
         try:
             Repo.clone_from(url, path)
         except GitCommandError:
-            log.error(f"GitCommandError: {GitCommandError}, no path {path}")
+            logging.exception(f"GitCommandError: {GitCommandError}, no path {path} traceback")
             return None
         return cls(path)
 
@@ -98,7 +99,7 @@ class Repository(object):
         try:
             Repo.init(path)
         except GitCommandError:
-            log.error(f"GitCommandError: {GitCommandError}")
+            logging.exception(f"GitCommandError: {GitCommandError} traceback")
             return None
         return cls(path)
 
@@ -124,7 +125,7 @@ class Repository(object):
         try:
             self.repo.git.checkout('-b', branch_name)
         except GitCommandError:
-            log.error(f"GitCommandError git checkout {branch_name}")
+            logging.exception(f"GitCommandError: git checkout {branch_name} traceback")
             self.repo.git.checkout(branch_name)
 
     def commit(self, message: str) -> None:
