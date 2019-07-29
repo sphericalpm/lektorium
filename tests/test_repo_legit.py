@@ -88,24 +88,14 @@ class TestGitMethods(unittest.TestCase):
         self.assertEqual(git_path, cloned_repo.repo.git_dir)
 
     def test_branching(self):
-        if isdir(folder):
-            change_mod_recursively(folder)
-            rmtree(folder)
-        repository = legit.Repository(create_folder(folder)).repo
-        repo = Repo(repository.working_tree_dir)
-        cloned_repo = repo.clone(folder, create_folder(folder))  # TODO Check?
+        cloned_repo = legit.Repository.clone(url, clean_and_create(build_path('newrepo'))).repo  # TODO Check?
         # create a new branch
         new_branch = cloned_repo.create_head('feature')
         # which wasn't checked out yet
         assert cloned_repo.active_branch != new_branch
 
     def test_commiting(self):
-        if isdir(folder):
-            change_mod_recursively(folder)
-            rmtree(folder)
-        repository = legit.Repository(create_folder(folder)).repo
-        repo = Repo(repository.working_tree_dir)
-        cloned_repo = repo.clone(folder, create_folder(folder))  # TODO Check?
+        cloned_repo = legit.Repository.clone(url, clean_and_create(build_path('newrepo'))).repo  # TODO Check?
         new_branch = cloned_repo.create_head('another-branch')
         assert cloned_repo.active_branch != new_branch
         # pointing to the checked-out commit
