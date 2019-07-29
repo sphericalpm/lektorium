@@ -19,7 +19,7 @@ log.addHandler(fh)
 
 class Repository(object):
     """GitPython provides object model access to your git repository. 
-    This class wrap up some fuctions of GitPython
+    This class wraps up some fuctions of GitPython
 
     Attributes:
         repo : This is path to git repository. Most of the GitPython functions
@@ -180,7 +180,6 @@ class Repository(object):
         except GitCommandError:
             logging.exception(f"GitCommandError: git add {GitCommandError} traceback")
    
-
     def push_to_origin(self, branch_name: str) -> None:
         """Updates remote refs using local refs, while sending
         objects necessary to complete the given refs.

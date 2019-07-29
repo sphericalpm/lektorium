@@ -12,10 +12,12 @@ folder = join(expanduser('~'), 'Desktop\\folder2')
 path = abspath(dirname(dirname(abspath(__file__))))
 sys.path.append(path)
 
+
 def create_folder(folder: str) -> str:
     if not exists(folder):
         makedirs(folder)
     assert isdir(folder)
+
 
 def change_mod_recursively(folder: str, permissions: oct = 0o777) -> None:
     for root, dirs, files in walk(folder):
@@ -31,7 +33,6 @@ class TestGitMethods(unittest.TestCase):
         import gc
         gc.collect()
 
-
     def test_initialization(self):
         repository = legit.Repository(create_folder(folder)).repo
         assert isdir(repository.working_tree_dir)
@@ -44,11 +45,11 @@ class TestGitMethods(unittest.TestCase):
 
     def test_cloning_empty_dir(self):
         if isdir(folder):
-             change_mod_recursively(folder)
-             rmtree(folder)
+            change_mod_recursively(folder)
+            rmtree(folder)
         repository = legit.Repository(create_folder(folder)).repo
         repo = Repo(repository.working_tree_dir)
-        cloned_repo = repo.clone(folder, create_folder('newrepo')) #TODO Check?
+        cloned_repo = repo.clone(folder, create_folder('newrepo'))  # TODO Check?
         # clone an existing repository
         assert cloned_repo.__class__ is Repo
         assert Repo.init(folder).__class__ is Repo
@@ -62,7 +63,7 @@ class TestGitMethods(unittest.TestCase):
             change_mod_recursively(folder)
             rmtree(folder)
         legit.Repository.init(create_folder(folder))
-        cloned_repo = legit.Repository.clone(url, create_folder('newrepo')) #TODO Check?
+        cloned_repo = legit.Repository.clone(url, create_folder('newrepo'))  # TODO Check?
         # no working tree
         assert cloned_repo is None
 
@@ -94,7 +95,7 @@ class TestGitMethods(unittest.TestCase):
     def test_add_file_and_commit(self):
         file_name = join(folder, 'new-file')
         r = legit.Repository.init(folder).repo
-        #This function just creates an empty file
+        # This function just creates an empty file
         open(file_name, 'wb').close()
         r.index.add([file_name])
         r.index.commit("initial commit")
