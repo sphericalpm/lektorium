@@ -43,8 +43,11 @@ class Repository(object):
 
         """
         log.debug(f"git init {path}")
-        self.repo = Repo.init(path)
-
+        try:
+            self.repo = Repo.init(path)
+        except GitCommandError:
+            logging.exception(f"GitCommandError: git init {GitCommandError}, {path} traceback")
+        
     @classmethod
     def clone(cls, url: str, path: str) -> str:
         """Git function which provides interface to clone from remote
@@ -69,7 +72,7 @@ class Repository(object):
         try:
             Repo.clone_from(url, path)
         except GitCommandError:
-            logging.exception(f"GitCommandError: {GitCommandError}, no path {path} traceback")
+            logging.exception(f"GitCommandError: git clone {GitCommandError}, {path} traceback")
             return None
         return cls(path)
 
@@ -99,7 +102,7 @@ class Repository(object):
         try:
             Repo.init(path)
         except GitCommandError:
-            logging.exception(f"GitCommandError: {GitCommandError} traceback")
+            logging.exception(f"GitCommandError: git init {GitCommandError} traceback")
             return None
         return cls(path)
 
@@ -144,8 +147,11 @@ class Repository(object):
         
         """
         log.debug(f"git commit -m \"{message}\"")
-        self.repo.index.commit(message)
-        
+        try:
+            self.repo.index.commit(message)
+        except GitCommandError:
+            logging.exception(f"GitCommandError: git commit {GitCommandError} traceback")
+   
     def add_changes(self, files: Iterable[str] = None) -> None:
         """This command updates the index using
         the current content found in the working tree,
@@ -163,13 +169,17 @@ class Repository(object):
             >>> path_to_repo.add()
         
         """
-        if files:
-            for file in files:
-                log.debug(f"git add {file}")
-                self.repo.index.add(file)
-        else:
-            log.debug(f"git add .")
-            self.repo.git.add(A=True)
+        try:
+            if files:
+                for file in files:
+                    log.debug(f"git add {file}")
+                    self.repo.index.add(file)
+            else:
+                log.debug(f"git add .")
+                self.repo.git.add(A=True)
+        except GitCommandError:
+            logging.exception(f"GitCommandError: git add {GitCommandError} traceback")
+   
 
     def push_to_origin(self, branch_name: str) -> None:
         """Updates remote refs using local refs, while sending
