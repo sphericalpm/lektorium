@@ -49,7 +49,7 @@ def clean_data():
 
 
 clean_data()
-res = build_new_image(site_name="TestFuckingSite", site_dir="t_sites/t1/")
+res = build_new_image(site_name="TestFuckingSite", site_dir="t_sites/LctrmTestSite1/")
 
 print(res[0])
 print(res[1])
