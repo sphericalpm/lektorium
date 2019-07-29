@@ -29,6 +29,9 @@ def build_new_image(site_name: str, site_dir: str):
         dockerfile="docker_app/Dockerfile",
         tag=f"{clean_site_name}_{datetime_now.strftime('%-Hh-%-Mm-%-Ss')}:{datetime_now.strftime('%Y.%m.%d')}",
         quiet=True,
+        buildargs={
+            "site_dir": site_dir
+        },
         # TODO change to True
         nocache=False,
         rm=True,
@@ -46,7 +49,7 @@ def clean_data():
 
 
 clean_data()
-res = build_new_image(site_name="TestFuckingSite", site_dir="some qute dir")
+res = build_new_image(site_name="TestFuckingSite", site_dir="t_sites/t1/")
 
 print(res[0])
 print(res[1])
