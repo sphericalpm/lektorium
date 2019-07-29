@@ -18,7 +18,7 @@ log.addHandler(fh)
 
 class Repository(object):
     """GitPython provides object model access to your git repository. 
-    This class wrap up some fuctions of GitPython
+    This class wraps up some fuctions of GitPython
 
     Attributes:
         repo : This is path to git repository. Most of the GitPython functions
