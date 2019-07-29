@@ -24,6 +24,21 @@ class Repository(object):
 
     @classmethod
     def clone(cls, url: str, path: str) -> str:
+        """Git function which provides interface to clone from remote to local machine.
+        
+        Note:
+            Git accordance is "git clone `url` `path`"
+        
+        Args:
+            url: The url of remote (Github, Gitlab, etc)
+            path: The path to locate remote repo in the local machine.
+        
+        Returns:
+            The return value is path to repo. Str for success, None otherwise.
+        
+        Examples:
+            >>> path_to_repo = Repository.clone(url, path).repo
+        """
         log.debug(f"git clone {url} {path}")
         try:
             Repo.clone_from(url, path)
@@ -51,9 +66,9 @@ class Repository(object):
             self.repo.git.checkout(branch_name)
 
     def commit(self, message: str) -> None:
-        self.repo.index.commit(message)
         log.debug(f"git commit -m \"{message}\"")
-
+        self.repo.index.commit(message)
+        
     def add_changes(self, files: Iterable[str] = None) -> None:
         if files:
             for file in files:
