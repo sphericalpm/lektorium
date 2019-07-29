@@ -83,7 +83,6 @@ class Repository(object):
         Args:
             branch_name: The name for branch you want to create/switch.
         
-        
         Examples:
             >>> path_to_repo = Repository.init(path).repo
             >>> path_to_repo.create_branch(`branch_name`)
@@ -97,10 +96,35 @@ class Repository(object):
             self.repo.git.checkout(branch_name)
 
     def commit(self, message: str) -> None:
+        """Git function which provides interface to commit changes.
+        
+        Note:
+            Git accordance is "git commit -m `message`"
+        
+        Args:
+            branch_name: The name for branch you want to create/switch.
+        
+        Examples:
+            >>> path_to_repo.commit(`message`)
+        
+        """
         log.debug(f"git commit -m \"{message}\"")
         self.repo.index.commit(message)
         
     def add_changes(self, files: Iterable[str] = None) -> None:
+        """Git function which provides interface to commit changes.
+        
+        Note:
+            Git accordance is "git add `files`" or "git add ."
+        
+        Args:
+            files: The path to files to add or None if one wants to add them all
+        
+        Examples:
+            >>> path_to_repo.add(`files`)
+            >>> path_to_repo.add()
+        
+        """
         if files:
             for file in files:
                 log.debug(f"git add {file}")
