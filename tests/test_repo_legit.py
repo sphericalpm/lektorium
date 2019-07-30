@@ -16,7 +16,6 @@ def build_path(sub_dir: str) -> str:
 def create_folder(folder: str) -> str:
     if not exists(folder):
         makedirs(folder)
-    assert isdir(folder)
     return folder
 
 
@@ -56,7 +55,7 @@ class TestGitMethods(unittest.TestCase):
         assert isdir(repo.working_tree_dir)
         assert repo.git_dir.startswith(repo.working_tree_dir)
 
-    def test_cloning_empty_dir(self):
+    def test_clone_empty_dir(self):
         #clean_folders(folder)
         repository = legit.Repository(create_folder('folder')).repo
         repo = Repo(repository.working_tree_dir)
@@ -68,19 +67,19 @@ class TestGitMethods(unittest.TestCase):
         # directory containing the git repository
         assert cloned_repo.git_dir.startswith(cloned_repo.working_tree_dir)
 
-    def test_cloning_non_empty_dir(self):
+    def test_clone_non_empty_dir(self):
         cloned_repo = legit.Repository.clone(url, clean_and_create(build_path('newrepo')))  # TODO Check?
         git_path = build_path('newrepo\\.git')
         assert isdir(git_path)
         self.assertEqual(git_path, cloned_repo.repo.git_dir)
 
-    def test_branching(self):
+    def test_branch(self):
         cloned_repo = legit.Repository.clone(url, clean_and_create('newrepo')).repo  # TODO Check?
         # create a new branch
         new_branch = cloned_repo.create_head('feature')
         assert cloned_repo.active_branch != new_branch
 
-    def test_commiting(self):
+    def test_commit(self):
         cloned_repo = legit.Repository.clone(url, clean_and_create('newrepo')).repo  # TODO Check?
         new_branch = cloned_repo.create_head('another-branch')
         assert cloned_repo.active_branch != new_branch
