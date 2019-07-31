@@ -1,4 +1,6 @@
 flake8
+pytest
+pytest-cov
 flake8-import-order-spoqa
 flake8-docstrings
 flake8-builtins
