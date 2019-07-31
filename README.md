@@ -1,4 +1,5 @@
 [![CircleCI](https://circleci.com/gh/sphericalpm/lektorium.svg?style=svg)](https://circleci.com/gh/sphericalpm/lektorium)
+[![codecov](https://codecov.io/gh/sphericalpm/lektorium/branch/master/graph/badge.svg)](https://codecov.io/gh/sphericalpm/lektorium)
 
 # What is Lektorium? 
 Lektorium _will be_ a web content management solution for those with many little and/or similar websites. 
