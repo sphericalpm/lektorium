@@ -15,7 +15,15 @@ The following is a set of guidelines for contributing to [Lektorium](https://git
 [How Can I Contribute](#how-can-i-contribute)
 
 
-[Styleguides](#styleguides)
+[Style Guides](#styleguides)
+
+* [Git Commit Messages](###Git-Commit-Messages)
+
+* [Python Style Guide](###Python-Styleguide)
+
+* [HTML/CSS Style Guide](###HTML/CSS-Styleguide)
+
+* [JS Style Guide](###Java-Script-Style-Guide)
 
 ## Code Of Conduct
 
@@ -45,9 +53,20 @@ This project and everyone participating in it is governed by the Atom Code of Co
 
 ## How Can I Contribute
 
-## Styleguides
-### Python Styleguide
+## Style Guides
+
+### Git Commit Messages
+
+* Use the present tense ("Add feature" not "Added feature")
+* Use the imperative mood ("Move cursor to..." not "Moves cursor to...")
+* Limit the first line to 72 characters or less
+* Reference issues and pull requests liberally after the first line
+* When only changing documentation, include `[ci skip]` in the commit title
+
+### Python Style Guide
 * We use [PEP-8](https://www.python.org/dev/peps/pep-0008/) in our project.
+* Also we use [PEP-484](https://www.python.org/dev/peps/pep-0484/) for type hints
+* We use [google-style](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) docstrings
 * Additions
   * Use 4 spaces indentation please!
   * avoid `\` at the end of line as much as possible
@@ -57,4 +76,8 @@ This project and everyone participating in it is governed by the Atom Code of Co
   * [flake8](https://pypi.org/project/flake8/)
   * [pylint](https://pypi.org/project/pylint/)
  
+### HTML/CSS Style Guide
+* We stick to Google [HTML/CSS Style Guide](https://google.github.io/styleguide/htmlcssguide.html)
 
+### Java Script Style Guide
+* We use [Airbnb style guide for JS](https://github.com/airbnb/javascript)
