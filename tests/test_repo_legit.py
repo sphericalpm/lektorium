@@ -1,16 +1,19 @@
 from os.path import expanduser, isdir, exists, join
 from os import makedirs, chmod, walk
-from git import Repo
-import legit
 from shutil import rmtree
 import unittest
 
+from git import Repo
+
+import legit
+
+
 url = 'https://github.com/katridi/test_folder.git'
-folder = join(expanduser('~'), 'Desktop\\folder2') #TODO Change
+folder = join(expanduser('~'), 'Desktop\\folder2')  # TODO Change
 
 
 def build_path(sub_dir: str) -> str:
-    return join(expanduser('~'), f"Desktop\\{sub_dir}") #TODO Change
+    return join(expanduser('~'), f"Desktop\\{sub_dir}")  # TODO Change
 
 
 def create_folder(folder: str) -> str:
@@ -34,7 +37,7 @@ def clean_folders(*args):
             rmtree(arg)
 
 
-def clean_and_create(folder:str):
+def clean_and_create(folder: str):
     clean_folders(folder)
     return create_folder(folder)
 
@@ -42,21 +45,21 @@ def clean_and_create(folder:str):
 class TestGitMethods(unittest.TestCase):
 
     def test_initialization(self):
-        #clean_folders(folder)
+        # clean_folders(folder)
         repository = legit.Repository(create_folder('folder'))
         repo = repository.repo
         assert isdir(repo.working_tree_dir)
         assert repo.git_dir.startswith(repo.working_tree_dir)
 
     def test_initialization_dot_attr(self):
-        #clean_folders(folder)
+        # clean_folders(folder)
         repository = legit.Repository.init(create_folder('folder'))
         repo = repository.repo
         assert isdir(repo.working_tree_dir)
         assert repo.git_dir.startswith(repo.working_tree_dir)
 
     def test_clone_empty_dir(self):
-        #clean_folders(folder)
+        # clean_folders(folder)
         repository = legit.Repository(create_folder('folder')).repo
         repo = Repo(repository.working_tree_dir)
         cloned_repo = repo.clone(clean_and_create(build_path('newrepo')))  # TODO Check?

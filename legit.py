@@ -1,8 +1,8 @@
-from git import Repo
-from git.exc import GitCommandError
 from typing import Iterable
 import logging
 
+from git import Repo
+from git.exc import GitCommandError
 
 log = logging.getLogger("legit")
 log.setLevel(logging.DEBUG)
