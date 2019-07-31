@@ -1,0 +1,4 @@
+aiohttp==3.5.4
+aiohttp_debugtoolbar==0.5.0
+aiodns==2.0.0
+envparse==0.2.0
