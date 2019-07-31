@@ -32,7 +32,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            pytest --cov=crf --cov-report xml
+            pytest --cov-report xml
 
 
       - codecov/upload:
