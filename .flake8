@@ -4,3 +4,6 @@ filename = *.py
 max-line-length = 120
 max-doc-length = 79
 select = E,W,F,C
+import-order-style = spoqa
+# inline-quotes = " # Choose here type of quotes
+
