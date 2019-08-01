@@ -3,6 +3,7 @@ from time import time
 from bson.objectid import ObjectId
 
 from aiohttp import web
+from aiohttp_session import get_session
 from aiohttp_security import remember, forget, authorized_userid
 
 
@@ -11,58 +12,34 @@ def redirect(request, router_name):
     raise web.HTTPFound(url)
 
 
-async def get_user_by_name(conn, username):
-    result = await conn.fetchrow(
-        users
-        .select()
-        .where(users.c.username == username)
-    )
-    return result
+def set_session(session, username, request):
+    session['user'] = username
+    session['last_visit'] = time()
+    redirect(request, 'main')
 
 
-async def validate_login_form(conn, form):
-
-    username = form['username']
-    password = form['password']
-
+async def validate_login_form(data):
+    username = data['username']
     if not username:
         return 'username is required'
-    if not password:
-        return 'password is required'
-
-    user = await get_user_by_name(conn, username)
-
-    if not user:
-        return 'Invalid username'
-    if not check_password_hash(password, user['password_hash']):
-        return 'Invalid password'
-    else:
-        return None
+    return None
 
 
 class Login(web.View):
-    async def login(request):
-        username = await authorized_userid(request)
-        if username:
-            raise redirect(request.app.router, 'index')
+    async def get(self):
+        session = await get_session(self.request)
+        if session.get('user'):
+            redirect(self.request, 'main')
+        return {'content': 'Please enter login or email'}
 
-        if request.method == 'POST':
-            form = await request.post()
+    async def post(self):
+        data = await self.request.post()
+        error = await validate_login_form(data)
+        if error:
+            return {'error': error}
 
-            async with request.app['db_pool'].acquire() as conn:
-                error = await validate_login_form(conn, form)
-
-                if error:
-                    return {'error': error}
-                else:
-                    response = redirect(request.app.router, 'index')
-
-                    user = await get_user_by_name(conn, form['username'])
-                    await remember(request, response, user['username'])
-
-                    raise response
-
-        return {}
+        session = await get_session(self.request)
+        set_session(session, data['username'], self.request)
 
 
 class Logout(web.View):
