@@ -1,19 +1,16 @@
 from os.path import expanduser, isdir, exists, join
 from os import makedirs, chmod, walk
+from git import Repo
+import legit
 from shutil import rmtree
 import unittest
 
-from git import Repo
-
-import legit
-
-
 url = 'https://github.com/katridi/test_folder.git'
-folder = join(expanduser('~'), 'Desktop\\folder2')  # TODO Change
+folder = join(expanduser('~'), 'Desktop\\folder2')  # TODO: Change
 
 
 def build_path(sub_dir: str) -> str:
-    return join(expanduser('~'), f"Desktop\\{sub_dir}")  # TODO Change
+    return join(expanduser('~'), f"Desktop\\{sub_dir}")  # TODO: Change
 
 
 def create_folder(folder: str) -> str:
@@ -98,6 +95,7 @@ class TestGitMethods(unittest.TestCase):
         r.index.add([file_name])
         r.index.commit("initial commit")
 
+    # PLEASE DO NOT PUSH DEAD/COMMENTED-OUT CODE
     # def test_push(self):
     #     repository = legit.Repository.init(create_folder(folder)).repo
     #     repo = legit.Repository.init(folder).repo
@@ -106,7 +104,9 @@ class TestGitMethods(unittest.TestCase):
     #     empty_repo = Repo.init(join(folder, 'empty'))
     #     origin = empty_repo.create_remote('origin', repo.remotes.origin.url)
     #     assert origin.exists()
-    #     assert origin == empty_repo.remotes.origin == empty_repo.remotes['origin']
+    #     assert origin ==
+    #             empty_repo.remotes.origin ==
+    #            empty_repo.remotes['origin']
     #     # assure we actually have data. fetch() returns useful information
     #     origin.fetch()
     #     # Setup a local tracking branch of a remote branch
@@ -116,7 +116,8 @@ class TestGitMethods(unittest.TestCase):
     #     empty_repo.heads.master.set_tracking_branch(origin.refs.master)
     #     # checkout local "master" to working tree
     #     empty_repo.heads.master.checkout()
-    #     empty_repo.create_head('master', origin.refs.master).set_tracking_branch(origin.refs.master).checkout()
+    #     empty_repo.create_head('master', origin.refs.master)
+    #                      .set_tracking_branch(origin.refs.master).checkout()
     #     # rename remotes
     #     origin.rename('new_origin')
     #     origin.pull()
