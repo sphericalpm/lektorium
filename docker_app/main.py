@@ -7,8 +7,8 @@ from docker.models import images, containers  # type: ignore
 
 client = docker.from_env()
 
-# print(client.containers.list(all=True))
-# print(client.images.list(all=True))
+print(client.containers.list(all=True))
+print(client.images.list(all=True))
 
 
 """
@@ -38,9 +38,7 @@ def build_new_image(
         dockerfile="docker_app/Dockerfile",
         tag=f"{clean_site_name}_{datetime_now.strftime('%-Hh-%-Mm-%-Ss')}:{datetime_now.strftime('%Y.%m.%d')}",
         quiet=True,
-        buildargs={
-            "site_dir": site_dir
-        },
+        buildargs={"site_dir": site_dir},
         # TODO change to True
         nocache=False,
         rm=True,
@@ -96,6 +94,9 @@ def prune_data() -> None:
 
 prune_data()
 
+res = build_new_image(
+    site_name="lector site number first", site_dir="t_sites/LctrmTestSite1/"
+)
 
 print(res[0])
 print(res[1])
