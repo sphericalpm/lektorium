@@ -11,7 +11,11 @@ client = docker.from_env()
 # print(client.images.list(all=True))
 
 
-def build_new_image(site_name: str, site_dir: str):
+"""
+Images
+"""
+
+
 def build_new_image(
     site_name: str, site_dir: str
 ) -> typing.Tuple[images.Image, typing.Iterable]:
@@ -45,7 +49,44 @@ def build_new_image(
     return result_image, logs_data
 
 
-def clean_data():
+def delete_image(image: str) -> None:
+    """
+    Delete selected image;
+
+    :param image: Image ID(short or long)
+    """
+    client.images.remove(image=image, force=True)
+
+
+"""
+Containers
+"""
+
+
+def delete_container(container: containers.Container) -> None:
+    """
+    Delete selected container;
+
+    :param container: Container object for deleting
+    """
+    container.remove(force=True)
+
+
+def stop_container(container: containers.Container) -> None:
+    """
+    Stop selected container;
+
+    :param container: Container object for stoping
+    """
+    container.stop()
+
+
+"""
+Other methods
+"""
+
+
+def prune_data() -> None:
     """
     Delete unused images and containers.
     """
@@ -53,8 +94,8 @@ def clean_data():
     client.images.prune()
 
 
-clean_data()
-res = build_new_image(site_name="TestFuckingSite", site_dir="t_sites/LctrmTestSite1/")
+prune_data()
+
 
 print(res[0])
 print(res[1])
