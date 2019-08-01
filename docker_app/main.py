@@ -1,7 +1,9 @@
 import re
 import datetime
+import typing
 
-import docker
+import docker  # type: ignore
+from docker.models import images, containers  # type: ignore
 
 client = docker.from_env()
 
@@ -10,12 +12,15 @@ client = docker.from_env()
 
 
 def build_new_image(site_name: str, site_dir: str):
+def build_new_image(
+    site_name: str, site_dir: str
+) -> typing.Tuple[images.Image, typing.Iterable]:
     """
     Build new image from src
 
     :param site_name: Site name which will be used in image tag
 
-    :return: List with image object and logs.
+    :return: Tuple with image object and logs.
     """
     # clean site name from invalid symbols
     clean_site_name = re.sub(
