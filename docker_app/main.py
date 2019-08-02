@@ -147,9 +147,13 @@ def prune_data() -> None:
 
 prune_data()
 
-res = build_new_image(
+new_image, logs = build_new_image(
     site_name="lector site number first", site_dir="t_sites/LctrmTestSite1/"
 )
 
-print(res[0])
-print(res[1])
+new_container = run_container(image=new_image)
+
+print(new_container)
+
+stop_container(new_container)
+delete_container(new_container)
