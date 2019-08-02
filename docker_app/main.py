@@ -8,7 +8,7 @@ from docker.models import images, containers  # type: ignore
 client = docker.from_env()
 
 print(client.containers.list(all=True))
-print(client.images.list(all=True))
+print(client.images.list())
 
 
 """
@@ -22,7 +22,7 @@ def get_images() -> typing.List[images.Image]:
 
     :return: List with images objects
     """
-    all_images = client.images.list(all=True)
+    all_images = client.images.list()
 
     return all_images
 
