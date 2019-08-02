@@ -16,6 +16,17 @@ Images
 """
 
 
+def get_images() -> typing.List[images.Image]:
+    """
+    Return list of available Images-obects
+
+    :return: List with images objects
+    """
+    all_images = client.images.list(all=True)
+
+    return all_images
+
+
 def build_new_image(
     site_name: str, site_dir: str
 ) -> typing.Tuple[images.Image, typing.Iterable]:
@@ -59,6 +70,17 @@ def delete_image(image: str) -> None:
 """
 Containers
 """
+
+
+def get_containers() -> typing.List[containers.Container]:
+    """
+    Return list of available Containers-obects
+
+    :return: List with containers objects
+    """
+    all_containers = client.containers.list(all=True)
+
+    return all_containers
 
 
 def delete_container(container: containers.Container) -> None:
