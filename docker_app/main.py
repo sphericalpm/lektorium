@@ -111,7 +111,25 @@ def stop_container(container: containers.Container) -> None:
 
     :param container: Container object for stoping
     """
-    container.stop()
+    container.stop(timeout=20)
+
+
+def pause_container(container: containers.Container) -> None:
+    """
+    Pause selected container;
+
+    :param container: Container object for pause
+    """
+    container.pause()
+
+
+def unpause_container(container: containers.Container) -> None:
+    """
+    Un-Pause selected container;
+
+    :param container: Container object for unpause
+    """
+    container.unpause()
 
 
 """
