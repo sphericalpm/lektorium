@@ -72,6 +72,19 @@ Containers
 """
 
 
+def run_container(image: images.Image) -> containers.Container:
+    """
+    Return list of available Containers-obects
+
+    :return: List with containers objects
+    """
+    runned_container = client.containers.run(
+        image=image, auto_remove=True, detach=True, network_mode="host"
+    )
+
+    return runned_container
+
+
 def get_containers() -> typing.List[containers.Container]:
     """
     Return list of available Containers-obects
