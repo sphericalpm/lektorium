@@ -49,7 +49,7 @@ class Repository(object):
             logging.exception(f"GitCommandError: git init {GitCommandError}, {path} traceback")
 
     @classmethod
-    def clone(cls, url: str, path: str) -> str:
+    def clone(cls, url: str, path: str = None) -> str:
         """Git function which provides interface to clone from remote
         to local machine.
 

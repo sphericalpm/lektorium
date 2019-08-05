@@ -1,4 +1,4 @@
-from os.path import expanduser, isdir, join
+from os.path import isdir
 from tempfile import TemporaryDirectory, TemporaryFile
 
 from git import Repo
@@ -6,10 +6,6 @@ from git import Repo
 import legit
 
 # TODO: Consider @fixture for cloning and stuff like that
-# TODO: Delete extra methods below replace stdlibs methods and funcs4
-
-url = 'https://github.com/katridi/test_folder.git'
-folder = join(expanduser('~'), 'Desktop\\folder2')
 
 
 def test_initialization():
@@ -45,20 +41,19 @@ def test_clone_into_non_empty_dir():
         new_clone = clone_from.clone(tmp_into)
         assert new_clone is None
 
-
+# TODO: Rewrite
 def test_checkout():
     with TemporaryDirectory() as tmpdirname:
-        repo = legit.Repository.init(tmpdirname).repo
+        repo = legit.Repository.init(tmpdirname)
         new_branch = repo.checkout('branch_name')
         assert repo.active_branch == new_branch
 
-
+# TODO: Rewrite
 def test_add_file_and_commit():
     with TemporaryDirectory() as tmpdirname:
-        repo = legit.Repository.init(tmpdirname).repo
+        repo = legit.Repository.init(tmpdirname)
         with TemporaryFile(dir=tmpdirname) as tmpfilename:
-            repo.index.add([tmpfilename])
-            repo.index.commit("initial commit")
+            repo.add_changes(files=[tmpfilename])
     assert repo.commit == repo.active_branch.commit
 
 # PLEASE DO NOT PUSH DEAD/COMMENTED-OUT CODE
