@@ -1,5 +1,5 @@
-from typing import Iterable
 import logging
+from typing import Iterable
 
 from git import Repo
 from git.exc import GitCommandError
