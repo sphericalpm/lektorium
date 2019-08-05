@@ -12,7 +12,7 @@ url = 'https://github.com/katridi/test_folder.git'
 folder = join(expanduser('~'), 'Desktop\\folder2')
 
 
-def test_initialization(self):
+def test_initialization():
     with TemporaryDirectory() as tmpdirname:
         repository = legit.Repository(tmpdirname)
         repo = repository.repo
@@ -20,7 +20,7 @@ def test_initialization(self):
         assert repo.git_dir.startswith(repo.working_tree_dir)
 
 
-def test_initialization_dot_attr(self):
+def test_initialization_dot_attr():
     with TemporaryDirectory() as tmpdirname:
         repository = legit.Repository.init(tmpdirname)
         repo = repository.repo
@@ -28,7 +28,7 @@ def test_initialization_dot_attr(self):
         assert repo.git_dir.startswith(repo.working_tree_dir)
 
 
-def test_clone_into_empty_dir(self):
+def test_clone_into_empty_dir():
     with TemporaryDirectory() as tmp_url, TemporaryDirectory() as tmp_path:
         origin = legit.Repository.init(tmp_url)
         cloned_repo = origin.clone(tmp_path)
@@ -38,7 +38,7 @@ def test_clone_into_empty_dir(self):
         assert cloned_repo.git_dir.startswith(cloned_repo.working_tree_dir)
 
 
-def test_clone_into_non_empty_dir(self):
+def test_clone_into_non_empty_dir():
     with TemporaryDirectory() as tmp_from, TemporaryDirectory() as tmp_into:
         legit.Repository.init(tmp_into)
         clone_from = legit.Repository.init(tmp_from)
@@ -46,35 +46,23 @@ def test_clone_into_non_empty_dir(self):
         assert new_clone is None
 
 
-def test_branch(self):
-    # cloned_repo = legit.Repository.clone(url, clean_and_create('newrepo')).repo  # TODO Check?
-    # create a new branch
-    # new_branch = cloned_repo.create_head('feature')
-    # assert cloned_repo.active_branch != new_branch
-    pass
+def test_checkout():
+    with TemporaryDirectory() as tmpdirname:
+        repo = legit.Repository.init(tmpdirname).repo
+        new_branch = repo.checkout('branch_name')
+        assert repo.active_branch == new_branch
 
 
-def test_commit(self):
-    # cloned_repo = legit.Repository.clone(url, clean_and_create('newrepo')).repo  # TODO Check?
-    # new_branch = cloned_repo.create_head('another-branch')
-    # assert cloned_repo.active_branch != new_branch
-    # # pointing to the checked-out commit
-    # self.assertEqual(new_branch.commit, cloned_repo.active_branch.commit)
-    # assert new_branch.set_commit('HEAD~1').commit == cloned_repo.active_branch.commit.parents[0]
-    pass
-
-
-def test_add_file_and_commit(self):
+def test_add_file_and_commit():
     with TemporaryDirectory() as tmpdirname:
         repo = legit.Repository.init(tmpdirname).repo
         with TemporaryFile(dir=tmpdirname) as tmpfilename:
             repo.index.add([tmpfilename])
             repo.index.commit("initial commit")
-    # here should be some assertions about commit's state
-
+    assert repo.commit == repo.active_branch.commit
 
 # PLEASE DO NOT PUSH DEAD/COMMENTED-OUT CODE
-# def test_push(self):
+# def test_push():
 #     repository = legit.Repository.init(create_folder(folder)).repo
 #     repo = legit.Repository.init(folder).repo
 #     assert isdir(repository.working_tree_dir)
