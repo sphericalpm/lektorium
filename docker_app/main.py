@@ -89,7 +89,7 @@ def get_containers() -> typing.List[containers.Container]:
     """
     Return a list of available containers objects
 
-    :return: List with containers objects
+    :return: List of container objects
     """
     all_containers = client.containers.list(all=True)
 
