@@ -125,7 +125,7 @@ def pause_container(container: containers.Container) -> None:
 
 def unpause_container(container: containers.Container) -> None:
     """
-    Un-Pause selected container;
+    Un-pause selected container;
 
     :param container: Container object to un-pause
     """
