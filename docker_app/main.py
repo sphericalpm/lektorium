@@ -87,7 +87,7 @@ def run_container(image: images.Image) -> containers.Container:
 
 def get_containers() -> typing.List[containers.Container]:
     """
-    Return list of available Containers-obects
+    Return a list of available containers objects
 
     :return: List with containers objects
     """
