@@ -4,56 +4,65 @@ from tempfile import TemporaryDirectory, TemporaryFile
 from git import Repo
 
 import legit
-
-# TODO: Consider @fixture for cloning and stuff like that
-
-
-def test_initialization():
-    with TemporaryDirectory() as tmpdirname:
-        repository = legit.Repository(tmpdirname)
-        repo = repository.repo
-        assert isdir(repo.working_tree_dir)
-        assert repo.git_dir.startswith(repo.working_tree_dir)
+import pytest
 
 
-def test_initialization_dot_attr():
-    with TemporaryDirectory() as tmpdirname:
-        repository = legit.Repository.init(tmpdirname)
-        repo = repository.repo
-        assert isdir(repo.working_tree_dir)
-        assert repo.git_dir.startswith(repo.working_tree_dir)
+# import mockssh
 
 
-def test_clone_into_empty_dir():
-    with TemporaryDirectory() as tmp_url, TemporaryDirectory() as tmp_path:
-        origin = legit.Repository.init(tmp_url)
-        cloned_repo = origin.clone(tmp_path)
-        assert cloned_repo.__class__ is Repo
-        assert Repo.init(tmp_url).__class__ is Repo
-        assert isdir(cloned_repo.working_tree_dir)
-        assert cloned_repo.git_dir.startswith(cloned_repo.working_tree_dir)
+@pytest.fixture(scope='module')
+def tmpdir_gen(request, tmp_path_factory):
+    from _pytest.tmpdir import _mk_tmp
+    import py
+    return lambda: py.path.local(_mk_tmp(request, tmp_path_factory))
 
 
-def test_clone_into_non_empty_dir():
-    with TemporaryDirectory() as tmp_from, TemporaryDirectory() as tmp_into:
-        legit.Repository.init(tmp_into)
-        clone_from = legit.Repository.init(tmp_from)
-        new_clone = clone_from.clone(tmp_into)
-        assert new_clone is None
+def test_initialization(tmpdir):
+    repository = legit.Repository(tmpdir)
+    repo = repository.repo
+    assert isdir(repo.working_tree_dir)
+    assert repo.git_dir.startswith(repo.working_tree_dir)
+
+
+def test_initialization_dot_attr(tmpdir):
+    repository = legit.Repository.init(tmpdir)
+    repo = repository.repo
+    assert isdir(repo.working_tree_dir)
+    assert repo.git_dir.startswith(repo.working_tree_dir)
+
+
+def test_clone_into_empty_dir(tmpdir_gen):
+    tmp_url = tmpdir_gen()
+    tmp_path = tmpdir_gen()
+    origin = legit.Repository.init(tmp_url)
+    cloned_repo = origin.clone(tmp_path)
+    assert cloned_repo.__class__ is Repo
+    assert Repo.init(tmp_url).__class__ is Repo
+    assert isdir(cloned_repo.working_tree_dir)
+    assert cloned_repo.git_dir.startswith(cloned_repo.working_tree_dir)
+
+
+def test_clone_into_non_empty_dir(tmpdir_gen):
+    tmp_from = tmpdir_gen()
+    tmp_into = tmpdir_gen()
+    legit.Repository.init(tmp_into)
+    clone_from = legit.Repository.init(tmp_from)
+    new_clone = clone_from.clone(tmp_into)
+    assert new_clone is None
+
 
 # TODO: Rewrite
-def test_checkout():
-    with TemporaryDirectory() as tmpdirname:
-        repo = legit.Repository.init(tmpdirname)
-        new_branch = repo.checkout('branch_name')
-        assert repo.active_branch == new_branch
+def test_checkout(tmpdir):
+    repo = legit.Repository.init(tmpdir)
+    new_branch = repo.checkout('branch_name')
+    assert repo.active_branch == new_branch
+
 
 # TODO: Rewrite
-def test_add_file_and_commit():
-    with TemporaryDirectory() as tmpdirname:
-        repo = legit.Repository.init(tmpdirname)
-        with TemporaryFile(dir=tmpdirname) as tmpfilename:
-            repo.add_changes(files=[tmpfilename])
+def test_add_file_and_commit(tmpdir):
+    repo = legit.Repository.init(tmpdir)
+    with TemporaryFile(dir=tmpdir) as tmpfilename:
+        repo.add_changes(files=[tmpfilename])
     assert repo.commit == repo.active_branch.commit
 
 # PLEASE DO NOT PUSH DEAD/COMMENTED-OUT CODE
