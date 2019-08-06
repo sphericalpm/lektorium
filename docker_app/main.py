@@ -20,7 +20,7 @@ def get_images() -> typing.List[images.Image]:
     """
     Return list of available Images-obects
 
-    :return: List with images objects
+    :return: List of image objects
     """
     all_images = client.images.list()
 
