@@ -76,7 +76,7 @@ def run_container(image: images.Image) -> containers.Container:
     """
     Return a list of available container objects
 
-    :return: List with containers objects
+    :return: List of container objects
     """
     started_container = client.containers.run(
         image=image, auto_remove=True, detach=True, network_mode="host"
