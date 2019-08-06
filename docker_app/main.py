@@ -74,7 +74,7 @@ Containers
 
 def run_container(image: images.Image) -> containers.Container:
     """
-    Return list of available Containers-obects
+    Return a list of available container objects
 
     :return: List with containers objects
     """
