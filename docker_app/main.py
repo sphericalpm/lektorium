@@ -43,7 +43,7 @@ def build_new_image(
     ).lower()
     # get current datetime
     datetime_now = datetime.datetime.now()
-    # build new image for selected website
+    # build a new image for the selected website
     result_image, logs_data = client.images.build(
         path=".",
         dockerfile="docker_app/Dockerfile",
