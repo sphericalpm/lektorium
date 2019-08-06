@@ -137,7 +137,7 @@ Other methods
 """
 
 
-def prune_data() -> None:
+def prune() -> None:
     """
     Delete unused images and containers.
     """
@@ -145,7 +145,7 @@ def prune_data() -> None:
     client.images.prune()
 
 
-prune_data()
+prune()
 
 new_image, logs = build_new_image(
     site_name="lektor site number first", site_dir="t_sites/LctrmTestSite1/"
