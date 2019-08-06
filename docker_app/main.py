@@ -18,7 +18,7 @@ Images
 
 def get_images() -> typing.List[images.Image]:
     """
-    Return list of available Images-obects
+    Return the list of available image objects
 
     :return: List of image objects
     """
