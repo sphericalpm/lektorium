@@ -41,7 +41,7 @@ def build_new_image(
     clean_site_name = re.sub(
         r'[ !"#$%&()*+,./:;<=>?@[\]^`{|}~]', "_", site_name
     ).lower()
-    # get current datetime
+
     datetime_now = datetime.datetime.now()
     # build a new image for the selected website
     result_image, logs_data = client.images.build(
@@ -148,7 +148,7 @@ def prune_data() -> None:
 prune_data()
 
 new_image, logs = build_new_image(
-    site_name="lector site number first", site_dir="t_sites/LctrmTestSite1/"
+    site_name="lektor site number first", site_dir="t_sites/LctrmTestSite1/"
 )
 
 new_container = run_container(image=new_image)
