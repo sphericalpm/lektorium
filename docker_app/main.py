@@ -109,7 +109,7 @@ def stop_container(container: containers.Container) -> None:
     """
     Stop selected container;
 
-    :param container: Container object for stoping
+    :param container: Container object for stopping
     """
     container.stop(timeout=20)
 
