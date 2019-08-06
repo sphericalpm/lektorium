@@ -78,11 +78,11 @@ def run_container(image: images.Image) -> containers.Container:
 
     :return: List with containers objects
     """
-    runned_container = client.containers.run(
+    started_container = client.containers.run(
         image=image, auto_remove=True, detach=True, network_mode="host"
     )
 
-    return runned_container
+    return started_container
 
 
 def get_containers() -> typing.List[containers.Container]:
