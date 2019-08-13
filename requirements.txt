@@ -1,9 +1,13 @@
-pydocstyle==3.*
+# Docker
+docker==4.0.*
+
+# Style-check
+pydocstyle==4.0.0
 flake8
 pytest
 pytest-cov
 flake8-import-order-spoqa
-flake8-docstrings
+flake8-docstrings==1.3.1
 flake8-builtins
 flake8-blind-except
 flake8-quotes
