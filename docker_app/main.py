@@ -7,9 +7,6 @@ from docker.models import images, containers  # type: ignore
 
 client = docker.from_env()
 
-print(client.containers.list(all=True))
-print(client.images.list())
-
 
 """
 Images
@@ -143,17 +140,3 @@ def prune() -> None:
     """
     client.containers.prune()
     client.images.prune()
-
-
-prune()
-
-new_image, logs = build_new_image(
-    site_name="lektor site number first", site_dir="t_sites/LctrmTestSite1/"
-)
-
-new_container = run_container(image=new_image)
-
-print(new_container)
-
-stop_container(new_container)
-delete_container(new_container)
