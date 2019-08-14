@@ -5,24 +5,31 @@ from docker_app.main import DockerModule
 
 
 class TestDockerInterface:
-    def setup(self):
-        self.docker_module = DockerModule()
+    def setup_class(self):
+        self.docker_module = DockerModule
         self.image_name = "Lektor test site"
         self.site_path = "tests/LektorTestSite1/"
 
+    def teardown(self):
+        with self.docker_module() as docker_client:
+            docker_client.prune()
+            # stop all containers
+            containers = docker_client.get_containers()
+            for container in containers:
+                docker_client.stop_container(container)
     """
     Images
     """
 
     def test_get_images(self):
-        with self.docker_module as docker_client:
+        with self.docker_module() as docker_client:
             all_images = docker_client.get_images()
             assert type(all_images) == list
 
     def test_build_image(self):
-        with self.docker_module as docker_client:
+        with self.docker_module() as docker_client:
             result = docker_client.build_new_image(
-                site_name=self.image_name, site_dir=self.site_path
+                site_name=self.image_name, site_dir=self.site_path, tag='for_build_image'
             )
             assert type(result) == tuple
             assert len(result) == 2
@@ -30,16 +37,16 @@ class TestDockerInterface:
             assert type(result[1]) == itertools._tee
 
     def test_delete_image(self):
-        with self.docker_module as docker_client:
+        with self.docker_module() as docker_client:
             # create new image
             new_image, _ = docker_client.build_new_image(
-                site_name=self.image_name, site_dir=self.site_path
+                site_name=self.image_name, site_dir=self.site_path, tag='for_delete_image'
             )
             # get actually images list
             old_all_images = docker_client.get_images()
             assert new_image in old_all_images
             # delete created image
-            docker_client.delete_image(image=new_image.id)
+            docker_client.delete_image(image=new_image.short_id)
             # get new actually images list
             new_all_images = docker_client.get_images()
             assert new_image not in new_all_images
@@ -49,10 +56,10 @@ class TestDockerInterface:
     """
     # TODO add container status check
     def test_run_container(self):
-        with self.docker_module as docker_client:
+        with self.docker_module() as docker_client:
             # create new image
             new_image, _ = docker_client.build_new_image(
-                site_name=self.image_name, site_dir=self.site_path
+                site_name=self.image_name, site_dir=self.site_path, tag='for_run_container'
             )
             # run new image as container
             new_container = docker_client.run_container(image=new_image)
@@ -61,15 +68,15 @@ class TestDockerInterface:
             assert new_container in containers_list
 
     def test_get_containers(self):
-        with self.docker_module as docker_client:
+        with self.docker_module() as docker_client:
             all_containers = docker_client.get_containers()
             assert type(all_containers) == list
 
     def test_stop_container(self):
-        with self.docker_module as docker_client:
+        with self.docker_module() as docker_client:
             # create new image
             new_image, _ = docker_client.build_new_image(
-                site_name=self.image_name, site_dir=self.site_path
+                site_name=self.image_name, site_dir=self.site_path, tag='for_stop_container'
             )
             # run new image as container
             new_container = docker_client.run_container(image=new_image)
