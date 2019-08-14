@@ -42,12 +42,14 @@ class DockerModule:
         return all_images
 
     def build_new_image(
-        self, site_name: str, site_dir: str
+        self, site_name: str, site_dir: str, tag: str = ''
     ) -> typing.Tuple[images.Image, typing.Iterable]:
         """
         Build new image from src
 
-        :param site_name: Site name which will be used in image tag
+        :param site_name: Site name which will be used in image name
+        :param site_dir: Path to Lektor folder with site
+        :param tag: Additional param for default tag
 
         :return: Tuple with image object and logs.
         """
@@ -61,7 +63,7 @@ class DockerModule:
         result_image, logs_data = self.client.images.build(
             path=".",
             dockerfile="docker_app/Dockerfile",
-            tag=f"{clean_site_name}_{datetime_now.strftime('%-Hh-%-Mm-%-Ss')}:{datetime_now.strftime('%Y.%m.%d')}",
+            tag=f"{clean_site_name}_{datetime_now.strftime('%-Hh-%-Mm-%-Ss')}:{datetime_now.strftime('%Y.%m.%d')}.{tag}",
             quiet=True,
             buildargs={"site_dir": site_dir},
             # TODO change to True
