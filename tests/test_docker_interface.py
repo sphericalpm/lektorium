@@ -17,6 +17,7 @@ class TestDockerInterface:
             containers = docker_client.get_containers()
             for container in containers:
                 docker_client.stop_container(container)
+
     """
     Images
     """
@@ -29,7 +30,9 @@ class TestDockerInterface:
     def test_build_image(self):
         with self.docker_module() as docker_client:
             result = docker_client.build_new_image(
-                site_name=self.image_name, site_dir=self.site_path, tag='for_build_image'
+                site_name=self.image_name,
+                site_dir=self.site_path,
+                tag="for_build_image",
             )
             assert type(result) == tuple
             assert len(result) == 2
@@ -40,7 +43,9 @@ class TestDockerInterface:
         with self.docker_module() as docker_client:
             # create new image
             new_image, _ = docker_client.build_new_image(
-                site_name=self.image_name, site_dir=self.site_path, tag='for_delete_image'
+                site_name=self.image_name,
+                site_dir=self.site_path,
+                tag="for_delete_image",
             )
             # get actually images list
             old_all_images = docker_client.get_images()
@@ -59,7 +64,9 @@ class TestDockerInterface:
         with self.docker_module() as docker_client:
             # create new image
             new_image, _ = docker_client.build_new_image(
-                site_name=self.image_name, site_dir=self.site_path, tag='for_run_container'
+                site_name=self.image_name,
+                site_dir=self.site_path,
+                tag="for_run_container",
             )
             # run new image as container
             new_container = docker_client.run_container(image=new_image)
@@ -76,7 +83,9 @@ class TestDockerInterface:
         with self.docker_module() as docker_client:
             # create new image
             new_image, _ = docker_client.build_new_image(
-                site_name=self.image_name, site_dir=self.site_path, tag='for_stop_container'
+                site_name=self.image_name,
+                site_dir=self.site_path,
+                tag="for_stop_container",
             )
             # run new image as container
             new_container = docker_client.run_container(image=new_image)

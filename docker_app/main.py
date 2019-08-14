@@ -42,7 +42,7 @@ class DockerModule:
         return all_images
 
     def build_new_image(
-        self, site_name: str, site_dir: str, tag: str = ''
+        self, site_name: str, site_dir: str, tag: str = ""
     ) -> typing.Tuple[images.Image, typing.Iterable]:
         """
         Build new image from src
@@ -59,11 +59,13 @@ class DockerModule:
         ).lower()
 
         datetime_now = datetime.datetime.now()
+        # prepare tag for image
+        image_tag = f"{datetime_now.strftime('%Y.%m.%d')}.{tag}"
         # build a new image for the selected website
         result_image, logs_data = self.client.images.build(
             path=".",
             dockerfile="docker_app/Dockerfile",
-            tag=f"{clean_site_name}_{datetime_now.strftime('%-Hh-%-Mm-%-Ss')}:{datetime_now.strftime('%Y.%m.%d')}.{tag}",
+            tag=f"{clean_site_name}_{datetime_now.strftime('%-Hh-%-Mm-%-Ss')}:{image_tag}",
             quiet=True,
             buildargs={"site_dir": site_dir},
             # TODO change to True
