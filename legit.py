@@ -22,7 +22,7 @@ class Repository(object):
     This class wraps up some fuctions of GitPython
 
     Attributes:
-        repo : This is path to git repository. Most of the GitPython functions
+        repo : Path to git repository. Most of GitPython functions
         use it to operate with repository.
 
     """
