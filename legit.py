@@ -62,7 +62,7 @@ class Repository(object):
             path: The path to locate remote repo in the local machine.
 
         Returns:
-            The return value is path to repo. Str for success, None otherwise.
+            Path to the repo or None in case of failure.
 
         Examples:
             >>> path_to_repo = Repository.clone(url, path).repo
