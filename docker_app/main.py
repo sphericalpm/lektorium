@@ -9,13 +9,13 @@ from docker.models import images, containers  # type: ignore
 class DockerModule:
     def __init__(self):
         """
-        Connect to local docker and create docker-client
+        Connect to local docker and create docker-client connection
         """
         self.client = docker.from_env()
 
     def close(self) -> None:
         """
-        Close docker-client connestion
+        Close docker-client connection
         """
         self.client.close()
 
