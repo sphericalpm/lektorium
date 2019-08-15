@@ -53,14 +53,23 @@ class DockerModule:
 
         :return: Tuple with image object and logs.
         """
-        # clean site name from invalid symbols
+
+        datetime_now = datetime.datetime.now()
+
+        # clean site name and tag from invalid symbols
         clean_site_name = re.sub(
             r'[ !"#$%&()*+,./:;<=>?@[\]^`{|}~]', "_", site_name
         ).lower()
 
-        datetime_now = datetime.datetime.now()
-        # prepare tag for image
-        image_tag = f"{datetime_now.strftime('%Y.%m.%d')}.{tag}"
+        if tag:
+            # use sended person tag, but sirstly prepare and clean it
+            image_tag = re.sub(
+                r'[ !"#$%&()*+,./:;<=>?@[\]^`{|}~]', "_", site_name
+            ).lower()
+        else:
+            # use date as default tag
+            image_tag = f"{datetime_now.strftime('%Y.%m.%d')}"
+
         # build a new image for the selected website
         result_image, logs_data = self.client.images.build(
             path=".",
