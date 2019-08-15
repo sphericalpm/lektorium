@@ -32,7 +32,7 @@ class TestDockerInterface:
             result = docker_client.build_new_image(
                 site_name=self.image_name,
                 site_dir=self.site_path,
-                tag="for_build_image",
+                tag="for build image",
             )
             assert type(result) == tuple
             assert len(result) == 2
@@ -45,7 +45,7 @@ class TestDockerInterface:
             new_image, _ = docker_client.build_new_image(
                 site_name=self.image_name,
                 site_dir=self.site_path,
-                tag="for_delete_image",
+                tag="for delete image",
             )
             # get actually images list
             old_all_images = docker_client.get_images()
@@ -66,7 +66,7 @@ class TestDockerInterface:
             new_image, _ = docker_client.build_new_image(
                 site_name=self.image_name,
                 site_dir=self.site_path,
-                tag="for_run_container",
+                tag="for run container",
             )
             # run new image as container
             new_container = docker_client.run_container(image=new_image)
@@ -85,7 +85,7 @@ class TestDockerInterface:
             new_image, _ = docker_client.build_new_image(
                 site_name=self.image_name,
                 site_dir=self.site_path,
-                tag="for_stop_container",
+                tag="for stop container",
             )
             # run new image as container
             new_container = docker_client.run_container(image=new_image)
