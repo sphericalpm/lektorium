@@ -45,7 +45,7 @@ class DockerModule:
         self, site_name: str, site_dir: str, tag: str = ""
     ) -> typing.Tuple[images.Image, typing.Iterable]:
         """
-        Build new image from src
+        Build a new image from source
 
         :param site_name: Site name which will be used in image name
         :param site_dir: Path to Lektor folder with site
