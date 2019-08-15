@@ -98,7 +98,7 @@ class DockerModule:
 
     def run_container(self, image: images.Image) -> containers.Container:
         """
-        Return a list of available container objects
+        Return the list of available container objects
 
         :return: List of container objects
         """
