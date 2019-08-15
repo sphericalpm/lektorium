@@ -62,7 +62,7 @@ class DockerModule:
         ).lower()
 
         if tag:
-            # use sended person tag, but sirstly prepare and clean it
+            # use the sent person tag, but first prepare and clean it
             image_tag = re.sub(
                 r'[ !"#$%&()*+,./:;<=>?@[\]^`{|}~]', "_", site_name
             ).lower()
