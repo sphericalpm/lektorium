@@ -117,7 +117,7 @@ class Repository(object):
             https://git-scm.com/docs/git-checkout
 
         Args:
-            branch_name: The name for branch you want to create/switch.
+            branch_name: The name for branch you want to create/switch to.
 
         Examples:
             >>> path_to_repo = Repository.init(path).repo
