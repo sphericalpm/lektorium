@@ -7,6 +7,9 @@ from docker.models import images, containers  # type: ignore
 
 
 class DockerModule:
+
+    CONTAINER_STOP_TIMEOUT = 20
+
     def __init__(self):
         """
         Connect to local docker and create docker-client connection
@@ -132,7 +135,7 @@ class DockerModule:
 
         :param container: Container object for stopping
         """
-        container.stop(timeout=20)
+        container.stop(timeout=self.CONTAINER_STOP_TIMEOUT)
 
     def pause_container(self, container: containers.Container) -> None:
         """
