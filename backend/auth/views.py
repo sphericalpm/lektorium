@@ -1,24 +1,22 @@
-import json
 from time import time
-from bson.objectid import ObjectId
-
+from typing import Dict
 from aiohttp import web
 from aiohttp_session import get_session
 from aiohttp_security import remember, forget, authorized_userid
 
 
-def redirect(request, router_name):
+def redirect(request, router_name: str):
     url = request.app.router[router_name].url()
     raise web.HTTPFound(url)
 
 
-def set_session(session, username, request):
+def set_session(session, username: str, request):
     session['user'] = username
     session['last_visit'] = time()
     redirect(request, 'main')
 
 
-async def validate_login_form(data):
+async def validate_login_form(data: Dict[str, str]):
     username = data['username']
     if not username:
         return 'username is required'

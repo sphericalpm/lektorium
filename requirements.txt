@@ -1,7 +1,8 @@
-pydocstyle==3.*
+aiohttp==3.5.4
+aiohttp_debugtoolbar==0.5.0
+aiodns==2.0.0
+envparse==0.2.0
 flake8
-pytest
-pytest-cov
 flake8-import-order-spoqa
 flake8-docstrings
 flake8-builtins
@@ -12,3 +13,6 @@ flake8-print
 flake8-mutable
 flake8-spellcheck
 pep8-naming
+pydocstyle==3.*
+pytest
+pytest-cov
