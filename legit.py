@@ -17,23 +17,18 @@ log.addHandler(ch)
 log.addHandler(fh)
 
 
-class Repository(object):
+class Repository:
     """GitPython provides object model access to your git repository.
     This class wraps up some fuctions of GitPython
 
     Attributes:
         repo : Path to git repository. Most of GitPython functions
-        use it to operate with repository.
+        use it to operate on repository.
 
     """
 
     def __init__(self, path: str) -> None:
-        """This command creates an empty Git repository - basically
-        a .git directory with subdirectories for objects,
-        refs/heads, refs/tags, and template files.
-        An initial HEAD file that references the HEAD
-        of the master branch is also created.
-
+        """
         Note:
             Git accordance is "git init `path`"
             https://git-scm.com/docs/git-init
@@ -46,7 +41,7 @@ class Repository(object):
         try:
             self.repo = Repo.init(path)
         except GitCommandError:
-            logging.exception(f"GitCommandError: git init {GitCommandError}, {path} traceback")
+            logging.exception(f'GitCommandError: git init {GitCommandError}, {path} traceback')
 
     @classmethod
     def clone(cls, url: str, path: str = None) -> str:
@@ -72,7 +67,7 @@ class Repository(object):
         try:
             Repo.clone_from(url, path)
         except GitCommandError:
-            logging.exception(f"GitCommandError: git clone {GitCommandError}, {path} traceback")
+            logging.exception(f'GitCommandError: git clone {GitCommandError}, {path} traceback')
             return None
         return cls(path)
 
@@ -92,7 +87,7 @@ class Repository(object):
             path: The path to initialize repo as git repository.
 
         Returns:
-            The return value is path to repo. Str for success, None otherwise.
+            Path to the repo or None in case of failure.
 
         Examples:
             >>> path_to_repo = Repository.init(path).repo
@@ -102,7 +97,7 @@ class Repository(object):
         try:
             Repo.init(path)
         except GitCommandError:
-            logging.exception(f"GitCommandError: git init {GitCommandError} traceback")
+            logging.exception(f'GitCommandError: git init {GitCommandError} traceback')
             return None
         return cls(path)
 
@@ -128,7 +123,7 @@ class Repository(object):
         try:
             self.repo.git.checkout('-b', branch_name)
         except GitCommandError:
-            logging.exception(f"GitCommandError: git checkout {branch_name} traceback")
+            logging.exception(f'GitCommandError: git checkout {branch_name} traceback')
             self.repo.git.checkout(branch_name)
 
     def commit(self, message: str) -> None:
@@ -140,17 +135,16 @@ class Repository(object):
             https://git-scm.com/docs/git-commit
 
         Args:
-            branch_name: The name for branch you want to create/switch.
-
+            branch_name: The name for branch you want to create/switch to.
         Examples:
             >>> path_to_repo.commit(`message`)
 
         """
-        log.debug(f"git commit -m \"{message}\"")
+        log.debug(f'git commit -m \"{message}\"')
         try:
             self.repo.index.commit(message)
         except GitCommandError:
-            logging.exception(f"GitCommandError: git commit {GitCommandError} traceback")
+            logging.exception(f'GitCommandError: git commit {GitCommandError} traceback')
 
     def add_changes(self, files: Iterable[str] = None) -> None:
         """This command updates the index using
@@ -175,10 +169,10 @@ class Repository(object):
                     log.debug(f"git add {file}")
                     self.repo.index.add(file)
             else:
-                log.debug(f"git add .")
+                log.debug(f'git add .')
                 self.repo.git.add(A=True)
         except GitCommandError:
-            logging.exception(f"GitCommandError: git add {GitCommandError} traceback")
+            logging.exception(f'GitCommandError: git add {GitCommandError} traceback')
 
     def push_to_origin(self, branch_name: str) -> None:
         """Updates remote refs using local refs, while sending
@@ -196,10 +190,10 @@ class Repository(object):
 
         """
         self.repo.head.reset(index=True, working_tree=True)
-        log.debug(f"git pull origin {branch_name}")
-        self.repo.git.pull("origin", branch_name)
-        log.debug(f"git push to origin, HEAD: {branch_name}")
-        self.repo.git.push(f"git push origin \'HEAD:\' {branch_name}")
+        log.debug(f'git pull origin {branch_name}')
+        self.repo.git.pull('origin', branch_name)
+        log.debug(f'git push to origin, HEAD: {branch_name}')
+        self.repo.git.push(f'git push origin \"HEAD:\" {branch_name}')
 
     def merge_branch(self, merge_from: str, merge_into: str, merge_commit_message: str) -> None:
         """Incorporates changes from the named commits
@@ -226,5 +220,5 @@ class Repository(object):
         merge_base = self.repo.merge_base(merge_from, branch_into)
         self.repo.index.merge_tree(branch_into, base=merge_base)
         self.commit(merge_commit_message)
-        log.debug(f"merge from {merge_from} into {merge_into} merge commit message: {merge_commit_message}")
+        log.debug(f'merge from {merge_from} into {merge_into} merge commit message: {merge_commit_message}')
         branch_from.checkout(force=True)
