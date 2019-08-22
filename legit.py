@@ -167,7 +167,7 @@ class Repository:
             if files:
                 for file in files:
                     log.debug(f"git add {file}")
-                    self.repo.index.add(file)
+                    self.repo.index.add([file])
             else:
                 log.debug(f'git add .')
                 self.repo.git.add(A=True)
