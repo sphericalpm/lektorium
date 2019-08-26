@@ -1,5 +1,8 @@
 aiohttp==3.5.4
+aiohttp_cors==0.7.0
 aiohttp_debugtoolbar==0.5.0
+aiohttp-security==0.4.0
+aiohttp_session==2.7.0
 aiodns==2.0.0
 envparse==0.2.0
 flake8

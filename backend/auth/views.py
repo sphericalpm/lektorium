@@ -1,8 +1,17 @@
+import random
 from time import time
 from typing import Dict
 from aiohttp import web
 from aiohttp_session import get_session
-from aiohttp_security import remember, forget, authorized_userid
+from aiohttp_security import forget
+
+
+async def test1(request):
+    name = int(request.match_info.get('num', '10')) # argument
+    return web.Response(text=str(random.randint(1, name)),
+                        headers={
+                            "X-Custom-Server-Header": "Custom data",
+                        })
 
 
 def redirect(request, router_name: str):
