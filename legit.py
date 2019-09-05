@@ -225,4 +225,4 @@ class Repository:
 
     def merge_abort_branch(self):
         """ Use in case of conflicts. Undo merge when necessary """
-        self.repo.index.reset('--merge')
+        self.repo.git.reset('--merge')
