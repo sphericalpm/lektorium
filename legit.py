@@ -222,3 +222,7 @@ class Repository:
         self.commit(merge_commit_message)
         log.debug(f'merge from {merge_from} into {merge_into} merge commit message: {merge_commit_message}')
         branch_from.checkout(force=True)
+
+    def merge_abort_branch(self):
+        """ Use in case of conflicts. Undo merge"""
+        self.repo.index.reset('--merge')
