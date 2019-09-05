@@ -1,9 +1,6 @@
-from os import sep
+from os import sep, unlink
 from tempfile import NamedTemporaryFile
 from os.path import isdir
-from tempfile import TemporaryDirectory, TemporaryFile
-
-from git import Repo
 import pytest
 import legit
 
@@ -57,12 +54,17 @@ def test_checkout(tmpdir):
 
 def test_add_file_and_commit(tmpdir):
     repo = legit.Repository.init(tmpdir)
-    with NamedTemporaryFile(dir=tmpdir) as tmpfile1, NamedTemporaryFile(dir=tmpdir) as tmpfile2:
-        tmpname1 = tmpfile1.name.split(sep)[-1]
-        tmpname2 = tmpfile2.name.split(sep)[-1]
-        assert len(repo.repo.untracked_files) == 2
-        assert tmpname1 in repo.repo.untracked_files
-        assert tmpname2 in repo.repo.untracked_files
-        repo.add_changes(files=[tmpname1])
-        assert len(repo.repo.untracked_files) == 1
-        assert list(repo.repo.index.entries.keys())[0][0] == tmpname1
+    tmpfile1 = NamedTemporaryFile(dir=tmpdir, delete=False)
+    tmpfile2 = NamedTemporaryFile(dir=tmpdir, delete=False)
+    tmpname1 = tmpfile1.name.split(sep)[-1]
+    tmpname2 = tmpfile2.name.split(sep)[-1]
+    assert len(repo.repo.untracked_files) == 2
+    assert tmpname1 in repo.repo.untracked_files
+    assert tmpname2 in repo.repo.untracked_files
+    repo.add_changes(files=[tmpname1])
+    assert len(repo.repo.untracked_files) == 1
+    assert list(repo.repo.index.entries.keys())[0][0] == tmpname1
+    tmpfile1.close()
+    unlink(tmpfile1.name)
+    tmpfile2.close()
+    unlink(tmpfile2.name)
