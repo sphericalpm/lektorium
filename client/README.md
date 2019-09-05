@@ -1,6 +1,6 @@
 # client
 
-> lektorium frontend part
+> Lektorium frontend app
 
 ## Build Setup
 
