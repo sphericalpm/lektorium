@@ -1,4 +1,4 @@
-from os import sep, unlink
+from os import sep
 from tempfile import NamedTemporaryFile
 from os.path import isdir
 import pytest
@@ -7,7 +7,7 @@ import legit
 
 @pytest.fixture(scope='module')
 def tmpdir_gen(request, tmp_path_factory):
-    from _pytest.tmpdir import _mk_tmp
+    from pytest.tmpdir import _mk_tmp
     import py
     return lambda: py.path.local(_mk_tmp(request, tmp_path_factory))
 
@@ -54,17 +54,17 @@ def test_checkout(tmpdir):
 
 def test_add_file_and_commit(tmpdir):
     repo = legit.Repository.init(tmpdir)
-    tmpfile1 = NamedTemporaryFile(dir=tmpdir, delete=False)
-    tmpfile2 = NamedTemporaryFile(dir=tmpdir, delete=False)
-    tmpname1 = tmpfile1.name.split(sep)[-1]
-    tmpname2 = tmpfile2.name.split(sep)[-1]
-    assert len(repo.repo.untracked_files) == 2
-    assert tmpname1 in repo.repo.untracked_files
-    assert tmpname2 in repo.repo.untracked_files
-    repo.add_changes(files=[tmpname1])
-    assert len(repo.repo.untracked_files) == 1
-    assert list(repo.repo.index.entries.keys())[0][0] == tmpname1
-    tmpfile1.close()
-    unlink(tmpfile1.name)
-    tmpfile2.close()
-    unlink(tmpfile2.name)
+    with NamedTemporaryFile(dir=tmpdir) as tmpfile1, NamedTemporaryFile(dir=tmpdir) as tmpfile2:
+        tmpname1 = tmpfile1.name.split(sep)[-1]
+        tmpname2 = tmpfile2.name.split(sep)[-1]
+        assert len(repo.repo.untracked_files) == 2
+        assert tmpname1 in repo.repo.untracked_files
+        assert tmpname2 in repo.repo.untracked_files
+        repo.add_changes(files=[tmpname1])
+        assert len(repo.repo.untracked_files) == 1
+        assert list(repo.repo.index.entries.keys())[0][0] == tmpname1
+
+def test_merge_abort(tmpdir):
+    assert
+
+
