@@ -75,7 +75,29 @@
           <template slot="title">
             Parked Sessions <b-badge pill> {{parked_sessions.length}} </b-badge>
           </template>
-          <b-card-text>Tab Contents 3</b-card-text>
+          <b-card-text>
+            <table class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col">Session</th>
+              <th scope="col">Site</th>
+              <th scope="col">Creation Time</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(session, index) in parked_sessions" :key="index">
+              <td>{{ session.session_id }}</td>
+              <td>{{ session.site_name }}</td>
+              <td>{{ session.creation_time }}</td>
+              <td>
+                <b-button variant="primary">Unpark</b-button>
+                <b-button variant="danger">Destroy</b-button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+          </b-card-text>
         </b-tab>
       </b-tabs>
     </b-card>
