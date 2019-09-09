@@ -1,74 +1,8 @@
-import abc
-from flask import Flask, render_template, abort
-from flask_graphql import GraphQLView
-from jinja2 import TemplateNotFound
 from graphene import ObjectType, String, Schema, List, Field, Boolean, Mutation
 
 
-# This is test backend for frontend prototype developing only!!!!
-SITES = [{
-    'site_name': 'Buy Our Widgets',
-    'production_url': 'https://bow.acme.com',
-    'staging_url': 'https://bow-test.acme.com',
-    'custodian': 'Max Jekov',
-    'custodian_email': 'mj@acme.com',
-    'sessions': [{
-        'session_id': 'widgets-1',
-        'edit_url': 'https://cmsdciks.cms.acme.com',
-        'view_url': 'https://cmsdciks.build.acme.com',
-        'creation_time': '2019-07-19 10:33 UTC+1',
-        'custodian': 'Max Jekov',
-        'custodian_email': 'mj@acme.com',
-    }],
-}, {
-    'site_name': 'Underpants Collectors International',
-    'production_url': 'https://uci.com',
-    'staging_url': 'https://uci-staging.acme.com',
-    'custodian': 'Mikhail Vartanyan',
-    'custodian_email': 'mv@acme.com',
-    'sessions': [{
-        'session_id': 'pantssss',
-        'view_url': 'https://smthng.uci.com',
-        'creation_time': '2019-07-18 11:33 UTC+1',
-        'custodian': 'Brian',
-        'custodian_email': 'brian@splitter.il',
-        'parked_time': '2019-07-18 11:33 UTC+1',
-    }],
-}, {
-    'site_name': 'Liver Donors Inc.',
-    'production_url': 'https://liver.do',
-    'staging_url': 'https://pancreas.acme.com',
-    'custodian': 'Brian',
-    'custodian_email': 'brian@splitter.il'
-}]
-
-
-class Repo:
-    @property
-    @abc.abstractmethod
-    def sites(self):
-        pass
-
-
-class ListRepo(Repo):
-    def __init__(self, data):
-        self.data = data
-
-    @property
-    def sites(self):
-        yield from self.data
-
-
-# configuration
-DEBUG = True
-
-
-# instantiate the app
-app = Flask(__name__, template_folder='../app/templates', static_folder='../app/static')
-app.config.from_object(__name__)
-
-
 class Site(ObjectType):
+    site_id = String()
     site_name = String()
     custodian = String()
     custodian_email = String()
@@ -146,29 +80,3 @@ class Query(ObjectType):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
-
-
-app.add_url_rule(
-    '/graphql',
-    view_func=GraphQLView.as_view(
-        'graphql',
-        schema=Schema(
-            query=Query,
-            mutation=MutationQuery
-        ),
-        graphiql=True,
-        get_context=lambda: {'repo': ListRepo(SITES)}
-    )
-)
-
-
-@app.route('/')
-def get_main():
-    try:
-        return render_template('index.html')
-    except TemplateNotFound:
-        abort(404)
-
-
-if __name__ == '__main__':
-    app.run()
