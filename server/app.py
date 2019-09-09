@@ -63,18 +63,17 @@ app.config.from_object(__name__)
 # enable CORS
 CORS(app)
 
-
-# sanity check route
-@app.route('/ping', methods=['GET'])
-def ping_pong():
-    return jsonify('pong!')
-
-@app.route('/hi')
+@app.route('/')
 def get_main():
     try:
         return render_template('index.html')
     except TemplateNotFound:
         abort(404)
+
+# sanity check route
+@app.route('/ping', methods=['GET'])
+def ping_pong():
+    return jsonify('pong!')
 
 @app.route('/sites', methods=['GET'])
 def get_sites():
