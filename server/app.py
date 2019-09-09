@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, Blueprint, render_template, abort
+from flask import Flask, jsonify, render_template, abort
 from jinja2 import TemplateNotFound
 
 # This is test backend for frontend prototype developing only!!!!
@@ -72,6 +72,7 @@ def get_main():
 @app.route('/ping', methods=['GET'])
 def ping_pong():
     return jsonify('pong!')
+
 
 @app.route('/sites', methods=['GET'])
 def get_sites():
