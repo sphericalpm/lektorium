@@ -52,14 +52,14 @@
           </thead>
           <tbody>
             <tr v-for="(session, index) in edit_sessions" :key="index">
-              <td>{{ session.session_id }}</td>
-              <td>{{ session.site_name }}</td>
-              <td>{{ session.creation_time }}</td>
+              <td>{{ session.sessionId }}</td>
+              <td>{{ session.siteName }}</td>
+              <td>{{ session.creationTime }}</td>
               <td>{{ session.custodian }}</td>
-              <td>{{ session.production_url }}</td>
-              <td>{{ session.staging_url }}</td>
-              <td>{{ session.admin_url }}</td>
-              <td>{{ session.build_url }}</td>
+              <td>{{ session.productionUrl }}</td>
+              <td>{{ session.stagingUrl }}</td>
+              <td>{{ session.editUrl }}</td>
+              <td>{{ session.viewUrl }}</td>
               <td>
                 <b-button variant="primary">Park</b-button>
                 <b-button variant="danger">Destroy</b-button>
@@ -87,9 +87,9 @@
           </thead>
           <tbody>
             <tr v-for="(session, index) in parked_sessions" :key="index">
-              <td>{{ session.session_id }}</td>
-              <td>{{ session.site_name }}</td>
-              <td>{{ session.creation_time }}</td>
+              <td>{{ session.sessionId }}</td>
+              <td>{{ session.siteName }}</td>
+              <td>{{ session.creationTime }}</td>
               <td>
                 <b-button variant="primary">Unpark</b-button>
                 <b-button variant="danger">Destroy</b-button>
@@ -136,27 +136,46 @@ export default {
       });
       this.available_sites = result.data.data.sites;
     },
-    getEditSessions() {
-      const path = '/edits';
-      axios.get(path)
-        .then((res) => {
-          this.edit_sessions = res.data;
-        })
-        .catch((error) => {
-          // eslint-disable-next-line
-          console.error(error);
-        });
+    async getEditSessions() {
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+              { 
+                sessions
+                { sessionId,
+                  siteName, 
+                  creationTime,
+                  custodian, 
+                  productionUrl,
+                  stagingUrl,
+                  editUrl,
+                  viewUrl,
+               } 
+              }
+          `
+        }
+      });
+      this.edit_sessions = result.data.data.sessions;
     },
-    getParkedSessions() {
-      const path = '/parked';
-      axios.get(path)
-        .then((res) => {
-          this.parked_sessions = res.data;
-        })
-        .catch((error) => {
-          // eslint-disable-next-line
-          console.error(error);
-        });
+    async getParkedSessions() {
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+              { 
+                sessions(parked: true)
+                { sessionId,
+                  siteName, 
+                  creationTime,
+               } 
+              }
+          `
+        }
+      });
+      this.parked_sessions = result.data.data.sessions;
     },
   },
   created() {
