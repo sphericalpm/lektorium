@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, render_template, abort
 from flask_graphql import GraphQLView
 from jinja2 import TemplateNotFound
-from graphene import ObjectType, String, Schema, List, Field, Boolean
+from graphene import ObjectType, String, Schema, List, Field, Boolean, Mutation
 
 
 # This is test backend for frontend prototype developing only!!!!
@@ -87,6 +87,28 @@ class Session(ObjectType):
         return not bool(parent.edit_url)
 
 
+class DestroySession(Mutation):
+    class Arguments:
+        session_id = String()
+
+    ok = Boolean()
+
+    def mutate(root, info, session_id):
+        sessions = [(s, x) for s in SITES for x in s.get('sessions', ())]
+        for site, session in sessions:
+            if session['session_id'] == session_id:
+                site['sessions'] = [
+                    x for x in site['session']
+                    if x['session_id'] != session_id
+                ]
+            return DestroySession(ok=True)
+        return DestroySession(ok=False)
+
+
+class MutationQuery(ObjectType):
+    destroy_session = DestroySession.Field()
+
+
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
@@ -110,7 +132,10 @@ app.add_url_rule(
     '/graphql',
     view_func=GraphQLView.as_view(
         'graphql',
-        schema=Schema(query=Query),
+        schema=Schema(
+            query=Query,
+            mutation=MutationQuery
+        ),
         graphiql=True,
     )
 )
