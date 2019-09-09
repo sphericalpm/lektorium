@@ -1,59 +1,46 @@
 from flask import Flask, jsonify, render_template, abort
 from flask_graphql import GraphQLView
 from jinja2 import TemplateNotFound
-from graphene import ObjectType, String, Schema, List
+from graphene import ObjectType, String, Schema, List, Field, Boolean
 
 
 # This is test backend for frontend prototype developing only!!!!
-AVAILABLE_SITES = [
-    {
-        "site_name": "Buy Our Widgets",
-        "production_url": "https://bow.acme.com",
-        "staging_url": "https://bow-test.acme.com",
-        "custodian": "Max Jekov", "custodian_email": "mj@acme.com"
-    },
-    {
-        "site_name": "Underpants Collectors International",
-        "production_url": "https://uci.com",
-        "staging_url": "https://uci-staging.acme.com",
-        "custodian": "Mikhail Vartanyan",
-        "custodian_email": "mv@acme.com"
-    },
-    {
-        "site_name": "Liver Donors Inc.",
-        "production_url": "https://liver.do",
-        "staging_url": "https://pancreas.acme.com",
-        "custodian": "Brian",
-        "custodian_email": "brian@splitter.il"
-    },
-]
+SITES = [{
+    'site_name': 'Buy Our Widgets',
+    'production_url': 'https://bow.acme.com',
+    'staging_url': 'https://bow-test.acme.com',
+    'custodian': 'Max Jekov',
+    'custodian_email': 'mj@acme.com',
+    'sessions': [{
+        'session_id': 'widgets-1',
+        'edit_url': 'https://cmsdciks.cms.acme.com',
+        'view_url': 'https://cmsdciks.build.acme.com',
+        'creation_time': '2019-07-19 10:33 UTC+1',
+        'custodian': 'Max Jekov',
+        'custodian_email': 'mj@acme.com',
+    }],
+}, {
+    'site_name': 'Underpants Collectors International',
+    'production_url': 'https://uci.com',
+    'staging_url': 'https://uci-staging.acme.com',
+    'custodian': 'Mikhail Vartanyan',
+    'custodian_email': 'mv@acme.com',
+    'sessions': [{
+        'session_id': 'pantssss',
+        'view_url': 'https://smthng.uci.com',
+        'creation_time': '2019-07-18 11:33 UTC+1',
+        'custodian': 'Brian',
+        'custodian_email': 'brian@splitter.il',
+        'parked_time': '2019-07-18 11:33 UTC+1',
+    }],
+}, {
+    'site_name': 'Liver Donors Inc.',
+    'production_url': 'https://liver.do',
+    'staging_url': 'https://pancreas.acme.com',
+    'custodian': 'Brian',
+    'custodian_email': 'brian@splitter.il'
+}]
 
-EDIT_SESSIONS = [
-    {
-        "session_id": "widgets-1",
-        "admin_url": "https://cmsdciks.cms.acme.com",
-        "build_url": "https://cmsdciks.build.acme.com",
-        "site_name": "Buy Our Widgets",
-        "creation_time": "2019-07-19 10:33 UTC+1",
-        "custodian": "Max Jekov",
-        "custodian_email": "mj@acme.com",
-        "production_url": "https://bow.acme.com",
-        "staging_url": "https://bow-test.acme.com",
-    },
-]
-
-PARKED_SESSION = [
-    {
-        "session_id": "widgets-1",
-        "site_name": "Buy Our Widgets",
-        "creation_time": "2019-07-19 10:33 UTC+1"
-    },
-    {
-        "session_id": "pantssss",
-        "site_name": "Underpants Collectors International",
-        "creation_time": "2019-07-18 11:33 UTC+1"
-    },
-]
 
 # configuration
 DEBUG = True
@@ -70,36 +57,53 @@ class Site(ObjectType):
     custodian_email = String()
     production_url = String()
     staging_url = String()
+    sessions = List(lambda: Session)
 
 
-class BaseSession(ObjectType):
+class Session(ObjectType):
     session_id = String()
     site_name = String()
+    edit_url = String()
+    view_url = String()
     creation_time = String()
-
-
-class Session(BaseSession):
-    admin_url = String()
-    build_url = String()
     custodian = String()
     custodian_email = String()
+    parked_time = String()
     production_url = String()
     staging_url = String()
+    site = Field(Site)
+    parked = Boolean()
+
+    def resolve_production_url(parent, info):
+        return parent.site.production_url
+
+    def resolve_staging_url(parent, info):
+        return parent.site.staging_url
+
+    def resolve_site_name(parent, info):
+        return parent.site.site_name
+
+    def resolve_parked(parent, info):
+        return not bool(parent.edit_url)
 
 
 class Query(ObjectType):
     sites = List(Site)
-    edits = List(Session)
-    parked = List(BaseSession)
+    sessions = List(Session, parked=Boolean(default_value=False))
+
+    @staticmethod
+    def sessions_list():
+        for site in SITES:
+            site = Site(**site)
+            for session in site.sessions or ():
+                yield dict(**session, site=site)
 
     def resolve_sites(root, info):
-        return [Site(**x) for x in AVAILABLE_SITES]
+        return [Site(**x) for x in SITES]
 
-    def resolve_edits(root, info):
-        return [Session(**x) for x in EDIT_SESSIONS]
-
-    def resolve_parked(root, info):
-        return [BaseSession(**x) for x in PARKED_SESSION]
+    def resolve_sessions(root, info, parked):
+        sessions = (Session(**x) for x in Query.sessions_list())
+        return [x for x in sessions if bool(x.edit_url) != parked]
 
 
 app.add_url_rule(
@@ -107,6 +111,7 @@ app.add_url_rule(
     view_func=GraphQLView.as_view(
         'graphql',
         schema=Schema(query=Query),
+        graphiql=True,
     )
 )
 
@@ -124,19 +129,36 @@ def ping_pong():
     return jsonify('pong!')
 
 
-@app.route('/sites', methods=['GET'])
-def get_sites():
-    return jsonify(AVAILABLE_SITES)
-
-
 @app.route('/edits', methods=['GET'])
 def get_edit_sessions():
-    return jsonify(EDIT_SESSIONS)
+    sessions = []
+    for site in SITES:
+        for site_session in site.get('sessions', ()):
+            if not site_session.get('edit_url'):
+                continue
+            site_session = dict(site_session)
+            site_session['admin_url'] = site_session.pop('edit_url', None)
+            site_session['build_url'] = site_session.pop('view_url', None)
+            site_session['production_url'] = site['production_url']
+            site_session['staging_url'] = site['staging_url']
+            sessions.append(site_session)
+    return jsonify(sessions)
 
 
 @app.route('/parked', methods=['GET'])
 def get_parked_session():
-    return jsonify(PARKED_SESSION)
+    sessions = []
+    for site in SITES:
+        for site_session in site.get('sessions', ()):
+            if site_session.get('parked_time'):
+                continue
+            site_session = dict(
+                session_id=site_session['session_id'],
+                site_name=site['site_name'],
+                creation_time=site_session['creation_time'],
+            )
+            sessions.append(site_session)
+    return jsonify(sessions)
 
 
 if __name__ == '__main__':
