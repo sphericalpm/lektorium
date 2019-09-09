@@ -1,3 +1,4 @@
+import abc
 from flask import Flask, jsonify, render_template, abort
 from flask_graphql import GraphQLView
 from jinja2 import TemplateNotFound
@@ -40,6 +41,22 @@ SITES = [{
     'custodian': 'Brian',
     'custodian_email': 'brian@splitter.il'
 }]
+
+
+class Repo:
+    @property
+    @abc.abstractmethod
+    def sites(self):
+        pass
+
+
+class ListRepo(Repo):
+    def __init__(self, data):
+        self.data = data
+
+    @property
+    def sites(self):
+        yield from self.data
 
 
 # configuration
@@ -94,7 +111,8 @@ class DestroySession(Mutation):
     ok = Boolean()
 
     def mutate(root, info, session_id):
-        sessions = [(s, x) for s in SITES for x in s.get('sessions', ())]
+        repo = info.context['repo']
+        sessions = [(s, x) for s in repo.sites for x in s.get('sessions', ())]
         for site, session in sessions:
             if session['session_id'] == session_id:
                 site['sessions'] = [
@@ -114,17 +132,19 @@ class Query(ObjectType):
     sessions = List(Session, parked=Boolean(default_value=False))
 
     @staticmethod
-    def sessions_list():
-        for site in SITES:
+    def sessions_list(repo):
+        for site in repo.sites:
             site = Site(**site)
             for session in site.sessions or ():
                 yield dict(**session, site=site)
 
     def resolve_sites(root, info):
-        return [Site(**x) for x in SITES]
+        repo = info.context['repo']
+        return [Site(**x) for x in repo.sites]
 
     def resolve_sessions(root, info, parked):
-        sessions = (Session(**x) for x in Query.sessions_list())
+        repo = info.context['repo']
+        sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
 
 
@@ -137,6 +157,7 @@ app.add_url_rule(
             mutation=MutationQuery
         ),
         graphiql=True,
+        get_context=lambda: {'repo': ListRepo(SITES)}
     )
 )
 
