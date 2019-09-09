@@ -19,9 +19,9 @@
           </thead>
           <tbody>
             <tr v-for="(site, index) in available_sites" :key="index">
-              <td>{{ site.site_name }}</td>
-              <td>{{ site.production_url }}</td>
-              <td>{{ site.staging_url }}</td>
+              <td>{{ site.siteName }}</td>
+              <td>{{ site.productionUrl }}</td>
+              <td>{{ site.stagingUrl }}</td>
               <td>{{ site.custodian }}</td>
               <td>
                 <b-button variant="success">Create Editor</b-button>
@@ -117,16 +117,24 @@ export default {
     };
   },
   methods: {
-    getAvailableSites() {
-      const path = '/sites';
-      axios.get(path)
-        .then((res) => {
-          this.available_sites = res.data;
-        })
-        .catch((error) => {
-          // eslint-disable-next-line
-          console.error(error);
-        });
+    async getAvailableSites() {
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+              { 
+                sites 
+                { custodian,
+                 custodianEmail, 
+              productionUrl,
+               siteName, stagingUrl, 
+               } 
+               }
+          `
+        }
+      });
+      this.available_sites = result.data.data.sites;
     },
     getEditSessions() {
       const path = '/edits';
