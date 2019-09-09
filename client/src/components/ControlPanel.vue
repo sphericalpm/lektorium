@@ -118,7 +118,7 @@ export default {
   },
   methods: {
     getAvailableSites() {
-      const path = 'http://localhost:5000/sites';
+      const path = '/sites';
       axios.get(path)
         .then((res) => {
           this.available_sites = res.data;
@@ -129,7 +129,7 @@ export default {
         });
     },
     getEditSessions() {
-      const path = 'http://localhost:5000/edits';
+      const path = '/edits';
       axios.get(path)
         .then((res) => {
           this.edit_sessions = res.data;
@@ -140,7 +140,7 @@ export default {
         });
     },
     getParkedSessions() {
-      const path = 'http://localhost:5000/parked';
+      const path = '/parked';
       axios.get(path)
         .then((res) => {
           this.parked_sessions = res.data;

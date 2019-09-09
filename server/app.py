@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, Blueprint, render_template, abort
-from flask_cors import CORS
 from jinja2 import TemplateNotFound
 
 # This is test backend for frontend prototype developing only!!!!
@@ -60,8 +59,7 @@ DEBUG = True
 # instantiate the app
 app = Flask(__name__, template_folder='../app/templates', static_folder='../app/static')
 app.config.from_object(__name__)
-# enable CORS
-CORS(app)
+
 
 @app.route('/')
 def get_main():
