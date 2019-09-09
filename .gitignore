@@ -126,3 +126,7 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+
+/client/package-lock.json
+/client/yarn.lock
