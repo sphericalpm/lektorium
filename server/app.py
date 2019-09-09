@@ -1,5 +1,8 @@
 from flask import Flask, jsonify, render_template, abort
+from flask_graphql import GraphQLView
 from jinja2 import TemplateNotFound
+from graphene import ObjectType, String, Schema, List
+
 
 # This is test backend for frontend prototype developing only!!!!
 AVAILABLE_SITES = [
@@ -59,6 +62,34 @@ DEBUG = True
 # instantiate the app
 app = Flask(__name__, template_folder='../app/templates', static_folder='../app/static')
 app.config.from_object(__name__)
+
+
+class Site(ObjectType):
+    site_name = String()
+    production_url = String()
+    staging_url = String()
+    custodian = String()
+    custodian_email = String()
+
+
+class Query(ObjectType):
+    sites = List(Site)
+    sessions = String()
+
+    def resolve_sites(root, info):
+        return [Site(**x) for x in AVAILABLE_SITES]
+
+    def resolve_sessions(root, info):
+        return 'sessions'
+
+
+app.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view(
+        'graphql',
+        schema=Schema(query=Query),
+    )
+)
 
 
 @app.route('/')
