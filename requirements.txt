@@ -1,7 +1,7 @@
-pydocstyle==3.*
-flake8
+pydocstyle
 pytest
 pytest-cov
+flake8
 flake8-import-order-spoqa
 flake8-docstrings
 flake8-builtins
@@ -12,5 +12,5 @@ flake8-print
 flake8-mutable
 flake8-spellcheck
 pep8-naming
-Flask==1.1.1
-Flask-Cors==3.0.8
+Flask
+nodeenv
