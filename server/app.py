@@ -1,5 +1,5 @@
 import abc
-from flask import Flask, jsonify, render_template, abort
+from flask import Flask, render_template, abort
 from flask_graphql import GraphQLView
 from jinja2 import TemplateNotFound
 from graphene import ObjectType, String, Schema, List, Field, Boolean, Mutation
