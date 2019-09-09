@@ -1,5 +1,6 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, Blueprint, render_template, abort
 from flask_cors import CORS
+from jinja2 import TemplateNotFound
 
 # This is test backend for frontend prototype developing only!!!!
 AVAILABLE_SITES = [
@@ -55,10 +56,10 @@ PARKED_SESSION = [
 # configuration
 DEBUG = True
 
-# instantiate the app
-app = Flask(__name__)
-app.config.from_object(__name__)
 
+# instantiate the app
+app = Flask(__name__, template_folder='../app/templates', static_folder='../app/static')
+app.config.from_object(__name__)
 # enable CORS
 CORS(app)
 
@@ -68,6 +69,12 @@ CORS(app)
 def ping_pong():
     return jsonify('pong!')
 
+@app.route('/hi')
+def get_main():
+    try:
+        return render_template('index.html')
+    except TemplateNotFound:
+        abort(404)
 
 @app.route('/sites', methods=['GET'])
 def get_sites():
