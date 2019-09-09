@@ -66,21 +66,40 @@ app.config.from_object(__name__)
 
 class Site(ObjectType):
     site_name = String()
-    production_url = String()
-    staging_url = String()
     custodian = String()
     custodian_email = String()
+    production_url = String()
+    staging_url = String()
+
+
+class BaseSession(ObjectType):
+    session_id = String()
+    site_name = String()
+    creation_time = String()
+
+
+class Session(BaseSession):
+    admin_url = String()
+    build_url = String()
+    custodian = String()
+    custodian_email = String()
+    production_url = String()
+    staging_url = String()
 
 
 class Query(ObjectType):
     sites = List(Site)
-    sessions = String()
+    edits = List(Session)
+    parked = List(BaseSession)
 
     def resolve_sites(root, info):
         return [Site(**x) for x in AVAILABLE_SITES]
 
-    def resolve_sessions(root, info):
-        return 'sessions'
+    def resolve_edits(root, info):
+        return [Session(**x) for x in EDIT_SESSIONS]
+
+    def resolve_parked(root, info):
+        return [BaseSession(**x) for x in PARKED_SESSION]
 
 
 app.add_url_rule(
