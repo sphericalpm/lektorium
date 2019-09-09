@@ -148,43 +148,6 @@ def get_main():
     except TemplateNotFound:
         abort(404)
 
-# sanity check route
-@app.route('/ping', methods=['GET'])
-def ping_pong():
-    return jsonify('pong!')
-
-
-@app.route('/edits', methods=['GET'])
-def get_edit_sessions():
-    sessions = []
-    for site in SITES:
-        for site_session in site.get('sessions', ()):
-            if not site_session.get('edit_url'):
-                continue
-            site_session = dict(site_session)
-            site_session['admin_url'] = site_session.pop('edit_url', None)
-            site_session['build_url'] = site_session.pop('view_url', None)
-            site_session['production_url'] = site['production_url']
-            site_session['staging_url'] = site['staging_url']
-            sessions.append(site_session)
-    return jsonify(sessions)
-
-
-@app.route('/parked', methods=['GET'])
-def get_parked_session():
-    sessions = []
-    for site in SITES:
-        for site_session in site.get('sessions', ()):
-            if site_session.get('parked_time'):
-                continue
-            site_session = dict(
-                session_id=site_session['session_id'],
-                site_name=site['site_name'],
-                creation_time=site_session['creation_time'],
-            )
-            sessions.append(site_session)
-    return jsonify(sessions)
-
 
 if __name__ == '__main__':
     app.run()
