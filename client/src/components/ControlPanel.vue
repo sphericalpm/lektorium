@@ -108,6 +108,7 @@
 <script>
 import axios from 'axios';
 import Alert from './Alert.vue';
+import { stat } from 'fs';
 
 export default {
   name: 'ControlPanel',
@@ -118,6 +119,7 @@ export default {
       parked_sessions: [],
       message: '',
       showMessage: false,
+      destroy_status: '',
     };
   },
   components: {
@@ -161,8 +163,8 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
     },
-    destroySession(id) {
-       var result = axios({
+    async destroySession(id) {
+      var result = await axios({
         method: "POST",
         url: "/graphql",
         data: {
@@ -175,9 +177,12 @@ export default {
           `
         }
       });
-      this.message = `'${id}' removed successfully`;
-      this.showMessage = true;
-      this.getPanelData();
+      if(result.data.data.destroySession.ok)
+      {
+        this.message = `'${id}' removed successfully.`;
+        this.showMessage = true;
+        this.getPanelData();
+      }
     },
   onDestroySession(session){
     this.destroySession(session.sessionId);
