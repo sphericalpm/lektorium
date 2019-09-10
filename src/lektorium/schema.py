@@ -1,4 +1,4 @@
-from graphene import ObjectType, String, Schema, List, Field, Boolean, Mutation
+from graphene import ObjectType, String, List, Field, Boolean, Mutation
 
 
 class Site(ObjectType):
