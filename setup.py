@@ -33,6 +33,7 @@ setuptools.setup(
         'nodeenv',
         'graphql-core<3',
         'pyyaml',
+        'python-dateutil',
     ],
     extras_require={
         'dev': [
