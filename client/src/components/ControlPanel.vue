@@ -93,7 +93,7 @@
               <td>{{ session.creationTime }}</td>
               <td>
                 <b-button variant="primary">Unpark</b-button>
-                <b-button variant="danger" @click="onDestroySession(session)">Destroy</b-button>
+                <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
               </td>
             </tr>
           </tbody>
@@ -163,7 +163,8 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
     },
-    async destroySession(id) {
+    async destroySession(session) {
+      let id = session.sessionId;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -184,9 +185,6 @@ export default {
         this.getPanelData();
       }
     },
-  onDestroySession(session){
-    this.destroySession(session.sessionId);
-  },
   },
   created() {
     this.getPanelData();
