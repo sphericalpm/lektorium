@@ -4,9 +4,7 @@ import setuptools
 setuptools.setup(
     name='lektorium',
 
-    use_scm_version=dict(
-        root='../..'
-    ),
+    use_scm_version=True,
     setup_requires=[
         'setuptools_scm',
     ],
@@ -29,11 +27,17 @@ setuptools.setup(
         '': 'src',
     },
     install_requires=[
-        'flask',
-        'nodeenv',
-        'flask-graphql',
+        'aiohttp',
+        'aiohttp-graphql',
         'graphene',
+        'nodeenv',
+        'graphql-core<3',
         'pyyaml',
     ],
+    extras_require={
+        'dev': [
+            'aiohttp-devtools',
+        ]
+    },
     zip_safe=True,
 )
