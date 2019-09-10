@@ -35,6 +35,13 @@ SITES = [{
         'custodian': 'Brian',
         'custodian_email': 'brian@splitter.il',
         'parked_time': dateutil.parser.parse('2019-07-18 11:53 UTC'),
+    },{
+        'session_id': 'pantss1',
+        'view_url': 'https://smthng-mu.uci.com',
+        'creation_time': dateutil.parser.parse('2019-07-18 11:34 UTC'),
+        'custodian': 'Muen',
+        'custodian_email': 'muen@flicker.tr',
+        'parked_time': dateutil.parser.parse('2019-07-18 11:54 UTC'),
     }],
 }, {
     'site_name': 'Liver Donors Inc.',
