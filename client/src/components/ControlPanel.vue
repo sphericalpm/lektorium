@@ -1,5 +1,6 @@
 <template>
   <div>
+    <alert :message=message v-if="showMessage"></alert>
     <b-card no-body>
       <b-tabs pills card vertical>
         <b-tab active>
@@ -92,7 +93,7 @@
               <td>{{ session.creationTime }}</td>
               <td>
                 <b-button variant="primary">Unpark</b-button>
-                <b-button variant="danger">Destroy</b-button>
+                <b-button variant="danger" @click="onDestroySession(session)">Destroy</b-button>
               </td>
             </tr>
           </tbody>
@@ -106,6 +107,7 @@
 
 <script>
 import axios from 'axios';
+import Alert from './Alert.vue';
 
 export default {
   name: 'ControlPanel',
@@ -114,7 +116,12 @@ export default {
       available_sites: [],
       edit_sessions: [],
       parked_sessions: [],
+      message: '',
+      showMessage: false,
     };
+  },
+  components: {
+    alert: Alert,
   },
   methods: {
     async getPanelData() {
@@ -147,7 +154,6 @@ export default {
                   creationTime
                 }
               }
-
           `
         }
       });
@@ -155,6 +161,27 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
     },
+    destroySession(id) {
+       var result = axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+                mutation {
+                destroySession(sessionId: "${id}") {
+                  ok
+                }
+              }
+          `
+        }
+      });
+      this.message = `'${id}' removed successfully`;
+      this.showMessage = true;
+      this.getPanelData();
+    },
+  onDestroySession(session){
+    this.destroySession(session.sessionId);
+  },
   },
   created() {
     this.getPanelData();
