@@ -9,6 +9,7 @@ import yaml
 
 
 SITES = [{
+    'site_id': 'bow',
     'site_name': 'Buy Our Widgets',
     'production_url': 'https://bow.acme.com',
     'staging_url': 'https://bow-test.acme.com',
@@ -23,6 +24,7 @@ SITES = [{
         'custodian_email': 'mj@acme.com',
     }],
 }, {
+    'site_id': 'uci',
     'site_name': 'Underpants Collectors International',
     'production_url': 'https://uci.com',
     'staging_url': 'https://uci-staging.acme.com',
@@ -44,6 +46,7 @@ SITES = [{
         'parked_time': dateutil.parser.parse('2019-07-18 11:54 UTC'),
     }],
 }, {
+    'site_id': 'ldi',
     'site_name': 'Liver Donors Inc.',
     'production_url': 'https://liver.do',
     'staging_url': 'https://pancreas.acme.com',
