@@ -11,9 +11,9 @@ async def index(request, app_path):
 
 
 def create_app():
-    from .repo import ListRepo, GitRepo, SITES
-    # repo = GitRepo('gitlab/service')
-    repo = ListRepo(SITES)
+    import repo
+    repo = repo.GitRepo('gitlab/service')
+    # repo = repo.ListRepo(repo.SITES)  # noqa: E800
     return init_app(repo)
 
 
