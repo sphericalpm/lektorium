@@ -25,7 +25,7 @@
               <td>{{ site.stagingUrl }}</td>
               <td>{{ site.custodian }}</td>
               <td>
-                <b-button variant="success">Create Editor</b-button>
+                <b-button variant="success" @click="createSession(site)">Create Editor</b-button>
               </td>
             </tr>
           </tbody>
@@ -134,6 +134,7 @@ export default {
           query: `
               {
                 sites {
+                  siteId
                   custodian
                   custodianEmail
                   productionUrl
@@ -181,6 +182,28 @@ export default {
       if(result.data.data.destroySession.ok)
       {
         this.message = `'${id}' removed successfully.`;
+        this.showMessage = true;
+        this.getPanelData();
+      }
+    },
+    async createSession(site) {
+      let id = site.siteId;
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+                mutation {
+                createSession(siteId: "${id}") {
+                  ok
+                }
+              }
+          `
+        }
+      });
+      if(result.data.data.createSession.ok)
+      {
+        this.message = `Session created successfully.`;
         this.showMessage = true;
         this.getPanelData();
       }
