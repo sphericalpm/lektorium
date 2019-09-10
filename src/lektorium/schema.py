@@ -1,4 +1,12 @@
-from graphene import ObjectType, String, List, Field, Boolean, Mutation
+from graphene import (
+    Boolean,
+    DateTime,
+    Field,
+    List,
+    Mutation,
+    ObjectType,
+    String,
+)
 
 
 class Site(ObjectType):
@@ -16,10 +24,10 @@ class Session(ObjectType):
     site_name = String()
     edit_url = String()
     view_url = String()
-    creation_time = String()
+    creation_time = DateTime()
     custodian = String()
     custodian_email = String()
-    parked_time = String()
+    parked_time = DateTime()
     production_url = String()
     staging_url = String()
     site = Field(Site)
