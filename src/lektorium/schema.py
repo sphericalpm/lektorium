@@ -47,7 +47,7 @@ class Session(ObjectType):
         return parent.site.site_name
 
     def resolve_parked(parent, info):
-        return not bool(parent.edit_url)
+        return not bool(parent.get('edit_url', None))
 
 
 class MutationResult(ObjectType):
