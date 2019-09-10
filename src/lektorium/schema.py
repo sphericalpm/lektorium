@@ -50,10 +50,10 @@ class DestroySession(Mutation):
         for site, session in sessions:
             if session['session_id'] == session_id:
                 site['sessions'] = [
-                    x for x in site['session']
+                    x for x in site['sessions']
                     if x['session_id'] != session_id
                 ]
-            return DestroySession(ok=True)
+                return DestroySession(ok=True)
         return DestroySession(ok=False)
 
 
