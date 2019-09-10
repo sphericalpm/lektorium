@@ -117,71 +117,47 @@ export default {
     };
   },
   methods: {
-    async getAvailableSites() {
+    async getPanelData() {
       var result = await axios({
         method: "POST",
         url: "/graphql",
         data: {
           query: `
-              { 
-                sites 
-                { custodian,
-                 custodianEmail, 
-              productionUrl,
-               siteName, stagingUrl, 
-               } 
-               }
+              {
+                sites {
+                  custodian
+                  custodianEmail
+                  productionUrl
+                  siteName
+                  stagingUrl
+                }
+                editSessions: sessions {
+                  sessionId
+                  siteName
+                  creationTime
+                  custodian
+                  productionUrl
+                  stagingUrl
+                  editUrl
+                  viewUrl
+                }
+                parkedSessions: sessions(parked: true) {
+                  sessionId
+                  siteName
+                  creationTime
+                }
+              }
+
           `
         }
       });
       this.available_sites = result.data.data.sites;
-    },
-    async getEditSessions() {
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        data: {
-          query: `
-              { 
-                sessions
-                { sessionId,
-                  siteName, 
-                  creationTime,
-                  custodian, 
-                  productionUrl,
-                  stagingUrl,
-                  editUrl,
-                  viewUrl,
-               } 
-              }
-          `
-        }
-      });
-      this.edit_sessions = result.data.data.sessions;
-    },
-    async getParkedSessions() {
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        data: {
-          query: `
-              { 
-                sessions(parked: true)
-                { sessionId,
-                  siteName, 
-                  creationTime,
-               } 
-              }
-          `
-        }
-      });
-      this.parked_sessions = result.data.data.sessions;
+      this.edit_sessions = result.data.data.editSessions;
+      this.parked_sessions = result.data.data.parkedSessions;
     },
   },
   created() {
-    this.getAvailableSites();
-    this.getEditSessions();
-    this.getParkedSessions();
+    this.getPanelData();
   },
 };
 </script>
