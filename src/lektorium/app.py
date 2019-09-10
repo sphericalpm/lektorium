@@ -2,7 +2,8 @@ import functools
 import pathlib
 import aiohttp.web
 from aiohttp_graphql import GraphQLView
-from .schema import Schema, Query, MutationQuery
+from graphene import Schema
+from .schema import Query, MutationQuery
 
 
 async def index(request, app_path):
@@ -11,9 +12,9 @@ async def index(request, app_path):
 
 
 def create_app():
-    import repo
-    repo = repo.GitRepo('gitlab/service')
-    # repo = repo.ListRepo(repo.SITES)  # noqa: E800
+    from . import repo
+    # repo = repo.GitRepo('gitlab/service')  # noqa: E800
+    repo = repo.ListRepo(repo.SITES)  # noqa: E800
     return init_app(repo)
 
 
