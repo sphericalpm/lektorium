@@ -12,8 +12,8 @@ async def index(request, app_path):
 
 def create_app():
     from .repo import ListRepo, GitRepo, SITES
-    repo = GitRepo('gitlab/service')
-    # repo = ListRepo(SITES)
+    # repo = GitRepo('gitlab/service')
+    repo = ListRepo(SITES)
     return init_app(repo)
 
 
