@@ -3,8 +3,9 @@ import io
 import pathlib
 import subprocess
 import tempfile
-import yaml
 import threading
+import dateutil.parser
+import yaml
 
 
 SITES = [{
@@ -17,7 +18,7 @@ SITES = [{
         'session_id': 'widgets-1',
         'edit_url': 'https://cmsdciks.cms.acme.com',
         'view_url': 'https://cmsdciks.build.acme.com',
-        'creation_time': '2019-07-19 10:33 UTC+1',
+        'creation_time': dateutil.parser.parse('2019-07-19 10:18 UTC'),
         'custodian': 'Max Jekov',
         'custodian_email': 'mj@acme.com',
     }],
@@ -30,10 +31,10 @@ SITES = [{
     'sessions': [{
         'session_id': 'pantssss',
         'view_url': 'https://smthng.uci.com',
-        'creation_time': '2019-07-18 11:33 UTC+1',
+        'creation_time': dateutil.parser.parse('2019-07-18 11:33 UTC'),
         'custodian': 'Brian',
         'custodian_email': 'brian@splitter.il',
-        'parked_time': '2019-07-18 11:33 UTC+1',
+        'parked_time': dateutil.parser.parse('2019-07-18 11:53 UTC'),
     }],
 }, {
     'site_name': 'Liver Donors Inc.',
