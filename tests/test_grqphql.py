@@ -61,6 +61,7 @@ def test_destroy_session():
     assert deorder(result) == {
         'data': {
             'destroySession': {
+                'ok': True,
             },
         }
     }
