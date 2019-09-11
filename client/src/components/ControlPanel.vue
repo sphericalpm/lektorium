@@ -97,7 +97,7 @@
               <td>{{ session.siteName }}</td>
               <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>
-                <b-button variant="primary">Unpark</b-button>
+                <b-button variant="primary" @click="unparkSession(session)">Unpark</b-button>
                 <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
               </td>
             </tr>
@@ -213,6 +213,28 @@ export default {
       if(result.data.data.parkSession.ok)
       {
         this.message = `'${id}' parked successfully.`;
+        this.showMessage = true;
+        this.getPanelData();
+      }
+    },
+    async unparkSession(session) {
+      let id = session.sessionId;
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+                mutation {
+                unparkSession(sessionId: "${id}") {
+                  ok
+                }
+              }
+          `
+        }
+      });
+      if(result.data.data.unparkSession.ok)
+      {
+        this.message = `'${id}' unparked successfully.`;
         this.showMessage = true;
         this.getPanelData();
       }
