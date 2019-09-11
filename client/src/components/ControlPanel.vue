@@ -67,7 +67,7 @@
               <td>{{ session.editUrl }}</td>
               <td>{{ session.viewUrl }}</td>
               <td>
-                <b-button variant="primary">Park</b-button>
+                <b-button variant="primary" @click="parkSession(session)">Park</b-button>
                 <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
                 <b-button variant="dark">Stage</b-button>
                 <b-button variant="success">Request release</b-button>
@@ -191,6 +191,28 @@ export default {
       if(result.data.data.destroySession.ok)
       {
         this.message = `'${id}' removed successfully.`;
+        this.showMessage = true;
+        this.getPanelData();
+      }
+    },
+    async parkSession(session) {
+      let id = session.sessionId;
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+                mutation {
+                parkSession(sessionId: "${id}") {
+                  ok
+                }
+              }
+          `
+        }
+      });
+      if(result.data.data.parkSession.ok)
+      {
+        this.message = `'${id}' parked successfully.`;
         this.showMessage = true;
         this.getPanelData();
       }
