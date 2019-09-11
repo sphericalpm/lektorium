@@ -98,6 +98,24 @@ class ParkSession(MutationBase):
         return MutationResult(ok=True)
 
 
+class Stage(MutationBase):
+    class Arguments:
+        session_id = String()
+
+    @classmethod
+    def mutate(cls, root, info, session_id):
+        return MutationResult(ok=True)
+
+
+class RequestRelease(MutationBase):
+    class Arguments:
+        session_id = String()
+
+    @classmethod
+    def mutate(cls, root, info, session_id):
+        return MutationResult(ok=True)
+
+
 class UnparkSession(MutationBase):
     class Arguments:
         session_id = String()
@@ -142,6 +160,8 @@ class MutationQuery(ObjectType):
     create_session = CreateSession.Field()
     park_session = ParkSession.Field()
     unpark_session = UnparkSession.Field()
+    stage = Stage.Field()
+    request_release = RequestRelease.Field()
 
 
 class Query(ObjectType):

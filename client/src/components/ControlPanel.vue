@@ -69,8 +69,8 @@
               <td>
                 <b-button variant="primary" @click="parkSession(session)">Park</b-button>
                 <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
-                <b-button variant="dark">Stage</b-button>
-                <b-button variant="success">Request release</b-button>
+                <b-button variant="dark" @click="stage(session)">Stage</b-button>
+                <b-button variant="success" @click="requestRelease(session)">Request release</b-button>
               </td>
             </tr>
           </tbody>
@@ -235,6 +235,50 @@ export default {
       if(result.data.data.unparkSession.ok)
       {
         this.message = `'${id}' unparked successfully.`;
+        this.showMessage = true;
+        this.getPanelData();
+      }
+    },
+    async stage(session) {
+      let id = session.sessionId;
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+                mutation {
+                stage(sessionId: "${id}") {
+                  ok
+                }
+              }
+          `
+        }
+      });
+      if(result.data.data.stage.ok)
+      {
+        this.message = `'${id}' staged.`;
+        this.showMessage = true;
+        this.getPanelData();
+      }
+    },
+    async requestRelease(session) {
+      let id = session.sessionId;
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        data: {
+          query: `
+                mutation {
+                requestRelease(sessionId: "${id}") {
+                  ok
+                }
+              }
+          `
+        }
+      });
+      if(result.data.data.requestRelease.ok)
+      {
+        this.message = `Release request was sent.`;
         this.showMessage = true;
         this.getPanelData();
       }
