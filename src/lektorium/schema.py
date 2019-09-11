@@ -64,7 +64,6 @@ class MutationBase(Mutation):
             for s in repo.sites for x in s.get('sessions', ())
         }
 
-
     @abc.abstractmethod
     def mutate(root, info, session_id):
         pass
