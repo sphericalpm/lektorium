@@ -55,26 +55,6 @@ def test_query_edit_session():
 
 
 def test_query_parked_session():
-    pass
-
-
-def test_create_session():
-    pass
-
-
-def test_park_session():
-    pass
-
-
-def test_stage():
-    pass
-
-
-def test_request_release():
-    pass
-
-
-def test_destroy_session():
     client = Client(Schema(
         query=Query,
         mutation=MutationQuery,
@@ -92,6 +72,113 @@ def test_destroy_session():
             ]
         }
     }
+
+
+def test_create_session():
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
+    result = client.execute(r'''mutation {
+        createSession(siteId: "uci")
+        {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'createSession': {
+                'ok': True,
+            },
+        }
+    }
+
+
+def test_park_session():
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
+    result = client.execute(r'''mutation {
+        parkSession(sessionId: "widgets-1")
+        {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'parkSession': {
+                'ok': True,
+            },
+        }
+    }
+
+
+def test_unpark_session():
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
+    result = client.execute(r'''mutation {
+        unparkSession(sessionId: "pantssss")
+        {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'unparkSession': {
+                'ok': True,
+            },
+        }
+    }
+
+
+def test_stage():
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
+    result = client.execute(r'''mutation {
+        stage(sessionId: "widgets-1")
+        {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'stage': {
+                'ok': True,
+            },
+        }
+    }
+
+
+def test_request_release():
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
+    result = client.execute(r'''mutation {
+        requestRelease(sessionId: "widgets-1")
+        {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'requestRelease': {
+                'ok': True,
+            },
+        }
+    }
+
+
+def test_destroy_session():
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
     result = client.execute(r'''mutation {
         destroySession(sessionId: "pantss1") {
             ok
