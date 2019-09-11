@@ -205,6 +205,18 @@ def test_unpark_session():
             },
         }
     }
+    result = client.execute(r'''mutation {
+        unparkSession(sessionId: "test12345") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'unparkSession': {
+                'ok': False,
+            },
+        }
+    }
 
 
 def test_stage():
