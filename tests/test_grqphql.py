@@ -312,43 +312,24 @@ def test_destroy_session():
     }
 
 
-def test_resolve_production_url():
+def test_resolve_funcs():
     client = Client(Schema(
         query=Query,
         mutation=MutationQuery,
     ), context={'repo': ListRepo(SITES)})
     result = client.execute(r'''{
-        sites {
+        sessions {
             productionUrl
-        }
-    }''')
-    assert deorder(result) == {
-        'data': {
-            'sites': [
-                {'productionUrl': 'https://bow.acme.com'},
-                {'productionUrl': 'https://uci.com'},
-                {'productionUrl': 'https://liver.do'},
-            ]
-        }
-    }
-
-
-def test_resolve_staging_url():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
-    result = client.execute(r'''{
-        sites {
             stagingUrl
+            parked
         }
     }''')
     assert deorder(result) == {
         'data': {
-            'sites': [
+            'sessions': [
+                {'productionUrl': 'https://bow.acme.com'},
                 {'stagingUrl': 'https://bow-test.acme.com'},
-                {'stagingUrl': 'https://uci-staging.acme.com'},
-                {'stagingUrl': 'https://pancreas.acme.com'},
+                {'parked': False},
             ]
         }
     }
