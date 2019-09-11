@@ -25,7 +25,9 @@
               <td>{{ site.stagingUrl }}</td>
               <td>{{ site.custodian }}</td>
               <td>
-                <b-button variant="success" @click="createSession(site)">Create Editor</b-button>
+                <b-button variant="success" @click="createSession(site)" :disabled="checkActiveSession(site)">
+                  Create Editor
+                  </b-button>
               </td>
             </tr>
           </tbody>
@@ -109,6 +111,7 @@
 import axios from 'axios';
 import Alert from './Alert.vue';
 import { stat } from 'fs';
+import { all } from 'q';
 
 export default {
   name: 'ControlPanel',
@@ -140,6 +143,9 @@ export default {
                   productionUrl
                   siteName
                   stagingUrl
+                  sessions {
+                    parked
+                  }
                 }
                 editSessions: sessions {
                   sessionId
@@ -207,6 +213,13 @@ export default {
         this.showMessage = true;
         this.getPanelData();
       }
+    },
+    checkActiveSession(site){
+      let result = false;
+      if (site.sessions) {
+        result = site.sessions.find(item => item.parked == false);
+      }
+      return result;
     },
   },
   created() {
