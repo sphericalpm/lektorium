@@ -161,6 +161,18 @@ def test_park_session():
             },
         }
     }
+    result = client.execute(r'''mutation {
+        parkSession(sessionId: "widgets-1") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'parkSession': {
+                'ok': False,
+            },
+        }
+    }
 
 
 def test_unpark_session():
@@ -296,5 +308,47 @@ def test_destroy_session():
             'destroySession': {
                 'ok': False,
             },
+        }
+    }
+
+
+def resolve_production_url():
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
+    result = client.execute(r'''{
+        sites {
+            productionUrl
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sites': [
+                {'productionUrl': 'https://bow.acme.com'},
+                {'productionUrl': 'https://uci.com'},
+                {'productionUrl': 'https://liver.do'},
+            ]
+        }
+    }
+
+
+def resolve_staging_url():
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
+    result = client.execute(r'''{
+        sites {
+            stagingUrl
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sites': [
+                {'stagingUrl': 'https://bow-test.acme.com'},
+                {'stagingUrl': 'https://uci-staging.acme.com'},
+                {'stagingUrl': 'https://pancreas.acme.com'},
+            ]
         }
     }
