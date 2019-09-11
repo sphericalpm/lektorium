@@ -312,7 +312,7 @@ def test_destroy_session():
     }
 
 
-def resolve_production_url():
+def test_resolve_production_url():
     client = Client(Schema(
         query=Query,
         mutation=MutationQuery,
@@ -333,7 +333,7 @@ def resolve_production_url():
     }
 
 
-def resolve_staging_url():
+def test_resolve_staging_url():
     client = Client(Schema(
         query=Query,
         mutation=MutationQuery,
