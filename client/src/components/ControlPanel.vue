@@ -68,7 +68,7 @@
               <td>{{ session.viewUrl }}</td>
               <td>
                 <b-button variant="primary">Park</b-button>
-                <b-button variant="danger">Destroy</b-button>
+                <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
                 <b-button variant="dark">Stage</b-button>
                 <b-button variant="success">Request release</b-button>
               </td>
