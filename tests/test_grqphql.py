@@ -80,8 +80,7 @@ def test_create_session():
         mutation=MutationQuery,
     ), context={'repo': ListRepo(SITES)})
     result = client.execute(r'''mutation {
-        createSession(siteId: "uci")
-        {
+        createSession(siteId: "uci") {
             ok
         }
     }''')
@@ -100,8 +99,7 @@ def test_park_session():
         mutation=MutationQuery,
     ), context={'repo': ListRepo(SITES)})
     result = client.execute(r'''mutation {
-        parkSession(sessionId: "widgets-1")
-        {
+        parkSession(sessionId: "widgets-1") {
             ok
         }
     }''')
@@ -120,8 +118,7 @@ def test_unpark_session():
         mutation=MutationQuery,
     ), context={'repo': ListRepo(SITES)})
     result = client.execute(r'''mutation {
-        unparkSession(sessionId: "pantssss")
-        {
+        unparkSession(sessionId: "pantssss") {
             ok
         }
     }''')
@@ -140,8 +137,7 @@ def test_stage():
         mutation=MutationQuery,
     ), context={'repo': ListRepo(SITES)})
     result = client.execute(r'''mutation {
-        stage(sessionId: "widgets-1")
-        {
+        stage(sessionId: "widgets-1") {
             ok
         }
     }''')
@@ -160,8 +156,7 @@ def test_request_release():
         mutation=MutationQuery,
     ), context={'repo': ListRepo(SITES)})
     result = client.execute(r'''mutation {
-        requestRelease(sessionId: "widgets-1")
-        {
+        requestRelease(sessionId: "widgets-1") {
             ok
         }
     }''')
