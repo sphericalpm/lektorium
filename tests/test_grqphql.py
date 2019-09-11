@@ -35,6 +35,28 @@ def test_query_sites():
     }
 
 
+def test_query_edit_session():
+    pass
+
+
+def test_query_parked_session():
+    pass
+
+
+def test_create_session():
+    pass
+
+
+def test_park_session():
+    pass
+
+
+def test_stage():
+    pass
+
+def test_request_release():
+    pass
+
 def test_destroy_session():
     client = Client(Schema(
         query=Query,
