@@ -60,7 +60,7 @@
             <tr v-for="(session, index) in edit_sessions" :key="index">
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
-              <td>{{ session.creationTime }}</td>
+              <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>{{ session.custodian }}</td>
               <td>{{ session.productionUrl }}</td>
               <td>{{ session.stagingUrl }}</td>
@@ -95,7 +95,7 @@
             <tr v-for="(session, index) in parked_sessions" :key="index">
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
-              <td>{{ session.creationTime }}</td>
+              <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>
                 <b-button variant="primary">Unpark</b-button>
                 <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
