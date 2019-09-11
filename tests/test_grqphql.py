@@ -91,6 +91,31 @@ def test_create_session():
             },
         }
     }
+    result = client.execute(r'''{
+        sessions {
+            siteName
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sessions': [
+                {'siteName': 'Buy Our Widgets'},
+                {'siteName': 'Underpants Collectors International'},
+            ]
+        }
+    }
+    result = client.execute(r'''mutation {
+        createSession(siteId: "bow") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'createSession': {
+                'ok': False,
+            },
+        }
+    }
 
 
 def test_park_session():
@@ -110,6 +135,32 @@ def test_park_session():
             },
         }
     }
+    result = client.execute(r'''{
+        sessions(parked: true) {
+            sessionId
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sessions': [
+                {'sessionId': 'widgets-1'},
+                {'sessionId': 'pantssss'},
+                {'sessionId': 'pantss1'},
+            ]
+        }
+    }
+    result = client.execute(r'''mutation {
+        parkSession(sessionId: "test12345") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'parkSession': {
+                'ok': False,
+            },
+        }
+    }
 
 
 def test_unpark_session():
@@ -126,6 +177,31 @@ def test_unpark_session():
         'data': {
             'unparkSession': {
                 'ok': True,
+            },
+        }
+    }
+    result = client.execute(r'''{
+        sessions {
+            sessionId
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sessions': [
+                {'sessionId': 'widgets-1'},
+                {'sessionId': 'pantssss'},
+            ]
+        }
+    }
+    result = client.execute(r'''mutation {
+        unparkSession(sessionId: "pantss1") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'unparkSession': {
+                'ok': False,
             },
         }
     }
