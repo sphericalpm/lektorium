@@ -21,13 +21,16 @@
           <tbody>
             <tr v-for="(site, index) in available_sites" :key="index">
               <td>{{ site.siteName }}</td>
-              <td>{{ site.productionUrl }}</td>
-              <td>{{ site.stagingUrl }}</td>
+              <td><a :href="site.productionUrl">{{ site.productionUrl }}</a></td>
+              <td> <a :href="site.stagingUrl">{{ site.stagingUrl }}</a></td>
               <td>{{ site.custodian }}</td>
-              <td>
-                <b-button variant="success" @click="createSession(site)" :disabled="checkActiveSession(site)">
-                  Create Editor
-                  </b-button>
+              <td>  
+                  <b-button 
+                  variant="success" 
+                  @click="createSession(site)" 
+                  :disabled="checkActiveSession(site)">
+                      Create Editor
+                  </b-button>                    
               </td>
             </tr>
           </tbody>
