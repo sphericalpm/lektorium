@@ -186,3 +186,27 @@ def test_destroy_session():
             },
         }
     }
+    result = client.execute(r'''{
+        sessions(parked: true) {
+            sessionId
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sessions': [
+                {'sessionId': 'pantssss'},
+            ]
+        }
+    }
+    result = client.execute(r'''mutation {
+        destroySession(sessionId: "test12345") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'destroySession': {
+                'ok': False,
+            },
+        }
+    }
