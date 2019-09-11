@@ -36,7 +36,22 @@ def test_query_sites():
 
 
 def test_query_edit_session():
-    pass
+    client = Client(Schema(
+        query=Query,
+        mutation=MutationQuery,
+    ), context={'repo': ListRepo(SITES)})
+    result = client.execute(r'''{
+        sessions {
+            sessionId
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sessions': [
+                {'sessionId': 'widgets-1'},
+            ]
+        }
+    }
 
 
 def test_query_parked_session():
@@ -54,8 +69,10 @@ def test_park_session():
 def test_stage():
     pass
 
+
 def test_request_release():
     pass
+
 
 def test_destroy_session():
     client = Client(Schema(
