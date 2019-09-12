@@ -308,10 +308,11 @@ def test_resolve_funcs(client):
     }''')
     assert deorder(result) == {
         'data': {
-            'sessions': [
-                {'productionUrl': 'https://bow.acme.com'},
-                {'stagingUrl': 'https://bow-test.acme.com'},
-                {'parked': False},
+            'sessions': [{
+                'productionUrl': 'https://bow.acme.com',
+                'stagingUrl': 'https://bow-test.acme.com',
+                'parked': False,
+            },
             ]
         }
     }
