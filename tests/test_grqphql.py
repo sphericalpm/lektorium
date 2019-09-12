@@ -1,14 +1,14 @@
+import copy
 import pytest
-from collections import OrderedDict
-from graphene import Schema
-from graphene.test import Client
-from lektorium.schema import Query, MutationQuery
-from lektorium.repo import ListRepo, SITES
+import collections
+import graphene.test
+import lektorium.schema
+import lektorium.repo
 
 
 def deorder(obj):
     '''Removes OrderedDict's in object tree'''
-    if isinstance(obj, (OrderedDict, dict)):
+    if isinstance(obj, (collections.OrderedDict, dict)):
         return {k: deorder(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [deorder(k) for k in obj]
@@ -17,13 +17,15 @@ def deorder(obj):
 
 @pytest.fixture
 def client():
-    return Client(
-        Schema(
-            query=Query,
-            mutation=MutationQuery,
+    return graphene.test.Client(
+        graphene.Schema(
+            query=lektorium.schema.Query,
+            mutation=lektorium.schema.MutationQuery,
         ),
         context={
-            'repo': ListRepo(SITES)
+            'repo': lektorium.repo.ListRepo(
+                copy.deepcopy(lektorium.repo.SITES)
+            )
         }
     )
 
