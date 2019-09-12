@@ -104,6 +104,9 @@ def test_create_session(client):
             ]
         }
     }
+
+
+def test_create_session_other_exist(client):
     result = client.execute(r'''mutation {
         createSession(siteId: "bow") {
             ok
@@ -145,6 +148,9 @@ def test_park_session(client):
             ]
         }
     }
+
+
+def test_park_unknown_session(client):
     result = client.execute(r'''mutation {
         parkSession(sessionId: "test12345") {
             ok
@@ -157,6 +163,14 @@ def test_park_session(client):
             },
         }
     }, 'Server should fail to park unknown session'
+
+
+def test_park_parked_session(client):
+    client.execute(r'''mutation {
+        parkSession(sessionId: "widgets-1") {
+            ok
+        }
+    }''')
     result = client.execute(r'''mutation {
         parkSession(sessionId: "widgets-1") {
             ok
@@ -168,7 +182,7 @@ def test_park_session(client):
                 'ok': False,
             },
         }
-    }
+    }, 'Server should fail to park parked session'
 
 
 def test_unpark_session(client):
@@ -203,6 +217,14 @@ def test_unpark_session(client):
             ]
         }
     }
+
+
+def test_unpark_session_another_exist(client):
+    client.execute(r'''mutation {
+        unparkSession(sessionId: "pantssss") {
+            ok
+        }
+    }''')
     result = client.execute(r'''mutation {
         unparkSession(sessionId: "pantss1") {
             ok
@@ -215,6 +237,9 @@ def test_unpark_session(client):
             },
         }
     }, 'Server should fail to unpark session when there is an active session for same website'
+
+
+def test_unpark_unknown_session(client):
     result = client.execute(r'''mutation {
         unparkSession(sessionId: "test12345") {
             ok
@@ -284,6 +309,9 @@ def test_destroy_session(client):
             ]
         }
     }
+
+
+def test_destroy_unknown_session(client):
     result = client.execute(r'''mutation {
         destroySession(sessionId: "test12345") {
             ok
