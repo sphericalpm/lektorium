@@ -1,3 +1,4 @@
+import pytest
 from collections import OrderedDict
 from graphene import Schema
 from graphene.test import Client
@@ -14,11 +15,20 @@ def deorder(obj):
     return obj
 
 
-def test_query_sites():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+@pytest.fixture
+def client():
+    return Client(
+        Schema(
+            query=Query,
+            mutation=MutationQuery,
+        ),
+        context={
+            'repo': ListRepo(SITES)
+        }
+    )
+
+
+def test_query_sites(client):
     result = client.execute(r'''{
         sites {
             siteId
@@ -35,11 +45,7 @@ def test_query_sites():
     }
 
 
-def test_query_edit_session():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_query_edit_session(client):
     result = client.execute(r'''{
         sessions {
             sessionId
@@ -54,11 +60,7 @@ def test_query_edit_session():
     }
 
 
-def test_query_parked_session():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_query_parked_session(client):
     result = client.execute(r'''{
         sessions(parked: true) {
             sessionId
@@ -74,11 +76,7 @@ def test_query_parked_session():
     }
 
 
-def test_create_session():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_create_session(client):
     result = client.execute(r'''mutation {
         createSession(siteId: "uci") {
             ok
@@ -118,11 +116,7 @@ def test_create_session():
     }
 
 
-def test_park_session():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_park_session(client):
     result = client.execute(r'''mutation {
         parkSession(sessionId: "widgets-1") {
             ok
@@ -175,11 +169,7 @@ def test_park_session():
     }
 
 
-def test_unpark_session():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_unpark_session(client):
     result = client.execute(r'''mutation {
         unparkSession(sessionId: "pantssss") {
             ok
@@ -231,11 +221,7 @@ def test_unpark_session():
     }
 
 
-def test_stage():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_stage(client):
     result = client.execute(r'''mutation {
         stage(sessionId: "widgets-1") {
             ok
@@ -250,11 +236,7 @@ def test_stage():
     }
 
 
-def test_request_release():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_request_release(client):
     result = client.execute(r'''mutation {
         requestRelease(sessionId: "widgets-1") {
             ok
@@ -269,11 +251,7 @@ def test_request_release():
     }
 
 
-def test_destroy_session():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_destroy_session(client):
     result = client.execute(r'''mutation {
         destroySession(sessionId: "pantss1") {
             ok
@@ -312,11 +290,7 @@ def test_destroy_session():
     }
 
 
-def test_resolve_funcs():
-    client = Client(Schema(
-        query=Query,
-        mutation=MutationQuery,
-    ), context={'repo': ListRepo(SITES)})
+def test_resolve_funcs(client):
     result = client.execute(r'''{
         sessions {
             productionUrl
