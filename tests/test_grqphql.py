@@ -204,7 +204,7 @@ def test_unpark_session(client):
         }
     }
     result = client.execute(r'''mutation {
-        unparkSession(sessionId: "pantss1") {
+        unparkSession(sessionId: "pantssss") {
             ok
         }
     }''')
@@ -214,7 +214,7 @@ def test_unpark_session(client):
                 'ok': False,
             },
         }
-    }
+    }, 'Server should fail to unpark unknown session'
     result = client.execute(r'''mutation {
         unparkSession(sessionId: "test12345") {
             ok
@@ -295,7 +295,7 @@ def test_destroy_session(client):
                 'ok': False,
             },
         }
-    }
+    }, 'Server should fail to destroy unknown session'
 
 
 def test_resolve_funcs(client):
