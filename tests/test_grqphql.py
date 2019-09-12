@@ -312,7 +312,6 @@ def test_resolve_funcs(client):
                 'productionUrl': 'https://bow.acme.com',
                 'stagingUrl': 'https://bow-test.acme.com',
                 'parked': False,
-            },
-            ]
+            }]
         }
     }
