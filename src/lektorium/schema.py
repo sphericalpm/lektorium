@@ -133,7 +133,11 @@ class UnparkSession(MutationBase):
     @classmethod
     def mutate(cls, root, info, session_id):
         sessions = cls.sessions(info.context['repo'])
-        session = sessions[session_id][0]
+        if session_id not in sessions:
+            return MutationResult(ok=False)
+        session, site = sessions[session_id]
+        if any(s.get('edit_url', None) for s in site.get('sessions', ())):
+            return MutationResult(ok=False)
         if session.get('edit_url', None) is not None:
             return MutationResult(ok=False)
         edit_url = f'https://{session_id}-unparked.example.com'
@@ -150,6 +154,8 @@ class CreateSession(MutationBase):
     def mutate(cls, root, info, site_id):
         repo = info.context['repo']
         site = {x['site_id']: x for x in repo.sites}[site_id]
+        if any(s.get('edit_url', None) for s in site.get('sessions', ())):
+            return MutationResult(ok=False)
         sessions = cls.sessions(info.context['repo'])
         session_id = None
         while not session_id or session_id in sessions:
