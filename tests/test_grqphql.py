@@ -204,7 +204,7 @@ def test_unpark_session(client):
         }
     }
     result = client.execute(r'''mutation {
-        unparkSession(sessionId: "pantssss") {
+        unparkSession(sessionId: "pantss1") {
             ok
         }
     }''')
@@ -214,7 +214,7 @@ def test_unpark_session(client):
                 'ok': False,
             },
         }
-    }, 'Server should fail to unpark unknown session'
+    }, 'Server should fail to unpark session when there is an active session for same website'
     result = client.execute(r'''mutation {
         unparkSession(sessionId: "test12345") {
             ok
@@ -226,7 +226,7 @@ def test_unpark_session(client):
                 'ok': False,
             },
         }
-    }
+    }, 'Server should fail to unpark unknown session'
 
 
 def test_stage(client):
