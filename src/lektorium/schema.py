@@ -49,6 +49,12 @@ class Session(ObjectType):
     def resolve_parked(parent, info):
         return not bool(parent.get('edit_url', None))
 
+    def get(self, key, default):
+        # FIXME: remove this hack
+        if key == 'edit_url':
+            return self.edit_url
+        raise KeyError(key)
+
 
 class MutationResult(ObjectType):
     ok = Boolean()
@@ -76,6 +82,8 @@ class DestroySession(MutationBase):
     @classmethod
     def mutate(cls, root, info, session_id):
         sessions = cls.sessions(info.context['repo'])
+        if session_id not in sessions:
+            return MutationResult(ok=False)
         site = sessions[session_id][1]
         site['sessions'] = [
             x for x in site['sessions']
@@ -91,6 +99,8 @@ class ParkSession(MutationBase):
     @classmethod
     def mutate(cls, root, info, session_id):
         sessions = cls.sessions(info.context['repo'])
+        if session_id not in sessions:
+            return MutationResult(ok=False)
         session = sessions[session_id][0]
         if session.pop('edit_url', None) is None:
             return MutationResult(ok=False)
