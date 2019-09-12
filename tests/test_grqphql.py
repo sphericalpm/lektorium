@@ -185,15 +185,21 @@ def test_unpark_session(client):
         }
     }
     result = client.execute(r'''{
-        sessions {
+        editSessions: sessions(parked: false) {
+            sessionId
+        }
+        parkedSessions: sessions(parked: true) {
             sessionId
         }
     }''')
     assert deorder(result) == {
         'data': {
-            'sessions': [
+            'editSessions': [
                 {'sessionId': 'widgets-1'},
                 {'sessionId': 'pantssss'},
+            ],
+            'parkedSessions': [
+                {'sessionId': 'pantss1'},
             ]
         }
     }
