@@ -113,7 +113,7 @@ def test_create_session(client):
                 'ok': False,
             },
         }
-    }
+    }, 'Server should fail to create session if another already exists'
 
 
 def test_park_session(client):
@@ -154,7 +154,7 @@ def test_park_session(client):
                 'ok': False,
             },
         }
-    }
+    }, 'Server should fail to park unknown session'
     result = client.execute(r'''mutation {
         parkSession(sessionId: "widgets-1") {
             ok
