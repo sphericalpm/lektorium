@@ -13,7 +13,7 @@
           <ul class="navbar-nav d-none d-md-block">
             <li v-if="!isAuthenticated" class="nav-item">
               <div v-if="anonymousMode">
-                <b-nav-item right>
+                <b-nav-item disabled right>
                   Anonymous
                 </b-nav-item>
               </div>
