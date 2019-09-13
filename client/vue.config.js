@@ -1,11 +1,16 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
-  assetsDir: '../static',
-  publicPath: '',
-  outputDir: path.resolve(__dirname, '../app/templates'),
-  runtimeCompiler: undefined,
-  productionSourceMap: undefined,
-  parallel: undefined,
-  css: undefined
+  outputDir: path.resolve(__dirname, 'build'),
+  configureWebpack: {
+    plugins: [
+      new webpack.ProvidePlugin({
+        $: 'jquery',
+        jquery: 'jquery',
+        'window.jQuery': 'jquery',
+        jQuery: 'jquery'
+      })
+    ]
+  }
 };

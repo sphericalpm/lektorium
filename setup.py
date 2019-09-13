@@ -29,6 +29,7 @@ setuptools.setup(
     install_requires=[
         'aiohttp',
         'aiohttp-graphql',
+        'beautifulsoup4',
         'graphene',
         'nodeenv',
         'graphql-core<3',
