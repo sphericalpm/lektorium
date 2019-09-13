@@ -26,6 +26,13 @@ setuptools.setup(
     package_dir={
         '': 'src',
     },
+    package_data={
+        'lektorium': [
+            'client/*',
+            'client/*/*',
+            'client/*/*/*'
+        ]
+    },
     install_requires=[
         'aiohttp',
         'aiohttp-graphql',
@@ -34,6 +41,7 @@ setuptools.setup(
         'nodeenv',
         'graphql-core<3',
         'pyyaml',
+        'importlib-resources ; python_version < "3.7"',
         'python-dateutil',
     ],
     extras_require={
