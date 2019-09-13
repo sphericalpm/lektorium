@@ -136,9 +136,9 @@ class UnparkSession(MutationBase):
         if session_id not in sessions:
             return MutationResult(ok=False)
         session, site = sessions[session_id]
-        if any(s.get('edit_url', None) for s in site.get('sessions', ())):
-            return MutationResult(ok=False)
         if session.get('edit_url', None) is not None:
+            return MutationResult(ok=False)
+        if any(s.get('edit_url', None) for s in site.get('sessions', ())):
             return MutationResult(ok=False)
         edit_url = f'https://{session_id}-unparked.example.com'
         session['edit_url'] = edit_url
