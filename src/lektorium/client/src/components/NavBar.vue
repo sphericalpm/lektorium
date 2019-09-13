@@ -9,13 +9,21 @@
               <router-link to="/" class="nav-link">Lektorium</router-link>
             </li>
           </ul>
+          <div class="login-controls">
           <ul class="navbar-nav d-none d-md-block">
             <li v-if="!isAuthenticated" class="nav-item">
+              <div v-if="anonymousMode">
+                <b-nav-item right>
+                  Anonymous
+                </b-nav-item>
+              </div>
+              <div v-else>
               <button
                 id="qsLoginBtn"
                 class="btn btn-primary btn-margin"
                 @click.prevent="login"
               >Login</button>
+              </div>
             </li>
 
             <li class="nav-item dropdown" v-if="isAuthenticated">
@@ -79,6 +87,13 @@
 <script>
 export default {
   name: "NavBar",
+  data() {
+    return {
+      isAuthenticated: false,
+      anonymousMode: false,
+      profile: {}
+    };
+  },
   methods: {
     login() {
       this.$auth.login();
@@ -92,12 +107,9 @@ export default {
       this.profile = data.profile;
     }
   },
-  data() {
-    return {
-      isAuthenticated: false,
-      profile: {}
-    };
-  }
+  created(){
+    this.anonymousMode = !Boolean(this.$auth);
+  },
 };
 </script>
 
