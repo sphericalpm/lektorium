@@ -133,9 +133,13 @@ export default {
   },
   methods: {
     async getPanelData() {
+      const accessToken = await this.$auth.getIdToken();
       var result = await axios({
         method: "POST",
         url: "/graphql",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
         data: {
           query: `
               {
@@ -175,9 +179,13 @@ export default {
     },
     async destroySession(session) {
       let id = session.sessionId;
+      const accessToken = await this.$auth.getIdToken();
       var result = await axios({
         method: "POST",
         url: "/graphql",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
         data: {
           query: `
                 mutation {
@@ -197,9 +205,13 @@ export default {
     },
     async parkSession(session) {
       let id = session.sessionId;
+      const accessToken = await this.$auth.getIdToken();
       var result = await axios({
         method: "POST",
         url: "/graphql",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
         data: {
           query: `
                 mutation {
@@ -219,9 +231,13 @@ export default {
     },
     async unparkSession(session) {
       let id = session.sessionId;
+      const accessToken = await this.$auth.getIdToken();
       var result = await axios({
         method: "POST",
         url: "/graphql",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
         data: {
           query: `
                 mutation {
@@ -241,9 +257,13 @@ export default {
     },
     async stage(session) {
       let id = session.sessionId;
+      const accessToken = await this.$auth.getIdToken();
       var result = await axios({
         method: "POST",
         url: "/graphql",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
         data: {
           query: `
                 mutation {
@@ -263,9 +283,13 @@ export default {
     },
     async requestRelease(session) {
       let id = session.sessionId;
+      const accessToken = await this.$auth.getIdToken();
       var result = await axios({
         method: "POST",
         url: "/graphql",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
         data: {
           query: `
                 mutation {
@@ -285,9 +309,13 @@ export default {
     },
     async createSession(site) {
       let id = site.siteId;
+      const accessToken = await this.$auth.getIdToken();
       var result = await axios({
         method: "POST",
         url: "/graphql",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
         data: {
           query: `
                 mutation {
