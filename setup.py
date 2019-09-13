@@ -43,6 +43,7 @@ setuptools.setup(
         'pyyaml',
         'importlib-resources ; python_version < "3.7"',
         'python-dateutil',
+        'appdirs',
     ],
     extras_require={
         'dev': [

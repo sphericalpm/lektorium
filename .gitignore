@@ -127,5 +127,4 @@ yarn-error.log*
 *.sln
 *.sw?
 
-
-/gitlab/
+/container/*whl
