@@ -1,19 +1,30 @@
 <template>
   <div id="app">
-    <CustomHeader />
-    <ControlPanel />
+    <nav-bar />
+    <div>
+      <error />
+      <div class="mt-5">
+        <router-view />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import CustomHeader from '@/components/CustomHeader';
-import ControlPanel from '@/components/ControlPanel';
+import NavBar from './components/NavBar';
 
 export default {
   name: 'app',
   components: {
-    CustomHeader,
-    ControlPanel,
+    NavBar,
+  },
+  async created() {
+    try {
+      await this.$auth.renewTokens();
+    } catch {
+      // Supress the 'not logged in' error as we can illegitimately get that
+      // when processing the callback url
+    }
   }
 }
 </script>

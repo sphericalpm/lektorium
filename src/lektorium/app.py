@@ -2,13 +2,21 @@ import functools
 import pathlib
 import aiohttp.web
 from aiohttp_graphql import GraphQLView
+import bs4
 from graphene import Schema
 from .schema import Query, MutationQuery
 
 
 async def index(request, app_path):
-    index = app_path / 'templates' / 'index.html'
-    return aiohttp.web.FileResponse(index.resolve())
+    index = app_path / 'index.html'
+    data = index.resolve().read_bytes()
+    data = bs4.BeautifulSoup(data, 'html.parser')
+    # data.find('body')['data-auth0-domain'] = 'ap-lektorium.eu.auth0.com'
+    # data.find('body')['data-auth0-id'] = 'q2VZfTHwd5v6ay9PIzDXNoQH6CSI3IY0'
+    return aiohttp.web.Response(
+        body=str(data).encode('utf-8'),
+        content_type='text/html',
+    )
 
 
 def create_app():
@@ -20,9 +28,17 @@ def create_app():
 
 def init_app(repo):
     app = aiohttp.web.Application()
-    app_path = pathlib.Path() / 'app'
-    app.router.add_static('/static', (app_path / 'static').resolve())
-    app.router.add_route('*', '/', functools.partial(index, app_path=app_path))
+    app_path = pathlib.Path() / 'client' / 'build'
+
+    app.router.add_static('/css', (app_path / 'css').resolve())
+    app.router.add_static('/img', (app_path / 'img').resolve())
+    app.router.add_static('/js', (app_path / 'js').resolve())
+
+    index_handler = functools.partial(index, app_path=app_path)
+    app.router.add_route('*', '/', index_handler)
+    app.router.add_route('*', '/callback', index_handler)
+    app.router.add_route('*', '/profile', index_handler)
+
     GraphQLView.attach(
         app,
         schema=Schema(
