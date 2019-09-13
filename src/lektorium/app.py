@@ -5,6 +5,7 @@ from aiohttp_graphql import GraphQLView
 import bs4
 from graphene import Schema
 from .schema import Query, MutationQuery
+from . import install as client
 
 
 async def index(request, app_path):
@@ -28,7 +29,7 @@ def create_app():
 
 def init_app(repo):
     app = aiohttp.web.Application()
-    app_path = pathlib.Path() / 'client' / 'build'
+    app_path = client.install()
 
     app.router.add_static('/css', (app_path / 'css').resolve())
     app.router.add_static('/img', (app_path / 'img').resolve())
