@@ -254,6 +254,21 @@ def test_unpark_unknown_session(client):
     }, 'Server should fail to unpark unknown session'
 
 
+def test_unpark_unkparked_session(client):
+    result = client.execute(r'''mutation {
+        unparkSession(sessionId: "widgets-1") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'unparkSession': {
+                'ok': False,
+            },
+        }
+    }, 'Server should fail to unpark session that was not parked'
+
+
 def test_stage(client):
     result = client.execute(r'''mutation {
         stage(sessionId: "widgets-1") {
