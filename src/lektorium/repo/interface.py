@@ -5,6 +5,10 @@ class DuplicateEditSession(Exception):
     pass
 
 
+class SessionNotFound(Exception):
+    pass
+
+
 class Repo(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod

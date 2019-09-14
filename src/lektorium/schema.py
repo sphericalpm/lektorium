@@ -11,6 +11,7 @@ from graphene import (
 )
 from lektorium.repo import (
     DuplicateEditSession,
+    SessionNotFound,
 )
 
 
@@ -82,14 +83,10 @@ class DestroySession(MutationBase):
 
     @classmethod
     def mutate(cls, root, info, session_id):
-        sessions = cls.sessions(info.context['repo'])
-        if session_id not in sessions:
+        try:
+            info.context['repo'].destroy_session(session_id)
+        except SessionNotFound:
             return MutationResult(ok=False)
-        site = sessions[session_id][1]
-        site['sessions'] = [
-            x for x in site['sessions']
-            if x['session_id'] != session_id
-        ]
         return MutationResult(ok=True)
 
 
