@@ -1,11 +1,5 @@
-import abc
-import io
-import pathlib
-import subprocess
-import tempfile
-import threading
 import dateutil.parser
-import yaml
+from .interface import Repo as BaseRepo
 
 
 SITES = [{
@@ -55,46 +49,10 @@ SITES = [{
 }]
 
 
-class Repo:
-    @property
-    @abc.abstractmethod
-    def sites(self):
-        pass
-
-
-class ListRepo(Repo):
+class Repo(BaseRepo):
     def __init__(self, data):
         self.data = data
 
     @property
     def sites(self):
         yield from self.data
-
-
-class GitRepo(Repo):
-    LOCK = threading.Lock()
-
-    def __init__(self, repo):
-        self.repo = repo
-        self.workdir = tempfile.TemporaryDirectory()
-
-    @property
-    def sites(self):
-        path = pathlib.Path(self.workdir.name) / 'service'
-        with self.LOCK:
-            cmd = (
-                f'git -C {path} pull'
-                if path.exists() else
-                f'git clone {self.repo} {path}'
-            )
-            subprocess.call(cmd, shell=True)
-        config = yaml.load(io.BytesIO((path / 'config.yml').read_bytes()))
-        for k, v in config.items():
-            yield dict(
-                site_id=k,
-                site_name=v['name'],
-                production_url=v['production'],
-                staging_url=v['staging'],
-                custodian=v['owner'],
-                custodian_email=v['email'],
-            )
