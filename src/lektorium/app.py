@@ -1,5 +1,4 @@
 import functools
-import pathlib
 import aiohttp.web
 import aiohttp_graphql
 import bs4
@@ -12,9 +11,13 @@ async def index(request, app_path):
     index = app_path / 'index.html'
     data = index.resolve().read_bytes()
     data = bs4.BeautifulSoup(data, 'html.parser')
-    # data.find('body')['data-auth0-domain'] = 'ap-lektorium.eu.auth0.com'
-    # data.find('body')['data-auth0-id'] = 'w1oxvMsFpZCW4G224I8JR7D2et9yqTYo'
-    # data.find('body')['data-auth0-api'] = 'Lektorium'
+    auth0_options = {
+        # 'data-auth0-domain': 'ap-lektorium.eu.auth0.com',
+        # 'data-auth0-id': 'w1oxvMsFpZCW4G224I8JR7D2et9yqTYo',
+        # 'data-auth0-api': 'Lektorium',
+    }
+    for k, v in auth0_options.items():
+        data.find('body')[k] = v
     return aiohttp.web.Response(
         body=str(data).encode('utf-8'),
         content_type='text/html',

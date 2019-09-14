@@ -38,11 +38,8 @@ def deploy(path):
         env_dir = cache / 'env'
 
         subprocess.check_call(('nodeenv', '-n', '10.16.3', env_dir))
-        subprocess.check_call((
-                '. env/bin/activate '
-                '&& npm install '
-                '&& npm run build'
-            ),
+        subprocess.check_call(
+            '. env/bin/activate && npm install && npm run build',
             cwd=cache,
             shell=True
         )
