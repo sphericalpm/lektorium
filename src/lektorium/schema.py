@@ -1,7 +1,5 @@
 import abc
 import datetime
-import random
-import string
 from graphene import (
     Boolean,
     DateTime,
@@ -10,6 +8,9 @@ from graphene import (
     Mutation,
     ObjectType,
     String,
+)
+from lektorium.repo import (
+    DuplicateEditSession,
 )
 
 
@@ -152,22 +153,10 @@ class CreateSession(MutationBase):
 
     @classmethod
     def mutate(cls, root, info, site_id):
-        repo = info.context['repo']
-        site = {x['site_id']: x for x in repo.sites}[site_id]
-        if any(s.get('edit_url', None) for s in site.get('sessions', ())):
+        try:
+            info.context['repo'].create_session(site_id)
+        except DuplicateEditSession:
             return MutationResult(ok=False)
-        sessions = cls.sessions(info.context['repo'])
-        session_id = None
-        while not session_id or session_id in sessions:
-            session_id = ''.join(random.sample(string.ascii_lowercase, 8))
-        site.setdefault('sessions', []).append(dict(
-            session_id=session_id,
-            view_url=f'https://{session_id}-created.example.com',
-            edit_url=f'https://edit.{session_id}-created.example.com',
-            creation_time=datetime.datetime.now(),
-            custodian='user-from-jws@example.com',
-            custodian_email='User Jwt',
-        ))
         return MutationResult(ok=True)
 
 
