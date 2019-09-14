@@ -1,5 +1,4 @@
 import abc
-import datetime
 from graphene import (
     Boolean,
     DateTime,
@@ -11,6 +10,7 @@ from graphene import (
 )
 from lektorium.repo import (
     DuplicateEditSession,
+    SessionAlreadyParked,
     SessionNotFound,
 )
 
@@ -96,13 +96,10 @@ class ParkSession(MutationBase):
 
     @classmethod
     def mutate(cls, root, info, session_id):
-        sessions = cls.sessions(info.context['repo'])
-        if session_id not in sessions:
+        try:
+            info.context['repo'].park_session(session_id)
+        except (SessionAlreadyParked, SessionNotFound):
             return MutationResult(ok=False)
-        session = sessions[session_id][0]
-        if session.pop('edit_url', None) is None:
-            return MutationResult(ok=False)
-        session['parked_time'] = datetime.datetime.now()
         return MutationResult(ok=True)
 
 

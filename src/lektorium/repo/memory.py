@@ -1,4 +1,3 @@
-import itertools
 import random
 import string
 import datetime
@@ -7,6 +6,7 @@ from .interface import (
     DuplicateEditSession,
     Repo as BaseRepo,
     SessionNotFound,
+    SessionAlreadyParked,
 )
 
 
@@ -73,6 +73,13 @@ class Repo(BaseRepo):
             for session in site.get('sessions', ())
         }
 
+    @property
+    def parked_sessions(self):
+        yield from filter(
+            lambda s: not bool(s[0].get('edit_url', None)),
+            self.sessions.values()
+        )
+
     def create_session(self, site_id):
         site = {x['site_id']: x for x in self.sites}[site_id]
         if any(s.get('edit_url', None) for s in site.get('sessions', ())):
@@ -97,3 +104,11 @@ class Repo(BaseRepo):
             x for x in site['sessions']
             if x['session_id'] != session_id
         ]
+
+    def park_session(self, session_id):
+        if session_id not in self.sessions:
+            raise SessionNotFound()
+        session = self.sessions[session_id][0]
+        if session.pop('edit_url', None) is None:
+            raise SessionAlreadyParked()
+        session['parked_time'] = datetime.datetime.now()
