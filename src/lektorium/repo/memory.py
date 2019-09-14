@@ -1,5 +1,9 @@
+import itertools
+import random
+import string
+import datetime
 import dateutil.parser
-from .interface import Repo as BaseRepo
+from .interface import Repo as BaseRepo, DuplicateEditSession
 
 
 SITES = [{
@@ -56,3 +60,28 @@ class Repo(BaseRepo):
     @property
     def sites(self):
         yield from self.data
+
+    @property
+    def sessions(self):
+        return {
+            session['session_id']: session
+            for session in itertools.chain.from_iterable(
+                site.get('sessions', ()) for site in self.data
+            )
+        }
+
+    def create_session(self, site_id):
+        site = {x['site_id']: x for x in self.sites}[site_id]
+        if any(s.get('edit_url', None) for s in site.get('sessions', ())):
+            raise DuplicateEditSession()
+        session_id = None
+        while not session_id or session_id in self.sessions:
+            session_id = ''.join(random.sample(string.ascii_lowercase, 8))
+        site.setdefault('sessions', []).append(dict(
+            session_id=session_id,
+            view_url=f'https://{session_id}-created.example.com',
+            edit_url=f'https://edit.{session_id}-created.example.com',
+            creation_time=datetime.datetime.now(),
+            custodian='user-from-jws@example.com',
+            custodian_email='User Jwt',
+        ))
