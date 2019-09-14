@@ -1,10 +1,10 @@
 import functools
 import pathlib
 import aiohttp.web
-from aiohttp_graphql import GraphQLView
+import aiohttp_graphql
 import bs4
-from graphene import Schema
-from .schema import Query, MutationQuery
+import graphene
+from . import schema
 from . import install as client
 
 
@@ -41,11 +41,11 @@ def init_app(repo):
     app.router.add_route('*', '/callback', index_handler)
     app.router.add_route('*', '/profile', index_handler)
 
-    GraphQLView.attach(
+    aiohttp_graphql.GraphQLView.attach(
         app,
-        schema=Schema(
-            query=Query,
-            mutation=MutationQuery,
+        schema=graphene.Schema(
+            query=schema.Query,
+            mutation=schema.MutationQuery,
         ),
         graphiql=True,
         context=dict(repo=repo),
