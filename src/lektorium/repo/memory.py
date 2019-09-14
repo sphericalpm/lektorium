@@ -3,7 +3,11 @@ import random
 import string
 import datetime
 import dateutil.parser
-from .interface import Repo as BaseRepo, DuplicateEditSession
+from .interface import (
+    DuplicateEditSession,
+    Repo as BaseRepo,
+    SessionNotFound,
+)
 
 
 SITES = [{
@@ -64,10 +68,9 @@ class Repo(BaseRepo):
     @property
     def sessions(self):
         return {
-            session['session_id']: session
-            for session in itertools.chain.from_iterable(
-                site.get('sessions', ()) for site in self.data
-            )
+            session['session_id']: (session, site)
+            for site in self.data
+            for session in site.get('sessions', ())
         }
 
     def create_session(self, site_id):
@@ -85,3 +88,12 @@ class Repo(BaseRepo):
             custodian='user-from-jws@example.com',
             custodian_email='User Jwt',
         ))
+
+    def destroy_session(self, session_id):
+        if session_id not in self.sessions:
+            raise SessionNotFound()
+        site = self.sessions[session_id][1]
+        site['sessions'] = [
+            x for x in site['sessions']
+            if x['session_id'] != session_id
+        ]
