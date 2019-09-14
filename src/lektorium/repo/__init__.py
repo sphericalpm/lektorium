@@ -1,3 +1,8 @@
-from .memory import Repo as ListRepo, SITES  # noqa: F401
-from .git import Repo as GitRepo  # noqa: F401
-from .interface import DuplicateEditSession, SessionNotFound  # noqa: F401
+# flake8: noqa
+from .memory import Repo as ListRepo, SITES
+from .git import Repo as GitRepo
+from .interface import (
+    DuplicateEditSession,
+    SessionAlreadyParked,
+    SessionNotFound,
+)
