@@ -24,13 +24,13 @@
               <td><a :href="site.productionUrl">{{ site.productionUrl }}</a></td>
               <td> <a :href="site.stagingUrl">{{ site.stagingUrl }}</a></td>
               <td>{{ site.custodian }}</td>
-              <td>  
-                  <b-button 
-                  variant="success" 
-                  @click="createSession(site)" 
+              <td>
+                  <b-button
+                  variant="success"
+                  @click="createSession(site)"
                   :disabled="checkActiveSession(site)">
                       Create Editor
-                  </b-button>                    
+                  </b-button>
               </td>
             </tr>
           </tbody>
@@ -132,14 +132,16 @@ export default {
     alert: Alert,
   },
   methods: {
+    async getHeaders() {
+      if (this.$auth ===undefined) return {};
+      const tokens = this.$auth.getTokens();
+      return {Authorization: `Bearer ${tokens.join('.')}`};
+    },
     async getPanelData() {
-      const tokens = await this.$auth.getTokens();
       var result = await axios({
         method: "POST",
         url: "/graphql",
-        headers: {
-          Authorization: `Bearer ${tokens.join('.')}`
-        },
+        headers: await this.getHeaders(),
         data: {
           query: `
               {
@@ -179,13 +181,10 @@ export default {
     },
     async destroySession(session) {
       let id = session.sessionId;
-      const tokens = await this.$auth.getTokens();
       var result = await axios({
         method: "POST",
         url: "/graphql",
-        headers: {
-          Authorization: `Bearer ${tokens.join('.')}`
-        },
+        headers: await this.getHeaders(),
         data: {
           query: `
                 mutation {
@@ -205,13 +204,10 @@ export default {
     },
     async parkSession(session) {
       let id = session.sessionId;
-      const tokens = await this.$auth.getTokens();
       var result = await axios({
         method: "POST",
         url: "/graphql",
-        headers: {
-          Authorization: `Bearer ${tokens.join('.')}`
-        },
+        headers: await this.getHeaders(),
         data: {
           query: `
                 mutation {
@@ -231,13 +227,10 @@ export default {
     },
     async unparkSession(session) {
       let id = session.sessionId;
-      const tokens = await this.$auth.getTokens();
       var result = await axios({
         method: "POST",
         url: "/graphql",
-        headers: {
-          Authorization: `Bearer ${tokens.join('.')}`
-        },
+        headers: await this.getHeaders(),
         data: {
           query: `
                 mutation {
@@ -257,13 +250,10 @@ export default {
     },
     async stage(session) {
       let id = session.sessionId;
-      const tokens = await this.$auth.getTokens();
       var result = await axios({
         method: "POST",
         url: "/graphql",
-        headers: {
-          Authorization: `Bearer ${tokens.join('.')}`
-        },
+        headers: await this.getHeaders(),
         data: {
           query: `
                 mutation {
@@ -283,13 +273,10 @@ export default {
     },
     async requestRelease(session) {
       let id = session.sessionId;
-      const tokens = await this.$auth.getTokens();
       var result = await axios({
         method: "POST",
         url: "/graphql",
-        headers: {
-          Authorization: `Bearer ${tokens.join('.')}`
-        },
+        headers: await this.getHeaders(),
         data: {
           query: `
                 mutation {
@@ -309,13 +296,10 @@ export default {
     },
     async createSession(site) {
       let id = site.siteId;
-      const tokens = await this.$auth.getTokens();
       var result = await axios({
         method: "POST",
         url: "/graphql",
-        headers: {
-          Authorization: `Bearer ${tokens.join('.')}`
-        },
+        headers: await this.getHeaders(),
         data: {
           query: `
                 mutation {
