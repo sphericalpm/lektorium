@@ -6,7 +6,7 @@ from .interface import (
     DuplicateEditSession,
     Repo as BaseRepo,
     SessionNotFound,
-    SessionAlreadyParked,
+    InvalidSessionState,
 )
 
 
@@ -110,5 +110,17 @@ class Repo(BaseRepo):
             raise SessionNotFound()
         session = self.sessions[session_id][0]
         if session.pop('edit_url', None) is None:
-            raise SessionAlreadyParked()
+            raise InvalidSessionState()
         session['parked_time'] = datetime.datetime.now()
+
+    def unpark_session(self, session_id):
+        if session_id not in self.sessions:
+            raise SessionNotFound()
+        session, site = self.sessions[session_id]
+        if session.get('edit_url', None) is not None:
+            raise InvalidSessionState()
+        if any(s.get('edit_url', None) for s in site.get('sessions', ())):
+            raise DuplicateEditSession()
+        edit_url = f'https://{session_id}-unparked.example.com'
+        session['edit_url'] = edit_url
+        session.pop('parked_time', None)

@@ -269,6 +269,7 @@ def test_unpark_unkparked_session(client):
     }, 'Server should fail to unpark session that was not parked'
 
 
+@pytest.mark.xfail
 def test_stage(client):
     result = client.execute(r'''mutation {
         stage(sessionId: "widgets-1") {
@@ -284,6 +285,7 @@ def test_stage(client):
     }
 
 
+@pytest.mark.xfail
 def test_request_release(client):
     result = client.execute(r'''mutation {
         requestRelease(sessionId: "widgets-1") {
