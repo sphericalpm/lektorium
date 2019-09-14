@@ -34,7 +34,7 @@ setuptools.setup(
         ]
     },
     install_requires=[
-        'aiohttp',
+        'aiohttp<3.6',
         'aiohttp-graphql',
         'beautifulsoup4',
         'graphene',
