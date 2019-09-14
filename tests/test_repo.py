@@ -45,5 +45,27 @@ def test_park_unknown_session(repo):
 
 def test_park_parked_session(repo):
     repo.park_session('widgets-1')
-    with pytest.raises(lektorium.repo.SessionAlreadyParked):
+    with pytest.raises(lektorium.repo.InvalidSessionState):
         repo.park_session('widgets-1')
+
+
+def test_unpark_session(repo):
+    assert len(list(repo.parked_sessions)) == 2
+    repo.unpark_session('pantssss')
+    assert len(list(repo.parked_sessions)) == 1
+
+
+def test_unpark_session_another_exist(repo):
+    repo.unpark_session('pantssss')
+    with pytest.raises(lektorium.repo.DuplicateEditSession):
+        repo.unpark_session('pantss1')
+
+
+def test_unpark_unknown_session(repo):
+    with pytest.raises(lektorium.repo.SessionNotFound):
+        repo.unpark_session('test12345')
+
+
+def test_unpark_unkparked_session(repo):
+    with pytest.raises(lektorium.repo.InvalidSessionState):
+        repo.unpark_session('widgets-1')

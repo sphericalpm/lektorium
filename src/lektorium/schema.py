@@ -8,11 +8,7 @@ from graphene import (
     ObjectType,
     String,
 )
-from lektorium.repo import (
-    DuplicateEditSession,
-    SessionAlreadyParked,
-    SessionNotFound,
-)
+import lektorium.repo
 
 
 class Site(ObjectType):
@@ -65,13 +61,6 @@ class MutationResult(ObjectType):
 class MutationBase(Mutation):
     Output = MutationResult
 
-    @staticmethod
-    def sessions(repo):
-        return {
-            x['session_id']: (x, s)
-            for s in repo.sites for x in s.get('sessions', ())
-        }
-
     @abc.abstractmethod
     def mutate(root, info, session_id):
         pass
@@ -85,7 +74,7 @@ class DestroySession(MutationBase):
     def mutate(cls, root, info, session_id):
         try:
             info.context['repo'].destroy_session(session_id)
-        except SessionNotFound:
+        except lektorium.repo.ExceptionBase:
             return MutationResult(ok=False)
         return MutationResult(ok=True)
 
@@ -98,7 +87,7 @@ class ParkSession(MutationBase):
     def mutate(cls, root, info, session_id):
         try:
             info.context['repo'].park_session(session_id)
-        except (SessionAlreadyParked, SessionNotFound):
+        except lektorium.repo.ExceptionBase:
             return MutationResult(ok=False)
         return MutationResult(ok=True)
 
@@ -109,6 +98,10 @@ class Stage(MutationBase):
 
     @classmethod
     def mutate(cls, root, info, session_id):
+        try:
+            info.context['repo'].stage(session_id)
+        except lektorium.repo.ExceptionBase:
+            return MutationResult(ok=False)
         return MutationResult(ok=True)
 
 
@@ -118,6 +111,10 @@ class RequestRelease(MutationBase):
 
     @classmethod
     def mutate(cls, root, info, session_id):
+        try:
+            info.context['repo'].request_release(session_id)
+        except lektorium.repo.ExceptionBase:
+            return MutationResult(ok=False)
         return MutationResult(ok=True)
 
 
@@ -127,17 +124,10 @@ class UnparkSession(MutationBase):
 
     @classmethod
     def mutate(cls, root, info, session_id):
-        sessions = cls.sessions(info.context['repo'])
-        if session_id not in sessions:
+        try:
+            info.context['repo'].unpark_session(session_id)
+        except lektorium.repo.ExceptionBase:
             return MutationResult(ok=False)
-        session, site = sessions[session_id]
-        if session.get('edit_url', None) is not None:
-            return MutationResult(ok=False)
-        if any(s.get('edit_url', None) for s in site.get('sessions', ())):
-            return MutationResult(ok=False)
-        edit_url = f'https://{session_id}-unparked.example.com'
-        session['edit_url'] = edit_url
-        session.pop('parked_time', None)
         return MutationResult(ok=True)
 
 
@@ -149,7 +139,7 @@ class CreateSession(MutationBase):
     def mutate(cls, root, info, site_id):
         try:
             info.context['repo'].create_session(site_id)
-        except DuplicateEditSession:
+        except lektorium.repo.ExceptionBase:
             return MutationResult(ok=False)
         return MutationResult(ok=True)
 

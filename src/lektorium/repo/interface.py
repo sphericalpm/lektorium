@@ -1,15 +1,19 @@
 import abc
 
 
-class DuplicateEditSession(Exception):
+class ExceptionBase(Exception):
     pass
 
 
-class SessionAlreadyParked(Exception):
+class DuplicateEditSession(ExceptionBase):
     pass
 
 
-class SessionNotFound(Exception):
+class InvalidSessionState(ExceptionBase):
+    pass
+
+
+class SessionNotFound(ExceptionBase):
     pass
 
 
