@@ -13,7 +13,8 @@ async def index(request, app_path):
     data = index.resolve().read_bytes()
     data = bs4.BeautifulSoup(data, 'html.parser')
     # data.find('body')['data-auth0-domain'] = 'ap-lektorium.eu.auth0.com'
-    # data.find('body')['data-auth0-id'] = 'q2VZfTHwd5v6ay9PIzDXNoQH6CSI3IY0'
+    # data.find('body')['data-auth0-id'] = 'w1oxvMsFpZCW4G224I8JR7D2et9yqTYo'
+    # data.find('body')['data-auth0-api'] = 'Lektorium'
     return aiohttp.web.Response(
         body=str(data).encode('utf-8'),
         content_type='text/html',

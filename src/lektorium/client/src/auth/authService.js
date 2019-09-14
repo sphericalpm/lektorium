@@ -1,12 +1,23 @@
 import auth0 from "auth0-js";
 import { EventEmitter } from "events";
 
+function parseJwt(token) {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+};
+
 function authService() {
   const webAuth = new auth0.WebAuth({
     domain: $($.find('body')).data('auth0-domain'),
     redirectUri: `${window.location.origin}/callback`,
     clientID: $($.find('body')).data('auth0-id'),
-    responseType: "id_token",
+    audience: $($.find('body')).data('auth0-api'),
+    responseType: "id_token token",
     scope: "openid profile email"
   });
 
@@ -15,6 +26,7 @@ function authService() {
 
   class AuthService extends EventEmitter {
     idToken = null;
+    accessToken = null;
     profile = null;
     tokenExpiry = null;
 
@@ -28,6 +40,7 @@ function authService() {
       localStorage.removeItem(localStorageKey);
 
       this.idToken = null;
+      this.accessToken = null;
       this.tokenExpiry = null;
       this.profile = null;
 
@@ -63,17 +76,17 @@ function authService() {
       );
     }
 
-    isIdTokenValid() {
+    isTokenValid() {
       return this.idToken && this.tokenExpiry && Date.now() < this.tokenExpiry;
     }
 
-    getIdToken() {
+    getTokens() {
       return new Promise((resolve, reject) => {
-        if (this.isIdTokenValid()) {
-          resolve(this.idToken);
+        if (this.isTokenValid()) {
+          resolve([this.idToken, this.accessToken]);
         } else if (this.isAuthenticated()) {
           this.renewTokens().then(authResult => {
-            resolve(authResult.idToken);
+            resolve([authResult.idToken, authResult.accessToken]);
           }, reject);
         } else {
           resolve();
@@ -82,8 +95,11 @@ function authService() {
     }
 
     localLogin(authResult) {
+      var profile = JSON.parse(JSON.stringify(authResult.idTokenPayload));
+      profile.access_token = parseJwt(authResult.accessToken);
       this.idToken = authResult.idToken;
-      this.profile = authResult.idTokenPayload;
+      this.accessToken = authResult.accessToken;
+      this.profile = profile;
 
       // Convert the expiry time from seconds to milliseconds,
       // required by the Date constructor
@@ -93,7 +109,7 @@ function authService() {
 
       this.emit(loginEvent, {
         loggedIn: true,
-        profile: authResult.idTokenPayload,
+        profile: profile,
         state: authResult.appState || {}
       });
     }
