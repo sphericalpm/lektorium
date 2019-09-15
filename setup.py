@@ -34,16 +34,16 @@ setuptools.setup(
         ]
     },
     install_requires=[
-        'aiohttp<3.6',
         'aiohttp-graphql',
+        'aiohttp<3.6',
+        'appdirs',
         'beautifulsoup4',
         'graphene',
-        'nodeenv',
         'graphql-core<3',
-        'pyyaml',
         'importlib-resources ; python_version < "3.7"',
+        'nodeenv',
         'python-dateutil',
-        'appdirs',
+        'pyyaml',
     ],
     extras_require={
         'dev': [
