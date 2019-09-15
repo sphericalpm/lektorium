@@ -124,4 +124,7 @@ export default {
   width: 100%;
   max-width: none;
 }
+.logo {
+  background-image: url(../assets/logo.svg);
+}
 </style>
