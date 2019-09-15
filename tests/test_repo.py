@@ -1,13 +1,28 @@
 import copy
+import pathlib
 import pytest
 import lektorium.repo
 
 
-@pytest.fixture
-def repo():
+def local_repo(root_dir):
+    return lektorium.repo.LocalRepo(root_dir)
+
+
+def memory_repo(_):
     return lektorium.repo.ListRepo(
         copy.deepcopy(lektorium.repo.SITES)
     )
+
+
+@pytest.fixture(scope='function', params=[
+    memory_repo,
+    pytest.param(
+        local_repo,
+        marks=[pytest.mark.xfail]
+    )
+])
+def repo(request, tmpdir):
+    return request.param(tmpdir)
 
 
 def test_site_attributes(repo):
