@@ -38,6 +38,8 @@ setuptools.setup(
         'aiohttp<3.6',
         'appdirs',
         'beautifulsoup4',
+        'bidict',
+        'cached-property',
         'graphene',
         'graphql-core<3',
         'importlib-resources ; python_version < "3.7"',
