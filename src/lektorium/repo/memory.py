@@ -10,6 +10,12 @@ from .interface import (
 )
 
 
+class Session(dict):
+    @property
+    def edit_url(self):
+        return self.get('edit_url', None)
+
+
 SITES = [{
     'site_id': 'bow',
     'site_name': 'Buy Our Widgets',
@@ -17,14 +23,14 @@ SITES = [{
     'staging_url': 'https://bow-test.acme.com',
     'custodian': 'Max Jekov',
     'custodian_email': 'mj@acme.com',
-    'sessions': [{
+    'sessions': [Session(x) for x in [{
         'session_id': 'widgets-1',
         'edit_url': 'https://cmsdciks.cms.acme.com',
         'view_url': 'https://cmsdciks.build.acme.com',
         'creation_time': dateutil.parser.parse('2019-07-19 10:18 UTC'),
         'custodian': 'Max Jekov',
         'custodian_email': 'mj@acme.com',
-    }],
+    }]],
 }, {
     'site_id': 'uci',
     'site_name': 'Underpants Collectors International',
@@ -32,7 +38,7 @@ SITES = [{
     'staging_url': 'https://uci-staging.acme.com',
     'custodian': 'Mikhail Vartanyan',
     'custodian_email': 'mv@acme.com',
-    'sessions': [{
+    'sessions': [Session(x) for x in [{
         'session_id': 'pantssss',
         'view_url': 'https://smthng.uci.com',
         'creation_time': dateutil.parser.parse('2019-07-18 11:33 UTC'),
@@ -46,7 +52,7 @@ SITES = [{
         'custodian': 'Muen',
         'custodian_email': 'muen@flicker.tr',
         'parked_time': dateutil.parser.parse('2019-07-18 11:54 UTC'),
-    }],
+    }]],
 }, {
     'site_id': 'ldi',
     'site_name': 'Liver Donors Inc.',

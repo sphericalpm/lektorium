@@ -45,13 +45,7 @@ class Session(ObjectType):
         return parent.site.site_name
 
     def resolve_parked(parent, info):
-        return not bool(parent.get('edit_url', None))
-
-    def get(self, key, default):
-        # FIXME: remove this hack
-        if key == 'edit_url':
-            return self.edit_url
-        raise KeyError(key)
+        return not bool(parent.edit_url)
 
 
 class Query(ObjectType):
