@@ -32,3 +32,19 @@ class Repo(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def parked_sessions(self):
         pass
+
+    @abc.abstractmethod
+    def create_session(self, site_id):
+        pass
+
+    @abc.abstractmethod
+    def destroy_session(self, session_id):
+        pass
+
+    @abc.abstractmethod
+    def park_session(self, session_id):
+        pass
+
+    @abc.abstractmethod
+    def unpark_session(self, session_id):
+        pass
