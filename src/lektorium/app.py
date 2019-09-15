@@ -1,4 +1,6 @@
 import functools
+import logging
+import sys
 import aiohttp.web
 import aiohttp_graphql
 import bs4
@@ -31,7 +33,29 @@ def create_app():
     return init_app(repo)
 
 
+async def log_application_ready(app):
+    logging.getLogger('lektorium').info('Lektorium started')
+
+
+def init_logging(stream=sys.stderr, level=logging.DEBUG):
+    stderr_handler = logging.StreamHandler(stream)
+    stderr_handler.setFormatter(
+        logging.Formatter(
+            fmt='%(asctime)s.%(msecs)03d %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+    )
+    logging.basicConfig(
+        level=level,
+        handlers=[
+            stderr_handler
+        ],
+    )
+
+
 def init_app(repo):
+    init_logging()
+
     app = aiohttp.web.Application()
     app_path = client.install()
 
@@ -53,4 +77,7 @@ def init_app(repo):
         graphiql=True,
         context=dict(repo=repo),
     )
+
+    app.on_startup.append(log_application_ready)
+
     return app
