@@ -86,7 +86,8 @@ class Repo(BaseRepo):
             self.sessions.values()
         )
 
-    def create_session(self, site_id):
+    def create_session(self, site_id, custodian=None):
+        custodian, custodian_email = custodian or self.DEFAULT_USER
         site = {x['site_id']: x for x in self.sites}[site_id]
         if any(s.get('edit_url', None) for s in site.get('sessions', ())):
             raise DuplicateEditSession()
@@ -98,8 +99,8 @@ class Repo(BaseRepo):
             view_url=f'https://{session_id}-created.example.com',
             edit_url=f'https://edit.{session_id}-created.example.com',
             creation_time=datetime.datetime.now(),
-            custodian='user-from-jws@example.com',
-            custodian_email='User Jwt',
+            custodian=custodian,
+            custodian_email=custodian_email,
         ))
 
     def destroy_session(self, session_id):

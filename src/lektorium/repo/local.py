@@ -17,7 +17,7 @@ class Repo(BaseRepo):
     def parked_sessions(self):
         raise NotImplementedError()
 
-    def create_session(self, site_id):
+    def create_session(self, site_id, custodian=None):
         raise NotImplementedError()
 
     def destroy_session(self, session_id):

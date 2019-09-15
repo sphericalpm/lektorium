@@ -18,6 +18,8 @@ class SessionNotFound(ExceptionBase):
 
 
 class Repo(metaclass=abc.ABCMeta):
+    DEFAULT_USER = ('User Interface Py', 'user@interface.py')
+
     @property
     @abc.abstractmethod
     def sites(self):
@@ -34,7 +36,7 @@ class Repo(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def create_session(self, site_id):
+    def create_session(self, site_id, custodian=None):
         pass
 
     @abc.abstractmethod
