@@ -10,6 +10,32 @@ def repo():
     )
 
 
+def test_site_attributes(repo):
+    attributes = set(a for s in repo.sites for a in s)
+    assert attributes == {
+        'custodian',
+        'custodian_email',
+        'production_url',
+        'sessions',
+        'site_id',
+        'site_name',
+        'staging_url',
+    }
+
+
+def test_session_attributes(repo):
+    attributes = set(a for s, _ in repo.sessions.values() for a in s)
+    assert attributes == {
+        'creation_time',
+        'custodian',
+        'custodian_email',
+        'edit_url',
+        'parked_time',
+        'session_id',
+        'view_url',
+    }
+
+
 def test_create_session(repo):
     assert len(list(repo.sessions)) == 3
     repo.create_session('uci')
