@@ -54,6 +54,27 @@ class Session(ObjectType):
         raise KeyError(key)
 
 
+class Query(ObjectType):
+    sites = List(Site)
+    sessions = List(Session, parked=Boolean(default_value=False))
+
+    @staticmethod
+    def sessions_list(repo):
+        for site in repo.sites:
+            site = Site(**site)
+            for session in site.sessions or ():
+                yield dict(**session, site=site)
+
+    def resolve_sites(root, info):
+        repo = info.context['repo']
+        return [Site(**x) for x in repo.sites]
+
+    def resolve_sessions(root, info, parked):
+        repo = info.context['repo']
+        sessions = (Session(**x) for x in Query.sessions_list(repo))
+        return [x for x in sessions if bool(x.edit_url) != parked]
+
+
 class MutationResult(ObjectType):
     ok = Boolean()
 
@@ -151,24 +172,3 @@ class MutationQuery(ObjectType):
     unpark_session = UnparkSession.Field()
     stage = Stage.Field()
     request_release = RequestRelease.Field()
-
-
-class Query(ObjectType):
-    sites = List(Site)
-    sessions = List(Session, parked=Boolean(default_value=False))
-
-    @staticmethod
-    def sessions_list(repo):
-        for site in repo.sites:
-            site = Site(**site)
-            for session in site.sessions or ():
-                yield dict(**session, site=site)
-
-    def resolve_sites(root, info):
-        repo = info.context['repo']
-        return [Site(**x) for x in repo.sites]
-
-    def resolve_sessions(root, info, parked):
-        repo = info.context['repo']
-        sessions = (Session(**x) for x in Query.sessions_list(repo))
-        return [x for x in sessions if bool(x.edit_url) != parked]
