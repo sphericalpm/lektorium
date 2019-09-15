@@ -360,3 +360,22 @@ def test_resolve_funcs(client):
             }]
         }
     }
+
+
+def test_broken_parked_resolve(client):
+    result = client.execute(r'''{
+        sites {
+            sessions {
+                parked
+            }
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sites': [
+                {'sessions': [{'parked': False}]},
+                {'sessions': [{'parked': True}, {'parked': True}]},
+                {'sessions': None}
+            ]
+        }
+    }
