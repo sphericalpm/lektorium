@@ -2,6 +2,7 @@ import abc
 import atexit
 import collections.abc
 import contextlib
+import datetime
 import os
 import pathlib
 import random
@@ -16,6 +17,8 @@ from cached_property import cached_property
 from .interface import (
     Repo as BaseRepo,
     DuplicateEditSession,
+    InvalidSessionState,
+    SessionNotFound,
 )
 
 
@@ -34,11 +37,11 @@ class Site(collections.abc.Mapping):
         self.data['site_id'] = site_id
         self.data['staging_url'] = None
         self.production_url = production_url
-        self.sessions = []
+        self.sessions = {}
 
     def __getitem__(self, key):
         if key == 'sessions':
-            return self.sessions
+            return list(self.sessions.values())
         return self.data[key]
 
     def __iter__(self):
@@ -48,7 +51,16 @@ class Site(collections.abc.Mapping):
         yield 'production_url'
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) + 2
+
+
+class Session(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @property
+    def parked(self):
+        return not bool(self['edit_url'])
 
 
 class Config(dict):
@@ -122,7 +134,7 @@ class FakeServer(Server):
 
     def generate_port(self):
         port = None
-        while not port and port in self.serves.values():
+        while not port or port in self.serves.values():
             port = random.randint(5000, 6000)
         return port
 
@@ -131,10 +143,13 @@ class FakeServer(Server):
             raise RuntimeError()
         port = self.generate_port()
         self.serves[path] = port
-        return f'http://localhost:{port}'
+        return self.server_url(path)
 
     def stop_server(self, path):
         self.serves.pop(path)
+
+    def server_url(self, path):
+        return f'http://localhost:{self.serves[path]}'
 
     serve_static = serve_lektor
 
@@ -177,37 +192,68 @@ class Repo(BaseRepo):
     @property
     def sessions(self):
         def iterate():
-            for site in self.session_dir.iterdir():
-                for session in site.iterdir():
-                    session_id, _, _ = session.name.partition('.')
-                    yield session_id, (None, self.config[site.name])
+            for site in self.config.values():
+                for session_id, session in site.sessions.items():
+                    yield session_id, (session, site)
         return dict(iterate())
 
     @property
     def parked_sessions(self):
-        raise NotImplementedError()
+        for site in self.config.values():
+            for session in site.sessions.values():
+                if session.parked:
+                    yield session
 
     def create_session(self, site_id, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER
-        if (self.session_dir / site_id).exists():
-            for s in (self.session_dir / site_id).iterdir():
-                if not s.name.endswith('.parked'):
-                    raise DuplicateEditSession()
+        site = self.config[site_id]
+        if any(not s.parked for s in site.sessions.values()):
+            raise DuplicateEditSession()
         session_id = self.generate_session_id()
-        shutil.copytree(
-            self.root_dir / site_id / 'master',
-            self.session_dir / site_id / session_id,
+        session_dir = self.session_dir / site_id / session_id
+        shutil.copytree(self.root_dir / site_id / 'master', session_dir)
+        session_object = Session(
+            session_id=session_id,
+            creation_time=datetime.datetime.now(),
+            view_url=None,
+            edit_url=self.server.serve_lektor(session_dir),
+            custodian=custodian,
+            custodian_email=custodian_email,
         )
+        self.config[site_id].sessions[session_id] = session_object
         return session_id
 
     def destroy_session(self, session_id):
-        raise NotImplementedError()
+        if session_id not in self.sessions:
+            raise SessionNotFound()
+        site = self.sessions[session_id][1]
+        session_dir = self.session_dir / site['site_id'] / session_id
+        self.server.stop_server(session_dir)
+        shutil.rmtree(session_dir)
+        site.sessions.pop(session_id)
 
     def park_session(self, session_id):
-        raise NotImplementedError()
+        if session_id not in self.sessions:
+            raise SessionNotFound()
+        session, site = self.sessions[session_id]
+        session_dir = self.session_dir / site['site_id'] / session_id
+        if session.parked:
+            raise InvalidSessionState()
+        self.server.stop_server(session_dir)
+        session['edit_url'] = None
+        session['parked_time'] = datetime.datetime.now()
 
     def unpark_session(self, session_id):
-        raise NotImplementedError()
+        if session_id not in self.sessions:
+            raise SessionNotFound()
+        session, site = self.sessions[session_id]
+        session_dir = (self.session_dir / site['site_id'] / session_id)
+        if not session.parked:
+            raise InvalidSessionState()
+        if any(not s.parked for s in site.sessions.values()):
+            raise DuplicateEditSession()
+        session['edit_url'] = self.server.serve_lektor(session_dir)
+        session.pop('parked_time', None)
 
     def create_site(self, site_id, name, owner=None):
         owner, email = owner or self.DEFAULT_USER
