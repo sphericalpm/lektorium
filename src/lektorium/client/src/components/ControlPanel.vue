@@ -371,8 +371,8 @@ export default {
           query: `
                 mutation {
                 createSite(
-                  siteName: "${site_name}",
                   siteId: "${site_id}",
+                  siteName: "${site_name}",
                 ) 
                 {
                   ok

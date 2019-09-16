@@ -159,6 +159,20 @@ class CreateSession(MutationBase):
         return MutationResult(ok=True)
 
 
+class CreateSite(MutationBase):
+    class Arguments:
+        site_id = String()
+        site_name = String()
+
+    @classmethod
+    def mutate(cls, root, info, site_id, site_name):
+        try:
+            info.context['repo'].create_site(site_id, site_name)
+        except lektorium.repo.ExceptionBase:
+            return MutationResult(ok=False)
+        return MutationResult(ok=True)
+
+
 class MutationQuery(ObjectType):
     destroy_session = DestroySession.Field()
     create_session = CreateSession.Field()
@@ -166,3 +180,4 @@ class MutationQuery(ObjectType):
     unpark_session = UnparkSession.Field()
     stage = Stage.Field()
     request_release = RequestRelease.Field()
+    create_site = RequestRelease.Field()
