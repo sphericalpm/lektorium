@@ -125,6 +125,16 @@
                     placeholder="Enter title">
       </b-form-input>
     </b-form-group>
+    <b-form-group id="form-id-group"
+                label="Site id:"
+                label-for="form-id-input">
+      <b-form-input id="form-id-input"
+                    type="text"
+                    v-model="addSiteForm.site_id"
+                    required
+                    placeholder="Enter site id">
+      </b-form-input>
+    </b-form-group>
     <b-button type="submit" variant="primary">OK</b-button>
     <b-button type="reset" variant="danger">Cancel</b-button>
   </b-form>
@@ -144,6 +154,7 @@ export default {
     return {
       addSiteForm: {
         title: '',
+        site_id: '',
       },
       available_sites: [],
       edit_sessions: [],
@@ -351,6 +362,7 @@ export default {
     },
     async addSite(payload) {
       const site_name = payload.title;
+      const site_id = payload.site_id;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -358,7 +370,11 @@ export default {
         data: {
           query: `
                 mutation {
-                createSite(siteName: "${site_name}") {
+                createSite(
+                  siteName: "${site_name}",
+                  siteId: "${site_id}",
+                ) 
+                {
                   ok
                 }
               }
@@ -374,12 +390,14 @@ export default {
     },
     initForm() {
       this.addSiteForm.title = '';
+      this.addSiteForm.site_id = '';
     },
     onSubmit(evt) {
       evt.preventDefault();
       this.$refs.addSiteModal.hide();
       const payload = {
         title: this.addSiteForm.title,
+        site_id: this.addSiteForm.site_id,
       };
       this.addSite(payload);
       this.initForm
