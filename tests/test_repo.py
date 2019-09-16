@@ -1,21 +1,26 @@
 import copy
 import os
-import pathlib
 import pytest
-import lektorium.repo
+from lektorium.repo import (
+    DuplicateEditSession,
+    InvalidSessionState,
+    ListRepo,
+    LocalRepo,
+    SessionNotFound,
+    SITES,
+)
+from lektorium.repo.local import FakeServer
 
 
 def local_repo(root_dir):
-    repo = lektorium.repo.LocalRepo(root_dir, lektorium.repo.local.FakeServer())
+    repo = LocalRepo(root_dir, FakeServer())
     repo.create_site('bow', 'Buy Our Widgets')
     repo.create_site('uci', 'Underpants Collectors International')
     return repo
 
 
 def memory_repo(_):
-    return lektorium.repo.ListRepo(
-        copy.deepcopy(lektorium.repo.SITES)
-    )
+    return ListRepo(copy.deepcopy(SITES))
 
 
 @pytest.fixture(scope='function', params=[
@@ -68,7 +73,7 @@ def test_create_session(repo):
 
 def test_create_session_other_exist(repo):
     assert isinstance(repo.create_session('uci'), str)
-    with pytest.raises(lektorium.repo.DuplicateEditSession):
+    with pytest.raises(DuplicateEditSession):
         repo.create_session('uci')
 
 
@@ -79,7 +84,7 @@ def test_destroy_session(repo):
 
 
 def test_destroy_unknown_session(repo):
-    with pytest.raises(lektorium.repo.SessionNotFound):
+    with pytest.raises(SessionNotFound):
         repo.destroy_session('test12345')
 
 
@@ -90,13 +95,13 @@ def test_park_session(repo):
 
 
 def test_park_unknown_session(repo):
-    with pytest.raises(lektorium.repo.SessionNotFound):
+    with pytest.raises(SessionNotFound):
         repo.park_session('test12345')
 
 
 def test_park_parked_session(repo):
     repo.park_session('widgets-1')
-    with pytest.raises(lektorium.repo.InvalidSessionState):
+    with pytest.raises(InvalidSessionState):
         repo.park_session('widgets-1')
 
 
@@ -108,15 +113,15 @@ def test_unpark_session(repo):
 
 def test_unpark_session_another_exist(repo):
     repo.unpark_session('pantssss')
-    with pytest.raises(lektorium.repo.DuplicateEditSession):
+    with pytest.raises(DuplicateEditSession):
         repo.unpark_session('pantss1')
 
 
 def test_unpark_unknown_session(repo):
-    with pytest.raises(lektorium.repo.SessionNotFound):
+    with pytest.raises(SessionNotFound):
         repo.unpark_session('test12345')
 
 
 def test_unpark_unkparked_session(repo):
-    with pytest.raises(lektorium.repo.InvalidSessionState):
+    with pytest.raises(InvalidSessionState):
         repo.unpark_session('widgets-1')
