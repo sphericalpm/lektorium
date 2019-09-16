@@ -1,5 +1,4 @@
 import copy
-import os
 import pytest
 from lektorium.repo import (
     DuplicateEditSession,
@@ -29,7 +28,7 @@ def repo(request, tmpdir):
 
 
 def test_site_attributes(repo):
-    attributes = set(a for s in repo.sites for a in s)
+    attributes = set({a: s[a] for s in repo.sites for a in s})
     assert attributes == {
         'custodian',
         'custodian_email',
