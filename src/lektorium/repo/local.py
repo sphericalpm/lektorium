@@ -1,6 +1,8 @@
+import abc
 import collections.abc
 import os
 import pathlib
+import random
 import subprocess
 
 import bidict
@@ -55,9 +57,47 @@ class Config(dict):
             config_file.write(yaml.dump(config).encode())
 
 
+class Server(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def serve_lektor(self, path):
+        pass
+
+    @abc.abstractmethod
+    def serve_static(self, path):
+        pass
+
+    @abc.abstractmethod
+    def stop_server(self, path):
+        pass
+
+
+class FakeServer(Server):
+    def __init__(self):
+        self.serves = {}
+
+    def generate_port(self):
+        port = None
+        while not port and port in self.serves.values():
+            port = random.randint(5000, 6000)
+        return port
+
+    def serve_lektor(self, path):
+        if path in self.serves:
+            raise RuntimeError()
+        port = self.generate_port()
+        self.serves[path] = port
+        return f'http://localhost:{port}'
+
+    def stop_server(self, path):
+        self.serves.pop(path)
+
+    serve_static = serve_lektor
+
+
 class Repo(BaseRepo):
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, server):
         self.root_dir = pathlib.Path(root_dir)
+        self.server = server
 
     @cached_property
     def config(self):
@@ -103,16 +143,18 @@ class Repo(BaseRepo):
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
         )
+        master_path = self.root_dir / site_id / 'master'
         proc.communicate(input=os.linesep.join((
             name,
             owner,
-            str(self.root_dir / site_id / 'master'),
+            str(master_path),
             'Y',
             'Y',
             '',
         )).encode())
         if proc.wait() != 0:
             raise RuntimeError()
+        self.server.serve_lektor(master_path)
         self.config[site_id] = Site(site_id, **dict(
             name=name,
             owner=owner,
