@@ -1,6 +1,9 @@
 <template>
   <div>
     <alert :message=message v-if="showMessage"></alert>
+    <div>
+      <b-button variant="success" v-b-modal.site-modal>Create New Site</b-button>
+    </div>
     <b-card no-body>
       <b-tabs pills card vertical>
         <b-tab active>
@@ -107,6 +110,25 @@
         </b-tab>
       </b-tabs>
     </b-card>
+  <b-modal ref="addSiteModal"
+         id="site-modal"
+         title="Create new site"
+         hide-footer>
+  <b-form @submit="onSubmit" @reset="onReset" class="w-100">
+  <b-form-group id="form-title-group"
+                label="Title:"
+                label-for="form-title-input">
+      <b-form-input id="form-title-input"
+                    type="text"
+                    v-model="addSiteForm.title"
+                    required
+                    placeholder="Enter title">
+      </b-form-input>
+    </b-form-group>
+    <b-button type="submit" variant="primary">OK</b-button>
+    <b-button type="reset" variant="danger">Cancel</b-button>
+  </b-form>
+</b-modal>
   </div>
 </template>
 
@@ -120,6 +142,9 @@ export default {
   name: 'ControlPanel',
   data() {
     return {
+      addSiteForm: {
+        title: '',
+      },
       available_sites: [],
       edit_sessions: [],
       parked_sessions: [],
@@ -134,7 +159,7 @@ export default {
   methods: {
     async getHeaders() {
       if (this.$auth ===undefined) return {};
-      const tokens = this.$auth.getTokens();
+      const tokens = await this.$auth.getTokens();
       return {Authorization: `Bearer ${tokens.join('.')}`};
     },
     async getPanelData() {
@@ -324,6 +349,46 @@ export default {
       }
       return result;
     },
+    async addSite(payload) {
+      const site_name = payload.title;
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        headers: await this.getHeaders(),
+        data: {
+          query: `
+                mutation {
+                createSite(siteName: "${site_name}") {
+                  ok
+                }
+              }
+          `
+        }
+      });
+      if(result.data.data.createSite.ok)
+      {
+        this.message = `${site_name} was created`;
+        this.showMessage = true;
+        this.getPanelData();
+      }
+    },
+    initForm() {
+      this.addSiteForm.title = '';
+    },
+    onSubmit(evt) {
+      evt.preventDefault();
+      this.$refs.addSiteModal.hide();
+      const payload = {
+        title: this.addSiteForm.title,
+      };
+      this.addSite(payload);
+      this.initForm
+    },
+    onReset(evt) {
+      evt.preventDefault();
+      this.$refs.addSiteModal.hide();
+      this.initForm();
+    },
   },
   created() {
     this.getPanelData();
@@ -332,5 +397,8 @@ export default {
 </script>
 
 <style>
-
+  .modal-backdrop
+  {
+      opacity:0.5 !important;
+  }
 </style>
