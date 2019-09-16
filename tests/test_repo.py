@@ -6,7 +6,7 @@ import lektorium.repo
 
 
 def local_repo(root_dir):
-    repo = lektorium.repo.LocalRepo(root_dir)
+    repo = lektorium.repo.LocalRepo(root_dir, lektorium.repo.local.FakeServer())
     repo.create_site('bow', 'Buy Our Widgets')
     repo.create_site('uci', 'Underpants Collectors International')
     return repo
