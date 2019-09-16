@@ -28,7 +28,9 @@ async def index(request, app_path):
 
 def create_app():
     from . import repo
+    from .repo.local import FakeServer  # noqa: F401
     # repo = repo.GitRepo('gitlab/service')  # noqa: E800
+    # repo = repo.LocalRepo('gitlab', FakeServer())  # noqa: E800
     repo = repo.ListRepo(repo.SITES)  # noqa: E800
     return init_app(repo)
 
