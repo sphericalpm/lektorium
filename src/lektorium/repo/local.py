@@ -42,6 +42,10 @@ class Site(collections.abc.Mapping):
     def __getitem__(self, key):
         if key == 'sessions':
             return list(self.sessions.values())
+        elif key == 'production_url':
+            return self.production_url
+        elif key in self.ATTR_MAPPING.inverse:
+            return self[self.ATTR_MAPPING.inverse[key]]
         return self.data[key]
 
     def __iter__(self):
@@ -61,6 +65,10 @@ class Session(dict):
     @property
     def parked(self):
         return not bool(self['edit_url'])
+
+    @property
+    def edit_url(self):
+        return self['edit_url']
 
 
 class Config(dict):
