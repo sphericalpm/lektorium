@@ -1,15 +1,22 @@
 import abc
+import atexit
 import collections.abc
+import contextlib
 import os
 import pathlib
 import random
+import shutil
 import subprocess
+import tempfile
 
 import bidict
 import yaml
 from cached_property import cached_property
 
-from .interface import Repo as BaseRepo
+from .interface import (
+    Repo as BaseRepo,
+    DuplicateEditSession,
+)
 
 
 class Site(collections.abc.Mapping):
@@ -100,6 +107,14 @@ class Repo(BaseRepo):
         self.server = server
 
     @cached_property
+    def session_dir(self):
+        result = tempfile.TemporaryDirectory()
+        closer = contextlib.ExitStack()
+        result = closer.enter_context(result)
+        atexit.register(closer.close)
+        return pathlib.Path(result)
+
+    @cached_property
     def config(self):
         config_path = (self.root_dir / 'config.yml')
         config = {}
@@ -117,14 +132,29 @@ class Repo(BaseRepo):
 
     @property
     def sessions(self):
-        raise NotImplementedError()
+        def iterate():
+            for site in self.session_dir.iterdir():
+                for session in site.iterdir():
+                    session_id, _, _ = session.name.partition('.')
+                    yield session_id, (None, self.config[site.name])
+        return dict(iterate())
 
     @property
     def parked_sessions(self):
         raise NotImplementedError()
 
     def create_session(self, site_id, custodian=None):
-        raise NotImplementedError()
+        custodian, custodian_email = custodian or self.DEFAULT_USER
+        if (self.session_dir / site_id).exists():
+            for s in (self.session_dir / site_id).iterdir():
+                if not s.name.endswith('.parked'):
+                    raise DuplicateEditSession()
+        session_id = self.generate_session_id()
+        shutil.copytree(
+            self.root_dir / site_id / 'master',
+            self.session_dir / site_id / session_id,
+        )
+        return session_id
 
     def destroy_session(self, session_id):
         raise NotImplementedError()
