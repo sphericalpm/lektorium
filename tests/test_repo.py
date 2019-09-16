@@ -53,6 +53,8 @@ def test_site_attributes(repo):
 
 
 def test_session_attributes(repo):
+    repo.park_session(repo.create_session('uci'))
+    repo.create_session('uci')
     attributes = set(a for s, _ in repo.sessions.values() for a in s)
     assert attributes == {
         'creation_time',
@@ -90,9 +92,10 @@ def test_destroy_unknown_session(repo):
 
 
 def test_park_session(repo):
-    assert len(list(repo.parked_sessions)) == 2
-    repo.park_session('widgets-1')
-    assert len(list(repo.parked_sessions)) == 3
+    session_id = repo.create_session('uci')
+    session_count_before = len(list(repo.parked_sessions))
+    repo.park_session(session_id)
+    assert len(list(repo.parked_sessions)) == session_count_before + 1
 
 
 def test_park_unknown_session(repo):
@@ -101,21 +104,26 @@ def test_park_unknown_session(repo):
 
 
 def test_park_parked_session(repo):
-    repo.park_session('widgets-1')
+    session_id = repo.create_session('uci')
+    repo.park_session(session_id)
     with pytest.raises(InvalidSessionState):
-        repo.park_session('widgets-1')
+        repo.park_session(session_id)
 
 
 def test_unpark_session(repo):
-    assert len(list(repo.parked_sessions)) == 2
-    repo.unpark_session('pantssss')
-    assert len(list(repo.parked_sessions)) == 1
+    session_id = repo.create_session('uci')
+    repo.park_session(session_id)
+    session_count_before = len(list(repo.parked_sessions))
+    repo.unpark_session(session_id)
+    assert len(list(repo.parked_sessions)) == session_count_before - 1
 
 
 def test_unpark_session_another_exist(repo):
-    repo.unpark_session('pantssss')
+    session_id = repo.create_session('uci')
+    repo.park_session(session_id)
+    repo.create_session('uci')
     with pytest.raises(DuplicateEditSession):
-        repo.unpark_session('pantss1')
+        repo.unpark_session(session_id)
 
 
 def test_unpark_unknown_session(repo):
@@ -124,5 +132,6 @@ def test_unpark_unknown_session(repo):
 
 
 def test_unpark_unkparked_session(repo):
+    session_id = repo.create_session('uci')
     with pytest.raises(InvalidSessionState):
-        repo.unpark_session('widgets-1')
+        repo.unpark_session(session_id)
