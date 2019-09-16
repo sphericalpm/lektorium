@@ -52,6 +52,7 @@ setuptools.setup(
         'dev': [
             'aiohttp-devtools',
 
+            'mypy',
             'pydocstyle',
             'pytest',
             'pytest-cov',
