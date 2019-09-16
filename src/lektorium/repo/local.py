@@ -22,17 +22,18 @@ from .interface import (
 class Site(collections.abc.Mapping):
     ATTR_MAPPING = bidict.bidict({
         'name': 'site_name',
-        'staging': 'staging_url',
-        'production': 'production_url',
         'email': 'custodian_email',
         'owner': 'custodian',
     })
 
-    def __init__(self, site_id, **props):
+    def __init__(self, site_id, production_url, **props):
         self.data = dict(props)
-        self.data['site_id'] = site_id
-        if self.data.get('sessions') is not None:
+        restricted_keys = ('sessions', 'production_url', 'staging_url')
+        if set(self.data.keys()).intersection(restricted_keys):
             raise RuntimeError()
+        self.data['site_id'] = site_id
+        self.data['staging_url'] = None
+        self.production_url = production_url
 
     def __getitem__(self, key):
         return self.data[key]
@@ -41,6 +42,7 @@ class Site(collections.abc.Mapping):
         for k in self.data:
             yield self.ATTR_MAPPING.get(k, k)
         yield 'sessions'
+        yield 'production_url'
 
     def __len__(self):
         return len(self.data)
@@ -58,7 +60,7 @@ class Config(dict):
                 k: {
                     sk: sv
                     for sk, sv in v.data.items()
-                    if sk != 'site_id'
+                    if sk not in ('site_id', 'staging_url')
                 } for k, v in self.items()
             }
             config_file.write(yaml.dump(config).encode())
@@ -121,8 +123,13 @@ class Repo(BaseRepo):
         if config_path.exists():
             with config_path.open('rb') as config_file:
                 config = {
-                    site_id: Site(site_id, **props)
-                    for site_id, props in yaml.load(config_file).items()
+                    site_id: Site(
+                        site_id,
+                        production_url=self.server.serve_static(
+                            self.root_dir / site_id / 'master',
+                        ),
+                        **props
+                    ) for site_id, props in yaml.load(config_file).items()
                 }
         return Config(config_path, config)
 
@@ -184,9 +191,9 @@ class Repo(BaseRepo):
         )).encode())
         if proc.wait() != 0:
             raise RuntimeError()
-        self.server.serve_lektor(master_path)
         self.config[site_id] = Site(site_id, **dict(
             name=name,
             owner=owner,
-            email=email
+            email=email,
+            production_url=self.server.serve_lektor(master_path)
         ))
