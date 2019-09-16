@@ -1,4 +1,6 @@
 import abc
+import random
+import string
 
 
 class ExceptionBase(Exception):
@@ -19,6 +21,12 @@ class SessionNotFound(ExceptionBase):
 
 class Repo(metaclass=abc.ABCMeta):
     DEFAULT_USER = ('User Interface Py', 'user@interface.py')
+
+    def generate_session_id(self):
+        session_id = None
+        while not session_id or session_id in self.sessions:
+            session_id = ''.join(random.sample(string.ascii_lowercase, 8))
+        return session_id
 
     @property
     @abc.abstractmethod

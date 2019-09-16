@@ -1,5 +1,3 @@
-import random
-import string
 import datetime
 import dateutil.parser
 from .interface import (
@@ -91,9 +89,7 @@ class Repo(BaseRepo):
         site = {x['site_id']: x for x in self.sites}[site_id]
         if any(s.get('edit_url', None) for s in site.get('sessions', ())):
             raise DuplicateEditSession()
-        session_id = None
-        while not session_id or session_id in self.sessions:
-            session_id = ''.join(random.sample(string.ascii_lowercase, 8))
+        session_id = self.generate_session_id()
         site.setdefault('sessions', []).append(dict(
             session_id=session_id,
             view_url=f'https://{session_id}-created.example.com',
