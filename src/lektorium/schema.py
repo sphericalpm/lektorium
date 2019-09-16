@@ -180,4 +180,4 @@ class MutationQuery(ObjectType):
     unpark_session = UnparkSession.Field()
     stage = Stage.Field()
     request_release = RequestRelease.Field()
-    create_site = RequestRelease.Field()
+    create_site = CreateSite.Field()
