@@ -9,11 +9,11 @@ from lektorium.repo import (
     SessionNotFound,
     SITES,
 )
-from lektorium.repo.local import FakeServer
+from lektorium.repo.local import FakeServer, FakeLektor
 
 
 def local_repo(root_dir):
-    repo = LocalRepo(root_dir, FakeServer())
+    repo = LocalRepo(root_dir, FakeServer(), FakeLektor)
     repo.create_site('bow', 'Buy Our Widgets')
     repo.create_site('uci', 'Underpants Collectors International')
     return repo

@@ -1,11 +1,11 @@
 import pytest
 from lektorium.repo import LocalRepo
-from lektorium.repo.local import FakeServer
+from lektorium.repo.local import FakeServer, FakeLektor
 
 
 @pytest.fixture
 def repo(tmpdir):
-    repo = LocalRepo(tmpdir, FakeServer())
+    repo = LocalRepo(tmpdir, FakeServer(), FakeLektor)
     repo.create_site('bow', 'Buy Our Widgets')
     return repo
 
@@ -20,12 +20,12 @@ def test_fake_server():
 
 
 def test_create_site(tmpdir):
-    repo = LocalRepo(tmpdir, FakeServer())
+    repo = LocalRepo(tmpdir, FakeServer(), FakeLektor)
     assert not len(list(repo.root_dir.iterdir()))
     assert not len(list(repo.sites))
     repo.create_site('bow', 'Buy Our Widgets')
     assert len(list(repo.sites)) == 1
-    repo = LocalRepo(tmpdir, FakeServer())
+    repo = LocalRepo(tmpdir, FakeServer(), FakeLektor)
     assert len(list(repo.sites)) == 1
 
 

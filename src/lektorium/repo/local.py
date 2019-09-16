@@ -80,6 +80,39 @@ class Server(metaclass=abc.ABCMeta):
         pass
 
 
+class Lektor(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def create_site(cls, name, owner, folder):
+        raise NotImplementedError()
+
+
+class LocalLektor(Lektor):
+    @classmethod
+    def create_site(cls, name, owner, folder):
+        proc = subprocess.Popen(
+            'lektor quickstart',
+            shell=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+        )
+        proc.communicate(input=os.linesep.join((
+            name,
+            owner,
+            str(folder),
+            'Y',
+            'Y',
+            '',
+        )).encode())
+        if proc.wait() != 0:
+            raise RuntimeError()
+
+
+class FakeLektor(Lektor):
+    @classmethod
+    def create_site(cls, name, owner, folder):
+        folder.mkdir(parents=True)
+
+
 class FakeServer(Server):
     def __init__(self):
         self.serves = {}
@@ -104,9 +137,10 @@ class FakeServer(Server):
 
 
 class Repo(BaseRepo):
-    def __init__(self, root_dir, server):
+    def __init__(self, root_dir, server, lektor=LocalLektor):
         self.root_dir = pathlib.Path(root_dir)
         self.server = server
+        self.lektor = lektor
 
     @cached_property
     def session_dir(self):
@@ -174,23 +208,8 @@ class Repo(BaseRepo):
 
     def create_site(self, site_id, name, owner=None):
         owner, email = owner or self.DEFAULT_USER
-        proc = subprocess.Popen(
-            'lektor quickstart',
-            shell=True,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-        )
         master_path = self.root_dir / site_id / 'master'
-        proc.communicate(input=os.linesep.join((
-            name,
-            owner,
-            str(master_path),
-            'Y',
-            'Y',
-            '',
-        )).encode())
-        if proc.wait() != 0:
-            raise RuntimeError()
+        self.lektor.create_site(name, owner, master_path)
         self.config[site_id] = Site(site_id, **dict(
             name=name,
             owner=owner,
