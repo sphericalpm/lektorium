@@ -23,18 +23,7 @@ def memory_repo(_):
     return ListRepo(copy.deepcopy(SITES))
 
 
-@pytest.fixture(scope='function', params=[
-    memory_repo,
-    pytest.param(
-        local_repo,
-        marks=[
-            pytest.mark.xfail(
-                bool(int(os.environ.get('PYTEST_NOXFAIL', True))),
-                reason='local repo is not fully implemented',
-            )
-        ]
-    )
-])
+@pytest.fixture(scope='function', params=[memory_repo, local_repo])
 def repo(request, tmpdir):
     return request.param(tmpdir)
 
