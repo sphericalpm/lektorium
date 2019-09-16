@@ -1,8 +1,8 @@
 <template>
   <div>
     <alert :message=message v-if="showMessage"></alert>
-    <div>
-      <b-button variant="success" v-b-modal.site-modal>Create New Site</b-button>
+    <div class="text-right">
+      <b-button variant="success" v-b-modal.site-modal>+ Create New Site</b-button>
     </div>
     <b-card no-body>
       <b-tabs pills card vertical>
