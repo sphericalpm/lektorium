@@ -1,4 +1,5 @@
 import copy
+import os
 import pathlib
 import pytest
 import lektorium.repo
@@ -21,7 +22,12 @@ def memory_repo(_):
     memory_repo,
     pytest.param(
         local_repo,
-        marks=[pytest.mark.xfail]
+        marks=[
+            pytest.mark.xfail(
+                bool(int(os.environ.get('PYTEST_NOXFAIL', True))),
+                reason='local repo is not fully implemented',
+            )
+        ]
     )
 ])
 def repo(request, tmpdir):
