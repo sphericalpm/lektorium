@@ -1,4 +1,12 @@
 import datetime
+from typing import (
+    Generator,
+    Iterable,
+    Mapping,
+    Optional,
+    Tuple,
+)
+
 import dateutil.parser
 from .interface import (
     DuplicateEditSession,
@@ -10,7 +18,7 @@ from .interface import (
 
 class Session(dict):
     @property
-    def edit_url(self):
+    def edit_url(self) -> Optional[str]:
         return self.get('edit_url', None)
 
 
@@ -62,15 +70,15 @@ SITES = [{
 
 
 class Repo(BaseRepo):
-    def __init__(self, data):
+    def __init__(self, data: Mapping) -> None:
         self.data = data
 
     @property
-    def sites(self):
+    def sites(self) -> Iterable:
         yield from self.data
 
     @property
-    def sessions(self):
+    def sessions(self) -> Mapping:
         return {
             session['session_id']: (session, site)
             for site in self.data
@@ -78,14 +86,18 @@ class Repo(BaseRepo):
         }
 
     @property
-    def parked_sessions(self):
+    def parked_sessions(self) -> Generator:
         yield from filter(
             lambda s: not bool(s[0].get('edit_url', None)),
             self.sessions.values()
         )
 
-    def create_session(self, site_id, custodian=None):
-        custodian, custodian_email = custodian or self.DEFAULT_USER
+    def create_session(
+        self,
+        site_id: str,
+        custodian: Optional[Tuple[str, str]] = None,
+    ) -> str:
+        custodian_name, custodian_email = custodian or self.DEFAULT_USER
         site = {x['site_id']: x for x in self.sites}[site_id]
         if any(s.get('edit_url', None) for s in site.get('sessions', ())):
             raise DuplicateEditSession()
@@ -95,12 +107,12 @@ class Repo(BaseRepo):
             view_url=f'https://{session_id}-created.example.com',
             edit_url=f'https://edit.{session_id}-created.example.com',
             creation_time=datetime.datetime.now(),
-            custodian=custodian,
+            custodian=custodian_name,
             custodian_email=custodian_email,
         ))
         return session_id
 
-    def destroy_session(self, session_id):
+    def destroy_session(self, session_id: str) -> None:
         if session_id not in self.sessions:
             raise SessionNotFound()
         site = self.sessions[session_id][1]
@@ -109,7 +121,7 @@ class Repo(BaseRepo):
             if x['session_id'] != session_id
         ]
 
-    def park_session(self, session_id):
+    def park_session(self, session_id: str) -> None:
         if session_id not in self.sessions:
             raise SessionNotFound()
         session = self.sessions[session_id][0]
@@ -117,7 +129,7 @@ class Repo(BaseRepo):
             raise InvalidSessionState()
         session['parked_time'] = datetime.datetime.now()
 
-    def unpark_session(self, session_id):
+    def unpark_session(self, session_id: str) -> None:
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]

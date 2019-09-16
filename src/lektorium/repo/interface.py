@@ -1,6 +1,13 @@
 import abc
 import random
 import string
+from typing import (
+    Generator,
+    Iterable,
+    Mapping,
+    Optional,
+    Tuple,
+)
 
 
 class ExceptionBase(Exception):
@@ -22,7 +29,7 @@ class SessionNotFound(ExceptionBase):
 class Repo(metaclass=abc.ABCMeta):
     DEFAULT_USER = ('User Interface Py', 'user@interface.py')
 
-    def generate_session_id(self):
+    def generate_session_id(self) -> str:
         session_id = None
         while not session_id or session_id in self.sessions:
             session_id = ''.join(random.sample(string.ascii_lowercase, 8))
@@ -30,31 +37,35 @@ class Repo(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def sites(self):
+    def sites(self) -> Iterable:
         pass
 
     @property
     @abc.abstractmethod
-    def sessions(self):
+    def sessions(self) -> Mapping:
         pass
 
     @property
     @abc.abstractmethod
-    def parked_sessions(self):
+    def parked_sessions(self) -> Generator:
         pass
 
     @abc.abstractmethod
-    def create_session(self, site_id, custodian=None):
+    def create_session(
+        self,
+        site_id: str,
+        custodian: Optional[Tuple[str, str]] = None,
+    ) -> str:
         pass
 
     @abc.abstractmethod
-    def destroy_session(self, session_id):
+    def destroy_session(self, session_id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def park_session(self, session_id):
+    def park_session(self, session_id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def unpark_session(self, session_id):
+    def unpark_session(self, session_id: str) -> None:
         pass
