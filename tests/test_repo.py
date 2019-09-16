@@ -132,3 +132,9 @@ def test_sessions_in_site(repo):
     assert len(site['sessions']) == session_count_before + 1
     repo.destroy_session(session_id)
     assert len(site['sessions']) == session_count_before
+
+
+def test_create_site(repo):
+    site_count_before = len(list(repo.sites))
+    repo.create_site('cri', 'Common Redundant Idioms')
+    assert len(list(repo.sites)) == site_count_before + 1

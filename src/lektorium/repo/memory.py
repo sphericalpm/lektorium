@@ -140,3 +140,14 @@ class Repo(BaseRepo):
         edit_url = f'https://{session_id}-unparked.example.com'
         session['edit_url'] = edit_url
         session.pop('parked_time', None)
+
+    def create_site(self, site_id, name, owner=None):
+        owner, email = owner or self.DEFAULT_USER
+        self.data.append(dict(
+            site_id=site_id,
+            site_name=name,
+            production_url=f'https://{site_id}.example.com',
+            staging_url=f'https://staging.{site_id}.example.com',
+            custodian=owner,
+            custodian_email=email,
+        ))
