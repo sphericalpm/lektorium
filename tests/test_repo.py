@@ -5,7 +5,10 @@ import lektorium.repo
 
 
 def local_repo(root_dir):
-    return lektorium.repo.LocalRepo(root_dir)
+    repo = lektorium.repo.LocalRepo(root_dir)
+    repo.create_site('bow', 'Buy Our Widgets')
+    repo.create_site('uci', 'Underpants Collectors International')
+    return repo
 
 
 def memory_repo(_):
