@@ -135,3 +135,12 @@ def test_unpark_unkparked_session(repo):
     session_id = repo.create_session('uci')
     with pytest.raises(InvalidSessionState):
         repo.unpark_session(session_id)
+
+
+def test_sessions_in_site(repo):
+    site = {x['site_id']: x for x in repo.sites}['uci']
+    session_count_before = len(site['sessions'])
+    session_id = repo.create_session('uci')
+    assert len(site['sessions']) == session_count_before + 1
+    repo.destroy_session(session_id)
+    assert len(site['sessions']) == session_count_before
