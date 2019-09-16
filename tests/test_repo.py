@@ -78,9 +78,10 @@ def test_create_session_other_exist(repo):
 
 
 def test_destroy_session(repo):
-    assert len(list(repo.sessions)) == 3
-    repo.destroy_session('pantss1')
-    assert len(list(repo.sessions)) == 2
+    repo.create_session('uci')
+    session_count_before = len(list(repo.sessions))
+    repo.destroy_session(list(repo.sessions)[0])
+    assert len(list(repo.sessions)) == session_count_before - 1
 
 
 def test_destroy_unknown_session(repo):
