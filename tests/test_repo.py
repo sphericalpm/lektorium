@@ -61,14 +61,15 @@ def test_session_attributes(repo):
 
 
 def test_create_session(repo):
-    assert len(list(repo.sessions)) == 3
+    sesison_before = len(list(repo.sessions))
     assert isinstance(repo.create_session('uci'), str)
-    assert len(list(repo.sessions)) == 4
+    assert len(list(repo.sessions)) == sesison_before + 1
 
 
 def test_create_session_other_exist(repo):
+    assert isinstance(repo.create_session('uci'), str)
     with pytest.raises(lektorium.repo.DuplicateEditSession):
-        repo.create_session('bow')
+        repo.create_session('uci')
 
 
 def test_destroy_session(repo):
