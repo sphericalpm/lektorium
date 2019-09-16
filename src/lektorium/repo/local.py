@@ -34,8 +34,11 @@ class Site(collections.abc.Mapping):
         self.data['site_id'] = site_id
         self.data['staging_url'] = None
         self.production_url = production_url
+        self.sessions = []
 
     def __getitem__(self, key):
+        if key == 'sessions':
+            return self.sessions
         return self.data[key]
 
     def __iter__(self):
