@@ -43,6 +43,7 @@ setuptools.setup(
         'graphene',
         'graphql-core<3',
         'importlib-resources ; python_version < "3.7"',
+        'lektor',
         'nodeenv',
         'python-dateutil',
         'pyyaml',
