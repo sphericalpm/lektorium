@@ -98,6 +98,7 @@ class Repo(BaseRepo):
             custodian=custodian,
             custodian_email=custodian_email,
         ))
+        return session_id
 
     def destroy_session(self, session_id):
         if session_id not in self.sessions:

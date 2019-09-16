@@ -56,7 +56,7 @@ def test_session_attributes(repo):
 
 def test_create_session(repo):
     assert len(list(repo.sessions)) == 3
-    repo.create_session('uci')
+    assert isinstance(repo.create_session('uci'), str)
     assert len(list(repo.sessions)) == 4
 
 
