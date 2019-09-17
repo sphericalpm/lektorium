@@ -158,7 +158,11 @@
         <b-button type="reset" variant="danger">Cancel</b-button>
       </b-form>
     </b-modal>
-    <alert :message=message v-if="showMessage"></alert>
+    <b-alert
+      :show="is_message_visible"
+      :variant="message_type"
+      dismissible @dismissed="is_message_visible=false"
+    >{{ message }}</b-alert>
   </div>
 </template>
 
@@ -178,7 +182,8 @@ export default {
       edit_sessions: [],
       parked_sessions: [],
       message: '',
-      showMessage: false,
+      is_message_visible: false,
+      message_type: 'success',
       destroy_status: '',
     };
   },
@@ -186,11 +191,13 @@ export default {
     alert: Alert,
   },
   methods: {
+
     async getHeaders() {
       if (this.$auth ===undefined) return {};
       const tokens = await this.$auth.getTokens();
       return {Authorization: `Bearer ${tokens.join('.')}`};
     },
+
     async getPanelData() {
       var result = await axios({
         method: "POST",
@@ -233,6 +240,7 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
     },
+
     async destroySession(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -249,13 +257,15 @@ export default {
           `
         }
       });
-      if(result.data.data.destroySession.ok)
-      {
-        this.message = `'${id}' removed successfully.`;
-        this.showMessage = true;
+      if(result.data.data.destroySession.ok) {
+        this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to remove '${id}'`, `warning`);
+      }
     },
+
     async parkSession(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -274,11 +284,14 @@ export default {
       });
       if(result.data.data.parkSession.ok)
       {
-        this.message = `'${id}' parked successfully.`;
-        this.showMessage = true;
+        this.showMessage(`'${id}' parked successfully.`,`successs`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to park '${id}'`, `warning`);
+      }
     },
+
     async unparkSession(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -297,11 +310,14 @@ export default {
       });
       if(result.data.data.unparkSession.ok)
       {
-        this.message = `'${id}' unparked successfully.`;
-        this.showMessage = true;
+        this.showMessage(`'${id}' unparked successfully.`,`success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to unpark '${id}'`, `warning`);
+      }
     },
+
     async stage(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -320,11 +336,14 @@ export default {
       });
       if(result.data.data.stage.ok)
       {
-        this.message = `'${id}' staged.`;
-        this.showMessage = true;
+        this.showMessage(`'${id}' staged.`, `success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to stage '${id}'`, `warning`);
+      }
     },
+
     async requestRelease(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -343,11 +362,14 @@ export default {
       });
       if(result.data.data.requestRelease.ok)
       {
-        this.message = `Release request was sent.`;
-        this.showMessage = true;
+        this.showMessage(`Release request was sent.`, `success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to send release request`, `warning`);
+      }
     },
+
     async createSession(site) {
       let id = site.siteId;
       var result = await axios({
@@ -366,11 +388,14 @@ export default {
       });
       if(result.data.data.createSession.ok)
       {
-        this.message = `Session created successfully.`;
-        this.showMessage = true;
+        this.showMessage(`Session created successfully.`, `success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to create session`, `warning`);
+      }
     },
+
     checkActiveSession(site){
       let result = false;
       if (site.sessions) {
@@ -378,6 +403,7 @@ export default {
       }
       return result;
     },
+
     async addSite(payload) {
       const site_name = payload.title;
       const site_id = payload.site_id;
@@ -399,17 +425,26 @@ export default {
           `
         }
       });
-      if(result.data.data.createSite.ok)
-      {
-        this.message = `${site_name} was created`;
-        this.showMessage = true;
+      if(result.data.data.createSite.ok) {
+        this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to create site`, `warning`);
+      }
     },
+
+    showMessage(text, type) {
+      this.message = text;
+      this.type = type;
+      this.is_message_visible = true;  
+    },
+
     initForm() {
       this.addSiteForm.title = '';
       this.addSiteForm.site_id = '';
     },
+
     onSubmit(evt) {
       evt.preventDefault();
       this.$refs.addSiteModal.hide();
@@ -420,13 +455,15 @@ export default {
       this.addSite(payload);
       this.initForm
     },
+
     onReset(evt) {
       evt.preventDefault();
       this.$refs.addSiteModal.hide();
       this.initForm();
     },
   },
-  created() {
+
+created() {
     this.getPanelData();
   },
 };
