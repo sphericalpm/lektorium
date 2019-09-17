@@ -239,6 +239,9 @@ export default {
         this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to remove '${id}'`, `warning`);
+      }
     },
 
     async parkSession(session) {
@@ -261,6 +264,9 @@ export default {
       {
         this.showMessage(`'${id}' parked successfully.`,`successs`);
         this.getPanelData();
+      }
+      else {
+        this.showMessage(`Unable to park '${id}'`, `warning`);
       }
     },
 
@@ -285,6 +291,9 @@ export default {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to unpark '${id}'`, `warning`);
+      }
     },
 
     async stage(session) {
@@ -307,6 +316,9 @@ export default {
       {
         this.showMessage(`'${id}' staged.`, `success`);
         this.getPanelData();
+      }
+      else {
+        this.showMessage(`Unable to stage '${id}'`, `warning`);
       }
     },
 
@@ -331,6 +343,9 @@ export default {
         this.showMessage(`Release request was sent.`, `success`);
         this.getPanelData();
       }
+      else {
+        this.showMessage(`Unable to send release request`, `warning`);
+      }
     },
 
     async createSession(site) {
@@ -353,6 +368,9 @@ export default {
       {
         this.showMessage(`Session created successfully.`, `success`);
         this.getPanelData();
+      }
+      else {
+        this.showMessage(`Unable to create session`, `warning`);
       }
     },
 
@@ -388,6 +406,9 @@ export default {
       if(result.data.data.createSite.ok) {
         this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
+      }
+      else {
+        this.showMessage(`Unable to create site`, `warning`);
       }
     },
 
