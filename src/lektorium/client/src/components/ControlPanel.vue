@@ -236,6 +236,7 @@ export default {
       this.available_sites = result.data.data.sites;
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
+      this.checkStarting();
     },
 
     async destroySession(session) {
@@ -398,7 +399,7 @@ export default {
       if (site.sessions) {
         result = site.sessions.find(item => item.parked == false);
       }
-      return result;
+      return Boolean(result);
     },
 
     async addSite(payload) {
@@ -458,8 +459,17 @@ export default {
       this.$refs.addSiteModal.hide();
       this.initForm();
     },
-    changeHiddenButton(event){
+    changeHiddenButton(event) {
       this.is_hidden_btn_visible = !this.is_hidden_btn_visible;
+    },
+
+    checkStarting() {
+      let production_result = this.available_sites.find(item => item.productionUrl == "Starting");
+      let admin_result = this.edit_sessions.find(item => item.editUrl == "Starting");
+      let view_result = this.edit_sessions.find(item => item.viewUrl == "Starting");
+      if(admin_result || production_result || production_result){
+        setTimeout(this.getPanelData,5000);
+      }
     },
   },
 
