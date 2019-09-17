@@ -1,8 +1,11 @@
 import abc
+import asyncio
 import atexit
 import collections.abc
 import contextlib
 import datetime
+import functools
+import logging
 import os
 import pathlib
 import random
@@ -43,7 +46,10 @@ class Site(collections.abc.Mapping):
         if key == 'sessions':
             return list(self.sessions.values())
         elif key == 'production_url':
-            return self.production_url
+            result = self.production_url
+            if callable(self.production_url):
+                self.production_url, result = result()
+            return result
         elif key in self.ATTR_MAPPING.inverse:
             return self[self.ATTR_MAPPING.inverse[key]]
         return self.data[key]
@@ -58,9 +64,27 @@ class Site(collections.abc.Mapping):
         return len(self.data) + 2
 
 
-class Session(dict):
+class Session(collections.abc.Mapping):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self.data = dict(*args, **kwargs)
+
+    def __getitem__(self, key):
+        result = self.data[key]
+        if key == 'edit_url' and callable(result):
+            self[key], result = result()
+        return result
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+    def __iter__(self):
+        yield from self.data
+
+    def __len__(self):
+        return len(self.data)
+
+    def pop(self, key, default):
+        return self.data.pop(key, default)
 
     @property
     def parked(self):
@@ -90,6 +114,16 @@ class Config(dict):
 
 
 class Server(metaclass=abc.ABCMeta):
+    START_PORT = 5000
+    END_PORT = 6000
+
+    @classmethod
+    def generate_port(cls, busy):
+        port = None
+        while not port or port in busy:
+            port = random.randint(cls.START_PORT, cls.END_PORT)
+        return port
+
     @abc.abstractmethod
     def serve_lektor(self, path):
         pass
@@ -99,8 +133,77 @@ class Server(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def stop_server(self, path):
+    def stop_server(self, path, finalizer=None):
         pass
+
+
+class AsyncLocalServer(Server):
+    COMMAND = 'lektor server -h 0.0.0.0 -p {port}'
+    LOGGER = logging.getLogger()
+
+    def __init__(self):
+        self.serves = {}
+
+    async def start(self, path, started):
+        log = logging.getLogger(f'Server({path})')
+        log.info('starting')
+        try:
+            try:
+                port = self.generate_port(())
+                proc = await asyncio.create_subprocess_shell(
+                    self.COMMAND.format(port=port),
+                    cwd=path,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                )
+                async for line in proc.stdout:
+                    if line.strip().startswith(b'Finished prune'):
+                        break
+                else:
+                    await proc.wait()
+                    raise RuntimeError('early process end')
+            except Exception as exc:
+                log.error('failed')
+                started.set_exception(exc)
+                raise
+            log.info('started')
+            started.set_result(port)
+            try:
+                async for line in proc.stdout:
+                    pass
+            finally:
+                proc.terminate()
+                await proc.wait()
+        finally:
+            log.info('finished')
+
+    async def stop(self, path, finalizer=None):
+        task, _ = self.serves[path]
+        task.cancel()
+        task.add_done_callback(lambda _: callable(finalizer) and finalizer())
+        await task
+
+    def serve_lektor(self, path):
+        def resolver(started):
+            if started.done():
+                if started.exception() is not None:
+                    try:
+                        started.result()
+                    except Exception:
+                        self.LOGGER.exception('error')
+                    return ('Failed to start',) * 2
+                return (f'http://localhost:{started.result()}',) * 2
+            return (functools.partial(resolver, started), 'Starting')
+        started = asyncio.Future()
+        task = asyncio.ensure_future(self.start(path, started))
+        self.serves[path] = [task, started]
+        return functools.partial(resolver, started)
+
+    serve_static = serve_lektor
+
+    def stop_server(self, path, finalizer=None):
+        result = asyncio.ensure_future(self.stop(path, finalizer))
+        result.add_done_callback(lambda _: result.result())
 
 
 class Lektor(metaclass=abc.ABCMeta):
@@ -140,24 +243,16 @@ class FakeServer(Server):
     def __init__(self):
         self.serves = {}
 
-    def generate_port(self):
-        port = None
-        while not port or port in self.serves.values():
-            port = random.randint(5000, 6000)
-        return port
-
     def serve_lektor(self, path):
         if path in self.serves:
             raise RuntimeError()
-        port = self.generate_port()
+        port = self.generate_port(list(self.serves.values()))
         self.serves[path] = port
-        return self.server_url(path)
-
-    def stop_server(self, path):
-        self.serves.pop(path)
-
-    def server_url(self, path):
         return f'http://localhost:{self.serves[path]}'
+
+    def stop_server(self, path, finalizer=None):
+        self.serves.pop(path)
+        callable(finalizer) and finalizer()
 
     serve_static = serve_lektor
 
@@ -236,8 +331,10 @@ class Repo(BaseRepo):
             raise SessionNotFound()
         site = self.sessions[session_id][1]
         session_dir = self.session_dir / site['site_id'] / session_id
-        self.server.stop_server(session_dir)
-        shutil.rmtree(session_dir)
+        self.server.stop_server(
+            session_dir,
+            functools.partial(shutil.rmtree, session_dir)
+        )
         site.sessions.pop(session_id)
 
     def park_session(self, session_id):
@@ -271,5 +368,5 @@ class Repo(BaseRepo):
             name=name,
             owner=owner,
             email=email,
-            production_url=self.server.serve_lektor(master_path)
+            production_url=self.server.serve_static(master_path)
         ))

@@ -52,10 +52,12 @@ setuptools.setup(
     extras_require={
         'dev': [
             'aiohttp-devtools',
+            'async-timeout',
 
             'mypy',
             'pydocstyle',
             'pytest',
+            'pytest-asyncio',
             'pytest-cov',
             'flake8',
             'flake8-import-order-spoqa',
