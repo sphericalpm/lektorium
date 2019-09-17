@@ -178,7 +178,8 @@ export default {
       edit_sessions: [],
       parked_sessions: [],
       message: '',
-      showMessage: false,
+      is_message_visible: false,
+      message_type: 'success',
       destroy_status: '',
     };
   },
@@ -249,10 +250,9 @@ export default {
           `
         }
       });
-      if(result.data.data.destroySession.ok)
-      {
+      if(result.data.data.destroySession.ok) {
         this.message = `'${id}' removed successfully.`;
-        this.showMessage = true;
+        this.is_message_visible = true;
         this.getPanelData();
       }
     },
@@ -275,7 +275,7 @@ export default {
       if(result.data.data.parkSession.ok)
       {
         this.message = `'${id}' parked successfully.`;
-        this.showMessage = true;
+        this.is_message_visible = true;
         this.getPanelData();
       }
     },
@@ -298,7 +298,7 @@ export default {
       if(result.data.data.unparkSession.ok)
       {
         this.message = `'${id}' unparked successfully.`;
-        this.showMessage = true;
+        this.is_message_visible = true;
         this.getPanelData();
       }
     },
@@ -321,7 +321,7 @@ export default {
       if(result.data.data.stage.ok)
       {
         this.message = `'${id}' staged.`;
-        this.showMessage = true;
+        this.is_message_visible = true;
         this.getPanelData();
       }
     },
@@ -344,7 +344,7 @@ export default {
       if(result.data.data.requestRelease.ok)
       {
         this.message = `Release request was sent.`;
-        this.showMessage = true;
+        this.is_message_visible = true;
         this.getPanelData();
       }
     },
@@ -367,7 +367,7 @@ export default {
       if(result.data.data.createSession.ok)
       {
         this.message = `Session created successfully.`;
-        this.showMessage = true;
+        this.is_message_visible = true;
         this.getPanelData();
       }
     },
@@ -399,13 +399,19 @@ export default {
           `
         }
       });
-      if(result.data.data.createSite.ok)
-      {
+      if(result.data.data.createSite.ok) {
         this.message = `${site_name} was created`;
-        this.showMessage = true;
+        this.is_message_visible = true;
         this.getPanelData();
       }
     },
+
+    showMessage(text, type) {
+      this.message = text;
+      this.type = type;
+      this.is_message_visible = true;  
+    },
+
     initForm() {
       this.addSiteForm.title = '';
       this.addSiteForm.site_id = '';
