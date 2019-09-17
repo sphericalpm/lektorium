@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-shortkey="['ctrl', 'alt', 'o']" @shortkey="changeHiddenButton">
     <b-card no-body>
       <b-tabs pills card vertical>
         <b-tab @click="getPanelData(); is_message_visible = false;" active>
@@ -16,7 +16,7 @@
               <th scope="col">Custodian</th>
               <th>
                 <div class="text-right">
-                  <b-button variant="success" v-b-modal.site-modal>
+                  <b-button variant="success" v-b-modal.site-modal v-if="is_hidden_btn_visible">
                     + Create New Site
                   </b-button>
                 </div>
@@ -179,6 +179,7 @@ export default {
       parked_sessions: [],
       message: '',
       is_message_visible: false,
+      is_hidden_btn_visible: false,
       message_type: 'success',
       destroy_status: '',
     };
@@ -456,6 +457,9 @@ export default {
       evt.preventDefault();
       this.$refs.addSiteModal.hide();
       this.initForm();
+    },
+    changeHiddenButton(event){
+      this.is_hidden_btn_visible = !this.is_hidden_btn_visible;
     },
   },
 
