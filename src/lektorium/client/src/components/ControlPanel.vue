@@ -2,7 +2,7 @@
   <div>
     <b-card no-body>
       <b-tabs pills card vertical>
-        <b-tab @click="getPanelData(); showMessage = false;" active>
+        <b-tab @click="getPanelData(); is_message_visible = false;" active>
           <template slot="title">
             Available Sites <b-badge pill> {{available_sites.length}} </b-badge>
           </template>
@@ -48,7 +48,7 @@
         </table>
           </b-card-text>
         </b-tab>
-        <b-tab @click="getPanelData(); showMessage = false;">
+        <b-tab @click="getPanelData(); is_message_visible = false;">
           <template slot="title">
             Edit Sessions <b-badge pill> {{edit_sessions.length}} </b-badge>
           </template>
@@ -94,7 +94,7 @@
         </table>
           </b-card-text>
         </b-tab>
-        <b-tab @click="getPanelData(); showMessage = false;" title="Parked Sessions">
+        <b-tab @click="getPanelData(); is_message_visible = false;" title="Parked Sessions">
           <template slot="title">
             Parked Sessions <b-badge pill> {{parked_sessions.length}} </b-badge>
           </template>
@@ -417,7 +417,7 @@ export default {
                 createSite(
                   siteId: "${site_id}",
                   siteName: "${site_name}",
-                ) 
+                )
                 {
                   ok
                 }
@@ -437,7 +437,7 @@ export default {
     showMessage(text, type) {
       this.message = text;
       this.type = type;
-      this.is_message_visible = true;  
+      this.is_message_visible = true;
     },
 
     initForm() {
