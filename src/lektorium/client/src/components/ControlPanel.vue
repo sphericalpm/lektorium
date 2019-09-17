@@ -1,12 +1,8 @@
 <template>
   <div>
-    <alert :message=message v-if="showMessage"></alert>
-    <div class="text-right">
-      <b-button variant="success" v-b-modal.site-modal>+ Create New Site</b-button>
-    </div>
     <b-card no-body>
       <b-tabs pills card vertical>
-        <b-tab active>
+        <b-tab @click="getPanelData(); showMessage = false;" active>
           <template slot="title">
             Available Sites <b-badge pill> {{available_sites.length}} </b-badge>
           </template>
@@ -16,16 +12,28 @@
             <tr>
               <th scope="col">Site</th>
               <th scope="col">Production</th>
-              <th scope="col">Staging</th>
+              <!-- <th scope="col">Staging</th> -->
               <th scope="col">Custodian</th>
-              <th></th>
+              <th>
+                <div class="text-right">
+                  <b-button variant="success" v-b-modal.site-modal>
+                    + Create New Site
+                  </b-button>
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(site, index) in available_sites" :key="index">
               <td>{{ site.siteName }}</td>
-              <td><a :href="site.productionUrl">{{ site.productionUrl }}</a></td>
-              <td> <a :href="site.stagingUrl">{{ site.stagingUrl }}</a></td>
+              <td>
+                <a
+                  v-if="site.productionUrl.startsWith('http')"
+                  :href="site.productionUrl"
+                >{{ site.productionUrl }}</a>
+                <span v-else>{{ site.productionUrl }}</span>
+              </td>
+              <!-- <td> <a :href="site.stagingUrl">{{ site.stagingUrl }}</a></td> -->
               <td>{{ site.custodian }}</td>
               <td>
                   <b-button
@@ -40,7 +48,7 @@
         </table>
           </b-card-text>
         </b-tab>
-        <b-tab>
+        <b-tab @click="getPanelData(); showMessage = false;">
           <template slot="title">
             Edit Sessions <b-badge pill> {{edit_sessions.length}} </b-badge>
           </template>
@@ -52,8 +60,8 @@
               <th scope="col">Site</th>
               <th scope="col">Creation Time</th>
               <th scope="col">Custodian</th>
-              <th scope="col">Production</th>
-              <th scope="col">Staging</th>
+              <!-- <th scope="col">Production</th> -->
+              <!-- <th scope="col">Staging</th> -->
               <th scope="col">Admin</th>
               <th scope="col">Build</th>
               <th></th>
@@ -65,14 +73,20 @@
               <td>{{ session.siteName }}</td>
               <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>{{ session.custodian }}</td>
-              <td>{{ session.productionUrl }}</td>
-              <td>{{ session.stagingUrl }}</td>
-              <td>{{ session.editUrl }}</td>
+              <!-- <td>{{ session.productionUrl }}</td> -->
+              <!-- <td>{{ session.stagingUrl }}</td> -->
+              <td>
+                <a
+                  v-if="session.editUrl.startsWith('http')"
+                  :href="session.editUrl"
+                >{{ session.editUrl }}</a>
+                <span v-else>{{ session.editUrl }}</span>
+              </td>
               <td>{{ session.viewUrl }}</td>
               <td>
                 <b-button variant="primary" @click="parkSession(session)">Park</b-button>
                 <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
-                <b-button variant="dark" @click="stage(session)">Stage</b-button>
+                <!-- <b-button variant="dark" @click="stage(session)">Stage</b-button> -->
                 <b-button variant="success" @click="requestRelease(session)">Request release</b-button>
               </td>
             </tr>
@@ -80,7 +94,7 @@
         </table>
           </b-card-text>
         </b-tab>
-        <b-tab title="Parked Sessions">
+        <b-tab @click="getPanelData(); showMessage = false;" title="Parked Sessions">
           <template slot="title">
             Parked Sessions <b-badge pill> {{parked_sessions.length}} </b-badge>
           </template>
@@ -110,43 +124,47 @@
         </b-tab>
       </b-tabs>
     </b-card>
-  <b-modal ref="addSiteModal"
-         id="site-modal"
-         title="Create new site"
-         hide-footer>
-  <b-form @submit="onSubmit" @reset="onReset" class="w-100">
-  <b-form-group id="form-title-group"
-                label="Title:"
-                label-for="form-title-input">
-      <b-form-input id="form-title-input"
-                    type="text"
-                    v-model="addSiteForm.title"
-                    required
-                    placeholder="Enter title">
-      </b-form-input>
-    </b-form-group>
-    <b-form-group id="form-id-group"
-                label="Site id:"
-                label-for="form-id-input">
-      <b-form-input id="form-id-input"
-                    type="text"
-                    v-model="addSiteForm.site_id"
-                    required
-                    placeholder="Enter site id">
-      </b-form-input>
-    </b-form-group>
-    <b-button type="submit" variant="primary">OK</b-button>
-    <b-button type="reset" variant="danger">Cancel</b-button>
-  </b-form>
-</b-modal>
+    <b-modal
+      ref="addSiteModal"
+      id="site-modal"
+      title="Create new site"
+      hide-footer>
+      <b-form @submit="onSubmit" @reset="onReset" class="w-100">
+        <b-form-group
+        id="form-title-group"
+          label="Title:"
+          label-for="form-title-input">
+          <b-form-input
+            id="form-title-input"
+            type="text"
+            v-model="addSiteForm.title"
+            required
+            placeholder="Enter title">
+          </b-form-input>
+        </b-form-group>
+        <b-form-group
+          id="form-id-group"
+          label="Site id:"
+          label-for="form-id-input">
+          <b-form-input
+            id="form-id-input"
+            type="text"
+            v-model="addSiteForm.site_id"
+            required
+            placeholder="Enter site id">
+          </b-form-input>
+        </b-form-group>
+        <b-button type="submit" variant="primary">OK</b-button>
+        <b-button type="reset" variant="danger">Cancel</b-button>
+      </b-form>
+    </b-modal>
+    <alert :message=message v-if="showMessage"></alert>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
 import Alert from './Alert.vue';
-import { stat } from 'fs';
-import { all } from 'q';
 
 export default {
   name: 'ControlPanel',
