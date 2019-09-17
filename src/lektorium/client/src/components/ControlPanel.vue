@@ -1,6 +1,6 @@
 <template>
   <div>
-    <alert :message=message v-if="is_message_visible" :variant=message_type></alert>
+    <b-alert :show="is_message_visible" :variant="message_type" dismissible @dismissed="is_message_visible=false"> {{ message }} </b-alert>
     <div class="text-right">
       <b-button variant="success" v-b-modal.site-modal>+ Create New Site</b-button>
     </div>
@@ -169,11 +169,13 @@ export default {
     alert: Alert,
   },
   methods: {
+
     async getHeaders() {
       if (this.$auth ===undefined) return {};
       const tokens = await this.$auth.getTokens();
       return {Authorization: `Bearer ${tokens.join('.')}`};
     },
+
     async getPanelData() {
       var result = await axios({
         method: "POST",
@@ -216,6 +218,7 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
     },
+
     async destroySession(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -233,11 +236,11 @@ export default {
         }
       });
       if(result.data.data.destroySession.ok) {
-        this.message = `'${id}' removed successfully.`;
-        this.is_message_visible = true;
+        this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
       }
     },
+
     async parkSession(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -256,11 +259,11 @@ export default {
       });
       if(result.data.data.parkSession.ok)
       {
-        this.message = `'${id}' parked successfully.`;
-        this.is_message_visible = true;
+        this.showMessage(`'${id}' parked successfully.`,`successs`);
         this.getPanelData();
       }
     },
+
     async unparkSession(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -279,11 +282,11 @@ export default {
       });
       if(result.data.data.unparkSession.ok)
       {
-        this.message = `'${id}' unparked successfully.`;
-        this.is_message_visible = true;
+        this.showMessage(`'${id}' unparked successfully.`,`success`);
         this.getPanelData();
       }
     },
+
     async stage(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -302,11 +305,11 @@ export default {
       });
       if(result.data.data.stage.ok)
       {
-        this.message = `'${id}' staged.`;
-        this.is_message_visible = true;
+        this.showMessage(`'${id}' staged.`, `success`);
         this.getPanelData();
       }
     },
+
     async requestRelease(session) {
       let id = session.sessionId;
       var result = await axios({
@@ -325,11 +328,11 @@ export default {
       });
       if(result.data.data.requestRelease.ok)
       {
-        this.message = `Release request was sent.`;
-        this.is_message_visible = true;
+        this.showMessage(`Release request was sent.`, `success`);
         this.getPanelData();
       }
     },
+
     async createSession(site) {
       let id = site.siteId;
       var result = await axios({
@@ -348,11 +351,11 @@ export default {
       });
       if(result.data.data.createSession.ok)
       {
-        this.message = `Session created successfully.`;
-        this.is_message_visible = true;
+        this.showMessage(`Session created successfully.`, `success`);
         this.getPanelData();
       }
     },
+
     checkActiveSession(site){
       let result = false;
       if (site.sessions) {
@@ -360,6 +363,7 @@ export default {
       }
       return result;
     },
+
     async addSite(payload) {
       const site_name = payload.title;
       const site_id = payload.site_id;
@@ -382,8 +386,7 @@ export default {
         }
       });
       if(result.data.data.createSite.ok) {
-        this.message = `${site_name} was created`;
-        this.is_message_visible = true;
+        this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
       }
     },
@@ -398,6 +401,7 @@ export default {
       this.addSiteForm.title = '';
       this.addSiteForm.site_id = '';
     },
+
     onSubmit(evt) {
       evt.preventDefault();
       this.$refs.addSiteModal.hide();
@@ -408,13 +412,15 @@ export default {
       this.addSite(payload);
       this.initForm
     },
+
     onReset(evt) {
       evt.preventDefault();
       this.$refs.addSiteModal.hide();
       this.initForm();
     },
   },
-  created() {
+
+created() {
     this.getPanelData();
   },
 };
