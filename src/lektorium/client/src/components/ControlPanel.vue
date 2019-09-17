@@ -1,5 +1,5 @@
 <template>
-  <div v-shortkey="['ctrl', 'alt', 'o']" @shortkey="changeHiddenButton">
+  <div v-shortkey="['f9']" @shortkey="changeHiddenButton">
     <b-card no-body>
       <b-tabs pills card vertical>
         <b-tab @click="getPanelData(); is_message_visible = false;" active>
