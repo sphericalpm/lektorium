@@ -33,7 +33,7 @@ async def test_start_stop_server():
         while callable(result):
             await asyncio.sleep(0.1)
             result = result()[0]
-        assert result == 'http://localhost:5000'
+        assert result == 'http://localhost:5000/'
         finalizer = MagicMock()
         server = server.stop_server(tmp, finalizer=finalizer)
         async with async_timeout.timeout(2):

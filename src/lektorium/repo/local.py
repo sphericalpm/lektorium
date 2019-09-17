@@ -192,7 +192,7 @@ class AsyncLocalServer(Server):
                     except Exception:
                         self.LOGGER.exception('error')
                     return ('Failed to start',) * 2
-                return (f'http://localhost:{started.result()}',) * 2
+                return (f'http://localhost:{started.result()}/',) * 2
             return (functools.partial(resolver, started), 'Starting')
         started = asyncio.Future()
         task = asyncio.ensure_future(self.start(path, started))
@@ -248,7 +248,7 @@ class FakeServer(Server):
             raise RuntimeError()
         port = self.generate_port(list(self.serves.values()))
         self.serves[path] = port
-        return f'http://localhost:{self.serves[path]}'
+        return f'http://localhost:{self.serves[path]}/'
 
     def stop_server(self, path, finalizer=None):
         self.serves.pop(path)
