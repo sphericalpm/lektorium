@@ -34,7 +34,11 @@
                 <span v-else>{{ site.productionUrl }}</span>
               </td>
               <!-- <td> <a :href="site.stagingUrl">{{ site.stagingUrl }}</a></td> -->
-              <td>{{ site.custodian }}</td>
+              <td>
+                <a :href="'mailto:' + site.custodianEmail">
+                  {{ site.custodian }}
+                </a>
+              </td>
               <td>
                   <b-button
                   variant="success"
@@ -72,7 +76,11 @@
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
               <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
-              <td>{{ session.custodian }}</td>
+              <td>
+                <a :href="'mailto:' + session.custodianEmail">
+                  {{ session.custodian }}
+                </a>
+              </td>
               <!-- <td>{{ session.productionUrl }}</td> -->
               <!-- <td>{{ session.stagingUrl }}</td> -->
               <td>
@@ -220,6 +228,7 @@ export default {
                   siteName
                   creationTime
                   custodian
+                  custodianEmail
                   productionUrl
                   stagingUrl
                   editUrl
