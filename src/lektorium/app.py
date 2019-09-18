@@ -3,6 +3,7 @@ import functools
 import logging
 import sys
 
+
 import aiohttp.web
 import aiohttp_graphql
 import bs4
