@@ -5,6 +5,7 @@ import collections.abc
 import contextlib
 import datetime
 import functools
+import inifile
 import logging
 import os
 import pathlib
@@ -34,7 +35,7 @@ class Site(collections.abc.Mapping):
 
     def __init__(self, site_id, production_url, **props):
         self.data = dict(props)
-        restricted_keys = ('sessions', 'production_url', 'staging_url')
+        restricted_keys = ('sessions', 'staging_url')
         if set(self.data.keys()).intersection(restricted_keys):
             raise RuntimeError()
         self.data['site_id'] = site_id
@@ -277,15 +278,27 @@ class Repo(BaseRepo):
         config = {}
         if config_path.exists():
             with config_path.open('rb') as config_file:
-                config = {
-                    site_id: Site(
-                        site_id,
-                        production_url=self.server.serve_static(
-                            self.root_dir / site_id / 'master',
-                        ),
-                        **props
-                    ) for site_id, props in yaml.load(config_file).items()
-                }
+                def iter_sites(config_file):
+                    for site_id, props in yaml.load(config_file).items():
+                        url = props.pop('url', None)
+                        if url is None:
+                            site_root = self.root_dir / site_id / 'master'
+                            config = list(site_root.glob('*.lektorproject'))
+                            if config:
+                                config = inifile.IniFile(config[0])
+                                name = config.get('project.name')
+                                if name is not None:
+                                    props['name'] = name
+                                project_url = config.get('project.url')
+                                if project_url is not None:
+                                    url = project_url
+                            if url is None:
+                                url = self.server.serve_static(site_root)
+                        props['production_url'] = url
+                        props['site_id'] = site_id
+                        yield props
+                sites = (Site(**props) for props in iter_sites(config_file))
+                config = {s['site_id']: s for s in sites}
         return Config(config_path, config)
 
     @property
