@@ -1,5 +1,5 @@
 <template>
-  <div v-shortkey="['f9']" @shortkey="changeHiddenButton">
+  <div v-shortkey="['shift', 'o']" @shortkey="changeHiddenButton">
     <b-card no-body>
       <b-tabs pills card vertical v-model="tab_index">
         <b-tab @click="getPanelData(); is_message_visible = false;">
@@ -122,7 +122,12 @@
               <td>{{ session.siteName }}</td>
               <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>
-                <b-button variant="primary" @click="unparkSession(session)">Unpark</b-button>
+                <b-button
+                variant="primary"
+                @click="unparkSession(session)"
+                :disabled="checkUnparkedSessions(session)">
+                  Unpark
+                </b-button>
                 <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
               </td>
             </tr>
@@ -136,6 +141,7 @@
       ref="addSiteModal"
       id="site-modal"
       title="Create new site"
+      @hidden="onReset"
       hide-footer>
       <b-form @submit="onSubmit" @reset="onReset" class="w-100">
         <b-form-group
@@ -237,11 +243,17 @@ export default {
                   stagingUrl
                   editUrl
                   viewUrl
+                  site {
+                    siteId
+                  }
                 }
                 parkedSessions: sessions(parked: true) {
                   sessionId
                   siteName
                   creationTime
+                  site {
+                    siteId
+                  }
                 }
               }
           `
@@ -274,7 +286,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to remove '${id}'`, `warning`);
+        this.showMessage(`Unable to remove '${id}'`, `danger`);
       }
     },
 
@@ -296,11 +308,11 @@ export default {
       });
       if(result.data.data.parkSession.ok)
       {
-        this.showMessage(`'${id}' parked successfully.`,`successs`);
+        this.showMessage(`'${id}' parked successfully.`,`success`);
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to park '${id}'`, `warning`);
+        this.showMessage(`Unable to park '${id}'`, `danger`);
       }
     },
 
@@ -326,7 +338,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to unpark '${id}'`, `warning`);
+        this.showMessage(`Unable to unpark '${id}'`, `danger`);
       }
     },
 
@@ -352,7 +364,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to stage '${id}'`, `warning`);
+        this.showMessage(`Unable to stage '${id}'`, `danger`);
       }
     },
 
@@ -378,7 +390,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to send release request`, `warning`);
+        this.showMessage(`Unable to send release request`, `danger`);
       }
     },
 
@@ -405,15 +417,22 @@ export default {
         this.tab_index = 1;
       }
       else {
-        this.showMessage(`Unable to create session`, `warning`);
+        this.showMessage(`Unable to create session`, `danger`);
       }
     },
 
-    checkActiveSession(site){
+    checkActiveSession(site) {
       let result = false;
       if (site.sessions) {
         result = site.sessions.find(item => item.parked == false);
       }
+      return Boolean(result);
+    },
+
+    checkUnparkedSessions(session) {
+      let result = false;
+      const siteId = session.site.siteId;
+      result = this.edit_sessions.find(item => item.site.siteId == siteId);
       return Boolean(result);
     },
 
@@ -443,13 +462,13 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to create site`, `warning`);
+        this.showMessage(`Unable to create site`, `danger`);
       }
     },
 
     showMessage(text, type) {
       this.message = text;
-      this.type = type;
+      this.message_type = type;
       this.is_message_visible = true;
     },
 
@@ -474,6 +493,7 @@ export default {
       this.$refs.addSiteModal.hide();
       this.initForm();
     },
+
     changeHiddenButton(event) {
       this.is_hidden_btn_visible = !this.is_hidden_btn_visible;
     },
