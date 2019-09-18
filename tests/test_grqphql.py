@@ -379,3 +379,33 @@ def test_broken_parked_resolve(client):
             ]
         }
     }
+
+
+def test_create_site(client):
+    result = client.execute(r'''mutation {
+        createSite(siteId:"test" siteName:"test") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'createSite': {
+                'ok': True,
+            },
+        }
+    }
+    result = client.execute(r'''{
+            sites {
+                siteId
+            }
+        }''')
+    assert deorder(result) == {
+        'data': {
+            'sites': [
+                {'siteId': 'bow'},
+                {'siteId': 'uci'},
+                {'siteId': 'ldi'},
+                {'siteId': 'test'},
+            ]
+        }
+    }
