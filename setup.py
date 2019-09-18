@@ -23,6 +23,7 @@ setuptools.setup(
     packages=[
         'lektorium',
         'lektorium.repo',
+        'lektorium.repo.local',
     ],
     package_dir={
         '': 'src',
