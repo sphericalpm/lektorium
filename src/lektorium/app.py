@@ -39,9 +39,9 @@ def create_app(repo_type=RepoType.LIST, auth=''):
             from .repo.local import FakeServer
             server = FakeServer
         else:
-            from .repo.local import AsyncLocalServer
+            from .repo.local import AsyncLocalServer, LocalLektor
             server = AsyncLocalServer()
-        repo = repo.LocalRepo('gitlab', server)
+        repo = repo.LocalRepo('gitlab', server, LocalLektor)
     else:
         repo = repo.GitRepo('gitlab/service')
     auth_attributes = ('domain', 'id', 'api')
