@@ -16,4 +16,4 @@ RUN LC_ALL=en_US.UTF-8 PATH="/env/bin:$PATH" pip install --no-cache *whl \
         /root/.npm
 ENV LC_ALL en_US.UTF-8
 ENV PATH "/env/bin:$PATH"
-CMD ["/env/bin/python", "-m", "lektorium"]
+ENTRYPOINT ["/env/bin/python", "-m", "lektorium"]
