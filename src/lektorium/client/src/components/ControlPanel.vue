@@ -274,7 +274,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to remove '${id}'`, `warning`);
+        this.showMessage(`Unable to remove '${id}'`, `danger`);
       }
     },
 
@@ -300,7 +300,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to park '${id}'`, `warning`);
+        this.showMessage(`Unable to park '${id}'`, `danger`);
       }
     },
 
@@ -326,7 +326,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to unpark '${id}'`, `warning`);
+        this.showMessage(`Unable to unpark '${id}'`, `danger`);
       }
     },
 
@@ -352,7 +352,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to stage '${id}'`, `warning`);
+        this.showMessage(`Unable to stage '${id}'`, `danger`);
       }
     },
 
@@ -378,7 +378,7 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to send release request`, `warning`);
+        this.showMessage(`Unable to send release request`, `danger`);
       }
     },
 
@@ -405,7 +405,7 @@ export default {
         this.tab_index = 1;
       }
       else {
-        this.showMessage(`Unable to create session`, `warning`);
+        this.showMessage(`Unable to create session`, `danger`);
       }
     },
 
@@ -443,13 +443,13 @@ export default {
         this.getPanelData();
       }
       else {
-        this.showMessage(`Unable to create site`, `warning`);
+        this.showMessage(`Unable to create site`, `danger`);
       }
     },
 
     showMessage(text, type) {
       this.message = text;
-      this.type = type;
+      this.message_type = type;
       this.is_message_visible = true;
     },
 
