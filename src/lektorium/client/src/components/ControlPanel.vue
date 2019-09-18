@@ -1,8 +1,8 @@
 <template>
   <div v-shortkey="['f9']" @shortkey="changeHiddenButton">
     <b-card no-body>
-      <b-tabs pills card vertical>
-        <b-tab @click="getPanelData(); is_message_visible = false;" active>
+      <b-tabs pills card vertical v-model="tab_index">
+        <b-tab @click="getPanelData(); is_message_visible = false;">
           <template slot="title">
             Available Sites <b-badge pill> {{available_sites.length}} </b-badge>
           </template>
@@ -186,6 +186,7 @@ export default {
       is_hidden_btn_visible: false,
       message_type: 'success',
       destroy_status: '',
+      tab_index: 0,
     };
   },
   components: {
@@ -392,6 +393,7 @@ export default {
       {
         this.showMessage(`Session created successfully.`, `success`);
         this.getPanelData();
+        this.tab_index = 1;
       }
       else {
         this.showMessage(`Unable to create session`, `warning`);
