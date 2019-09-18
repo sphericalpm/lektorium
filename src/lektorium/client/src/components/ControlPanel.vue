@@ -122,7 +122,12 @@
               <td>{{ session.siteName }}</td>
               <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>
-                <b-button variant="primary" @click="unparkSession(session)">Unpark</b-button>
+                <b-button
+                variant="primary"
+                @click="unparkSession(session)"
+                :disabled="checkUnparkedSessions(session)">
+                  Unpark
+                </b-button>
                 <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
               </td>
             </tr>
@@ -237,11 +242,17 @@ export default {
                   stagingUrl
                   editUrl
                   viewUrl
+                  site {
+                    siteId
+                  }
                 }
                 parkedSessions: sessions(parked: true) {
                   sessionId
                   siteName
                   creationTime
+                  site {
+                    siteId
+                  }
                 }
               }
           `
@@ -296,7 +307,7 @@ export default {
       });
       if(result.data.data.parkSession.ok)
       {
-        this.showMessage(`'${id}' parked successfully.`,`successs`);
+        this.showMessage(`'${id}' parked successfully.`,`success`);
         this.getPanelData();
       }
       else {
@@ -409,11 +420,18 @@ export default {
       }
     },
 
-    checkActiveSession(site){
+    checkActiveSession(site) {
       let result = false;
       if (site.sessions) {
         result = site.sessions.find(item => item.parked == false);
       }
+      return Boolean(result);
+    },
+
+    checkUnparkedSessions(session) {
+      let result = false;
+      const siteId = session.site.siteId;
+      result = this.edit_sessions.find(item => item.site.siteId == siteId);
       return Boolean(result);
     },
 
