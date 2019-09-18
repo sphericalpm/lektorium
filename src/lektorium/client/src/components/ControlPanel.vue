@@ -141,6 +141,7 @@
       ref="addSiteModal"
       id="site-modal"
       title="Create new site"
+      @hidden="onReset"
       hide-footer>
       <b-form @submit="onSubmit" @reset="onReset" class="w-100">
         <b-form-group
@@ -492,6 +493,7 @@ export default {
       this.$refs.addSiteModal.hide();
       this.initForm();
     },
+
     changeHiddenButton(event) {
       this.is_hidden_btn_visible = !this.is_hidden_btn_visible;
     },
