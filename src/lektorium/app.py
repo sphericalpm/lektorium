@@ -2,12 +2,14 @@ import enum
 import functools
 import logging
 import sys
+
 import aiohttp.web
 import aiohttp_graphql
 import bs4
 import graphene
-from . import schema
+
 from . import install as client
+from . import schema
 
 
 async def index(request, app_path, auth0_options=None):
@@ -101,3 +103,13 @@ def init_app(repo, auth0_options=None):
     app.on_startup.append(log_application_ready)
 
     return app
+
+
+def main(repo_type='', auth=''):
+    repo_type_names = [x.name for x in RepoType]
+    if repo_type not in repo_type_names:
+        message = 'Please provide repo type as argument. Use one of: {}'
+        print(message.format(', '.join(repo_type_names)), file=sys.stderr)
+        sys.exit(1)
+    repo_type = RepoType[repo_type]
+    aiohttp.web.run_app(create_app(repo_type, auth), port=8000)
