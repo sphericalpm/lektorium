@@ -37,11 +37,12 @@ def create_app(repo_type=RepoType.LIST, auth=''):
     if repo_type == RepoType.LIST:
         repo = repo.ListRepo(repo.SITES)
     elif repo_type in (RepoType.LOCAL_FAKE, RepoType.LOCAL_ASYNC):
+        from .repo.local import LocalLektor
         if repo_type == RepoType.LOCAL_FAKE:
             from .repo.local import FakeServer
             server = FakeServer
         else:
-            from .repo.local import AsyncLocalServer, LocalLektor
+            from .repo.local import AsyncLocalServer
             server = AsyncLocalServer()
         repo = repo.LocalRepo('gitlab', server, LocalLektor)
     else:
