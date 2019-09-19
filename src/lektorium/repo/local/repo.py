@@ -1,6 +1,4 @@
-import atexit
 import collections.abc
-import contextlib
 import datetime
 import functools
 import inifile
@@ -19,6 +17,7 @@ from ..interface import (
     SessionNotFound,
 )
 from .config import Config
+from ...utils import closer
 
 
 class Site(collections.abc.Mapping):
@@ -99,11 +98,7 @@ class Repo(BaseRepo):
 
     @cached_property
     def session_dir(self):
-        result = tempfile.TemporaryDirectory()
-        closer = contextlib.ExitStack()
-        result = closer.enter_context(result)
-        atexit.register(closer.close)
-        return pathlib.Path(result)
+        return pathlib.Path(closer(tempfile.TemporaryDirectory()))
 
     @cached_property
     def config(self):
