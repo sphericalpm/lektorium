@@ -1,6 +1,7 @@
 import pytest
 from lektorium.repo import LocalRepo
 from lektorium.repo.local import FakeServer, FakeLektor
+from lektorium.repo.local.repo import Site, Session
 
 
 @pytest.fixture
@@ -27,6 +28,40 @@ def test_create_site(tmpdir):
     assert len(list(repo.sites)) == 1
     repo = LocalRepo(tmpdir, FakeServer(), FakeLektor)
     assert len(list(repo.sites)) == 1
+
+
+def test_site_restrict_fields():
+    restrict_props = {'sessions': [], 'staging_url': 'http://stag.test'}
+    with pytest.raises(RuntimeError):
+        assert Site('test_id', 'http://site.test', **(restrict_props))
+
+
+def test_site_items():
+    props = {'additional_prop': 'test'}
+
+    def production_url():
+        return 'http://stag.test', 'http://stag.test'
+
+    site = Site('test_site', production_url, **(props))
+    assert site['production_url'] == 'http://stag.test'
+
+
+def test_site_len():
+    site = Site('test_site', 'http://stag.test')
+    assert len(site) == 4
+
+
+def test_session():
+    session = Session(session_name='test_session', edit_url='http://stag.test')
+    assert len(session) == 2
+    assert session.edit_url == 'http://stag.test'
+
+
+def test_session_callable_editurl():
+    def edit_url():
+        return ('edit_url', 'http://stag.test')
+    session = Session(session_name='test_session', edit_url=edit_url)
+    assert session.edit_url == 'http://stag.test'
 
 
 def test_session_create(repo):
