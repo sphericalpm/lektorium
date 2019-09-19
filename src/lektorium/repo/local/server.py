@@ -13,6 +13,8 @@ class Server(metaclass=abc.ABCMeta):
     @classmethod
     def generate_port(cls, busy):
         port = None
+        if not set(range(cls.START_PORT, cls.END_PORT + 1)).difference(busy):
+            raise RuntimeError('No free ports available')
         while not port or port in busy:
             port = random.randint(cls.START_PORT, cls.END_PORT)
         return port
