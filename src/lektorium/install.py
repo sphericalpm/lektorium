@@ -1,5 +1,3 @@
-import atexit
-import contextlib
 import hashlib
 try:
     import importlib.resources as importlib_resources
@@ -14,9 +12,7 @@ import lektorium
 
 def install():
     path = importlib_resources.path(lektorium.__name__, 'client')
-    closer = contextlib.ExitStack()
-    path = closer.enter_context(path)
-    atexit.register(closer.close)
+    path = lektorium.utils.closer(path)
     if (path / 'build').exists():
         return (path / 'build')
     return deploy(path)
