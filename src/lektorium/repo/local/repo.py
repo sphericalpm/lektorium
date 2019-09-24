@@ -24,6 +24,13 @@ class Repo(BaseRepo):
         self.root_dir = pathlib.Path(root_dir)
         self.server = server
         self.lektor = lektor
+        self.init_sites()
+
+    def init_sites(self):
+        for site_id, site in self.config.items():
+            if site.production_url is None:
+                site_root = self.root_dir / site_id / 'master'
+                site.production_url = self.server.serve_static(site_root)
 
     @cached_property
     def session_dir(self):
@@ -50,8 +57,6 @@ class Repo(BaseRepo):
                                 project_url = config.get('project.url')
                                 if project_url is not None:
                                     url = project_url
-                            if url is None:
-                                url = self.server.serve_static(site_root)
                         props['production_url'] = url
                         props['site_id'] = site_id
                         yield props
