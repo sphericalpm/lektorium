@@ -107,7 +107,8 @@ class Repo(BaseRepo):
         if config_path.exists():
             with config_path.open('rb') as config_file:
                 def iter_sites(config_file):
-                    for site_id, props in yaml.load(config_file).items():
+                    config_data = yaml.load(config_file, Loader=yaml.Loader)
+                    for site_id, props in config_data.items():
                         url = props.pop('url', None)
                         if url is None:
                             site_root = self.root_dir / site_id / 'master'
