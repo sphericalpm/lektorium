@@ -1,4 +1,3 @@
-import abc
 from graphene import (
     Boolean,
     DateTime,
@@ -76,108 +75,70 @@ class MutationResult(ObjectType):
 class MutationBase(Mutation):
     Output = MutationResult
 
-    @abc.abstractmethod
-    def mutate(root, info, session_id):
-        pass
+    @classmethod
+    def mutate(self, root, info, **kwargs):
+        try:
+            getattr(info.context['repo'], self.REPO_METHOD)(**kwargs)
+        except lektorium.repo.ExceptionBase:
+            return MutationResult(ok=False)
+        return MutationResult(ok=True)
 
 
 class DestroySession(MutationBase):
+    REPO_METHOD = 'destroy_session'
+
     class Arguments:
         session_id = String()
-
-    @classmethod
-    def mutate(cls, root, info, session_id):
-        try:
-            info.context['repo'].destroy_session(session_id)
-        except lektorium.repo.ExceptionBase:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
 
 
 class ParkSession(MutationBase):
+    REPO_METHOD = 'park_session'
+
     class Arguments:
         session_id = String()
-
-    @classmethod
-    def mutate(cls, root, info, session_id):
-        try:
-            info.context['repo'].park_session(session_id)
-        except lektorium.repo.ExceptionBase:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
 
 
 class Stage(MutationBase):
+    REPO_METHOD = 'stage'
+
     class Arguments:
         session_id = String()
-
-    @classmethod
-    def mutate(cls, root, info, session_id):
-        try:
-            info.context['repo'].stage(session_id)
-        except lektorium.repo.ExceptionBase:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
 
 
 class RequestRelease(MutationBase):
+    REPO_METHOD = 'request_release'
+
     class Arguments:
         session_id = String()
-
-    @classmethod
-    def mutate(cls, root, info, session_id):
-        try:
-            info.context['repo'].request_release(session_id)
-        except lektorium.repo.ExceptionBase:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
 
 
 class UnparkSession(MutationBase):
+    REPO_METHOD = 'unpark_session'
+
     class Arguments:
         session_id = String()
 
-    @classmethod
-    def mutate(cls, root, info, session_id):
-        try:
-            info.context['repo'].unpark_session(session_id)
-        except lektorium.repo.ExceptionBase:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
-
 
 class CreateSession(MutationBase):
+    REPO_METHOD = 'create_session'
+
     class Arguments:
         site_id = String()
-
-    @classmethod
-    def mutate(cls, root, info, site_id):
-        try:
-            info.context['repo'].create_session(site_id)
-        except lektorium.repo.ExceptionBase:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
 
 
 class CreateSite(MutationBase):
+    REPO_METHOD = 'create_site'
+
     class Arguments:
         site_id = String()
-        site_name = String()
-
-    @classmethod
-    def mutate(cls, root, info, site_id, site_name):
-        try:
-            info.context['repo'].create_site(site_id, site_name)
-        except lektorium.repo.ExceptionBase:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
+        name = String(name='siteName')
 
 
-class MutationQuery(ObjectType):
-    destroy_session = DestroySession.Field()
-    create_session = CreateSession.Field()
-    park_session = ParkSession.Field()
-    unpark_session = UnparkSession.Field()
-    stage = Stage.Field()
-    request_release = RequestRelease.Field()
-    create_site = CreateSite.Field()
+MutationQuery = type(
+    'MutationQuery', (
+        ObjectType,
+    ), {
+        cls.REPO_METHOD: getattr(cls, 'Field')()
+        for cls in MutationBase.__subclasses__()
+    },
+)
