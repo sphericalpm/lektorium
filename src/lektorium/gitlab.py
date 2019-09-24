@@ -1,12 +1,13 @@
 import os
 import requests
 
+from typing import Optional
+
 
 class GitLab:
     def __init__(self, gitlab_url):
         self.gitlab_url = gitlab_url
-        self.auth_token = os.environ['GITLAB_TOKEN']
-        self.headers = {'Private-Token': self.auth_token}
+        self.headers = {'Private-Token': os.environ['GITLAB_TOKEN']}
 
     def create_merge_request(
         self,
@@ -15,16 +16,16 @@ class GitLab:
         target_branch: str,
         title: str,
         assignee: str
-    ) -> bool:
+    ) -> Optional[bool]:
         project_path = self.get_project_path(project_url)
-        request_url = f'{self.gitlab_url}/api/v4/projects/{project_path}/merge_requests'
+        url = f'{self.gitlab_url}/api/v4/projects/{project_path}/merge_requests'
         assignee_id = self.get_user_id(assignee)
-        request_data = {'title': title,
-                        'source_branch': source_branch,
-                        'target_branch': target_branch,
-                        'assignee_id': assignee_id}
-        response = requests.post(request_url, headers=self.headers, data=request_data)
-        if response.status_code == 201:
+        data = {'title': title,
+                'source_branch': source_branch,
+                'target_branch': target_branch,
+                'assignee_id': assignee_id}
+        result = requests.post(url, headers=self.headers, data=data)
+        if result.status_code == 201:
             return True
 
     def get_project_path(self, project_url: str) -> str:
@@ -33,7 +34,7 @@ class GitLab:
         return project_path.replace('/', '%2f')
 
     def get_user_id(self, username: str) -> str:
-        request_url = f'{self.gitlab_url}/api/v4/users?username={username}'
-        response = requests.get(request_url, headers=self.headers).json()
-        if response:
-            return response[0]['id']
+        url = f'{self.gitlab_url}/api/v4/users?username={username}'
+        result = requests.get(url, headers=self.headers).json()
+        if result:
+            return result[0]['id']
