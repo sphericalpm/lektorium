@@ -1,7 +1,7 @@
 import pytest
 import unittest.mock
 from lektorium.repo import LocalRepo
-from lektorium.repo.local import FakeServer, FakeLektor
+from lektorium.repo.local import FakeServer, FakeLektor, LocalLektor
 from lektorium.repo.local.repo import Site, Session
 
 
@@ -71,3 +71,9 @@ def test_session_callable_editurl():
 def test_session_create(repo):
     repo.create_session(next(repo.sites)['site_id'])
     assert len(list(repo.sessions)) == 1
+
+
+def test_lektor_config_loading(tmpdir):
+    repo = LocalRepo(tmpdir, FakeServer(), LocalLektor)
+    repo.create_site('a', 'b')
+    LocalRepo(tmpdir, FakeServer(), LocalLektor)
