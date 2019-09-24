@@ -3,7 +3,7 @@ import tempfile
 import async_timeout
 import pytest
 from unittest.mock import MagicMock
-from lektorium.repo.local import AsyncLocalServer
+from lektorium.repo.local import AsyncLocalServer, LocalLektor
 
 
 class AsyncTestServer(AsyncLocalServer):
@@ -27,7 +27,7 @@ async def test_start_server_failed():
 @pytest.mark.asyncio
 async def test_start_stop_server():
     with tempfile.TemporaryDirectory() as tmp:
-        cmd = 'echo "Finished prune"; sleep 10'
+        cmd = 'echo "Finished prune"; sleep 1'
         server = AsyncTestServer(cmd)
         result = server.serve_lektor(tmp)
         while callable(result):
@@ -39,3 +39,18 @@ async def test_start_stop_server():
         async with async_timeout.timeout(2):
             while not finalizer.call_count:
                 await asyncio.sleep(0.1)
+
+
+@pytest.mark.asyncio
+async def test_start_stop_lektor(tmpdir):
+    LocalLektor.create_site('a', 'b', tmpdir / 'c')
+    server = AsyncLocalServer()
+    result = server.serve_lektor(tmpdir / 'c')
+    while callable(result):
+        await asyncio.sleep(0.1)
+        result = result()[0]
+    finalizer = MagicMock()
+    server.stop_server(tmpdir / 'c', finalizer=finalizer)
+    async with async_timeout.timeout(2):
+        while not finalizer.call_count:
+            await asyncio.sleep(0.1)
