@@ -16,7 +16,16 @@ class GitLab:
         title,
         assignee
     ):
-        pass
+        project_path = self.get_project_path(project_url)
+        request_url = f'{self.gitlab_url}/api/v4/projects/{project_path}/merge_requests'
+        assignee_id = self.get_user_id(assignee)
+        request_data = {'id': project_path,
+                        'title': title,
+                        'source_branch': source_branch,
+                        'target_branch': target_branch,
+                        'assignee_id': assignee_id}
+        response = requests.post(request_url, headers=self.headers, data=request_data).json()
+        return {'iid': response['iid'], 'merge_status': response['merge_status']}
 
     def get_project_path(self, project_url):
         gitlab_url = self.gitlab_url + '/'
