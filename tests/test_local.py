@@ -1,4 +1,5 @@
 import pytest
+import unittest.mock
 from lektorium.repo import LocalRepo
 from lektorium.repo.local import FakeServer, FakeLektor
 from lektorium.repo.local.repo import Site, Session
@@ -26,8 +27,11 @@ def test_create_site(tmpdir):
     assert not len(list(repo.sites))
     repo.create_site('bow', 'Buy Our Widgets')
     assert len(list(repo.sites)) == 1
-    repo = LocalRepo(tmpdir, FakeServer(), FakeLektor)
+    server = unittest.mock.Mock()
+    server.serve_static.assert_not_called()
+    repo = LocalRepo(tmpdir, server, FakeLektor)
     assert len(list(repo.sites)) == 1
+    server.serve_static.assert_called_once()
 
 
 def test_site_restrict_fields():
