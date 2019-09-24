@@ -1,3 +1,4 @@
+from asyncio import Future, iscoroutine
 from graphene import (
     Boolean,
     DateTime,
@@ -76,9 +77,12 @@ class MutationBase(Mutation):
     Output = MutationResult
 
     @classmethod
-    def mutate(self, root, info, **kwargs):
+    async def mutate(self, root, info, **kwargs):
         try:
-            getattr(info.context['repo'], self.REPO_METHOD)(**kwargs)
+            method = getattr(info.context['repo'], self.REPO_METHOD)
+            result = method(**kwargs)
+            if isinstance(result, Future) or iscoroutine(result):
+                await result
         except lektorium.repo.ExceptionBase:
             return MutationResult(ok=False)
         return MutationResult(ok=True)

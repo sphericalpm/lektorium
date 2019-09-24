@@ -6,6 +6,7 @@ import sys
 
 import aiohttp.web
 import aiohttp_graphql
+from graphql.execution.executors.asyncio import AsyncioExecutor
 import bs4
 import graphene
 
@@ -99,6 +100,7 @@ def init_app(repo, auth0_options=None):
             mutation=schema.MutationQuery,
         ),
         graphiql=True,
+        executor=AsyncioExecutor(),
         context=dict(repo=repo),
     )
 
