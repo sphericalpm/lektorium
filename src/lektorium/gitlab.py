@@ -19,16 +19,13 @@ class GitLab:
         project_path = self.get_project_path(project_url)
         request_url = f'{self.gitlab_url}/api/v4/projects/{project_path}/merge_requests'
         assignee_id = self.get_user_id(assignee)
-        request_data = {'id': project_path,
-                        'title': title,
+        request_data = {'title': title,
                         'source_branch': source_branch,
                         'target_branch': target_branch,
                         'assignee_id': assignee_id}
         response = requests.post(request_url, headers=self.headers, data=request_data)
         if response.status_code == 201:
             return True
-        else:
-            return False
 
     def get_project_path(self, project_url: str) -> str:
         gitlab_url = self.gitlab_url + '/'
