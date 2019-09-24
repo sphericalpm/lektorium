@@ -409,3 +409,31 @@ def test_create_site(client):
             ]
         }
     }
+
+
+def test_parked_resolve(client):
+    client.execute(r'''mutation {
+        createSession(siteId: "uci") {
+            ok
+        }
+    }''')
+    result = client.execute(r'''{
+        sites {
+            sessions {
+                parked
+            }
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sites': [
+                {'sessions': [{'parked': False}]},
+                {'sessions': [
+                    {'parked': True},
+                    {'parked': True},
+                    {'parked': False}
+                ]},
+                {'sessions': None},
+            ]
+        }
+    }
