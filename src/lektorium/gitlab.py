@@ -16,3 +16,9 @@ class GitLab:
         assignee
     ):
         pass
+
+    def get_project_path(project_url):
+        pass
+
+    def get_user_id(username):
+        pass
