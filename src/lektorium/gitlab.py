@@ -19,7 +19,8 @@ class GitLab:
         pass
 
     def get_project_path(self, project_url):
-        pass
+        gitlab_url = self.gitlab_url + '/'
+        return project_url.replace(gitlab_url, '')
 
     def get_user_id(self, username):
         request_url = f"{self.gitlab_url}/api/v4/users?username={username}"
