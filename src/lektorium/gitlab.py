@@ -20,10 +20,11 @@ class GitLab:
 
     def get_project_path(self, project_url):
         gitlab_url = self.gitlab_url + '/'
-        return project_url.replace(gitlab_url, '')
+        project_path = project_url.replace(gitlab_url, '')
+        return project_path.replace('/', '%2f')
 
     def get_user_id(self, username):
-        request_url = f"{self.gitlab_url}/api/v4/users?username={username}"
+        request_url = f'{self.gitlab_url}/api/v4/users?username={username}'
         response = requests.get(request_url, headers=self.headers).json()
         if response:
             return response[0]['id']
