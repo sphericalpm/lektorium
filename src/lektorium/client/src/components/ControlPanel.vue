@@ -172,7 +172,11 @@
         <b-button type="reset" variant="danger">Cancel</b-button>
       </b-form>
     </b-modal>
-    <alert :message=message v-if="showMessage"></alert>
+    <b-alert
+      :show="is_message_visible"
+      :variant="message_type"
+      dismissible @dismissed="is_message_visible=false"
+    >{{ message }}</b-alert>
   </div>
 </template>
 
