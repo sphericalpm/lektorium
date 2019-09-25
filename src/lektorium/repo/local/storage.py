@@ -33,7 +33,8 @@ class Storage:
     def create_site(self, lektor, name, owner, site_id):
         """Creates new site.
 
-        Creates new site in repository and initialize it with lektor quickstart.
+        Creates new site in storage and initialize it with lektor quickstart
+        via provided lektor object.
         """
         pass
 
@@ -41,8 +42,8 @@ class Storage:
     def site_config(self, site_id):
         """Returns site configuration from lektorproject file.
 
-        Returns safe dict-like object (returning None's) for non-existent
-        options from site's lektorproject file.
+        Returns safe (returning None's for non-existent options) dict-like
+        object from site's lektorproject file for provided site_id.
         """
         pass
 
