@@ -1,9 +1,50 @@
+import abc
 import collections
 import inifile
 import pathlib
 import shutil
 import yaml
 from .objects import Site
+
+
+class Storage:
+    @property
+    @abc.abstractmethod
+    def config(self):
+        """Returns Lektorium managed sites configuration.
+
+        Configuration is dict-like object site_id->(site object) able to set
+        additional items to it and control configuration saving automatically.
+        Each value of dict is also dict-like object containing site properties.
+        """
+        pass
+
+    @abc.abstractmethod
+    def create_session(self, site_id, session_id, session_dir):
+        """Creates new session.
+
+        This method mades all mandatory actions to create new session in
+        storage itself and fill session_dir with files to start lektor server
+        to work on site content.
+        """
+        pass
+
+    @abc.abstractmethod
+    def create_site(self, lektor, name, owner, site_id):
+        """Creates new site.
+
+        Creates new site in repository and initialize it with lektor quickstart.
+        """
+        pass
+
+    @abc.abstractmethod
+    def site_config(self, site_id):
+        """Returns site configuration from lektorproject file.
+
+        Returns safe dict-like object (returning None's) for non-existent
+        options from site's lektorproject file.
+        """
+        pass
 
 
 class Config(dict):
@@ -24,7 +65,7 @@ class Config(dict):
             config_file.write(yaml.dump(config).encode())
 
 
-class FileStorage:
+class FileStorage(Storage):
     def __init__(self, root):
         self.root = pathlib.Path(root).resolve()
 
