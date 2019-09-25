@@ -7,7 +7,7 @@ from typing import Optional
 class GitLab:
     def __init__(self, gitlab_url):
         self.gitlab_url = gitlab_url
-        self.headers = {'Private-Token': os.environ['GITLAB_TOKEN']}
+        self.headers = {'Private-Token': os.environ['GITLAB_TOKEN']}  # TODO: Specify the method of storing the token!
 
     def create_merge_request(
         self,
@@ -38,3 +38,8 @@ class GitLab:
         result = requests.get(url, headers=self.headers).json()
         if result:
             return result[0]['id']
+
+
+if __name__ == "__main__":
+    client = GitLab("https://gitlab.patrushev.me")
+    print(client.get_user_id("jekov"))
