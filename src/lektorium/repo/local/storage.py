@@ -47,7 +47,7 @@ class Storage:
         pass
 
 
-class Config(dict):
+class FileConfig(dict):
     def __init__(self, path, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.path = path
@@ -89,7 +89,7 @@ class FileStorage(Storage):
                         yield props
                 sites = (Site(**props) for props in iter_sites(config_file))
                 config = {s['site_id']: s for s in sites}
-        return Config(self.__config_path, config)
+        return FileConfig(self.__config_path, config)
 
     def create_session(self, site_id, session_id, session_dir):
         site_root = self.__site_dir(site_id)
