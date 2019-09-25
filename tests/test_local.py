@@ -23,7 +23,7 @@ def test_fake_server():
 
 def test_create_site(tmpdir):
     repo = LocalRepo(tmpdir, FakeServer(), FakeLektor)
-    assert not len(list(repo.root_dir.iterdir()))
+    assert not len(list(repo.storage.root.iterdir()))
     assert not len(list(repo.sites))
     repo.create_site('bow', 'Buy Our Widgets')
     assert len(list(repo.sites)) == 1

@@ -1,3 +1,4 @@
+import collections
 import datetime
 import functools
 import inifile
@@ -19,9 +20,37 @@ from .config import Config
 from .objects import Session, Site
 
 
+class Storage:
+    def __init__(self, root):
+        self.root = pathlib.Path(root).resolve()
+
+    def site_dir(self, site_id):
+        return self.root / site_id / 'master'
+
+    def site_config(self, site_id):
+        site_root = self.site_dir(site_id)
+        config = list(site_root.glob('*.lektorproject'))
+        if config:
+            return inifile.IniFile(config[0])
+        return collections.defaultdict(type(None))
+
+    @property
+    def config_path(self):
+        return self.root / 'config.yml'
+
+    def create_site(self, lektor, name, owner, site_id):
+        site_root = self.site_dir(site_id)
+        lektor.create_site(name, owner, site_root)
+        return site_root
+
+    def create_session(self, site_id, session_id, session_dir):
+        site_root = self.site_dir(site_id)
+        shutil.copytree(site_root, session_dir)
+
+
 class Repo(BaseRepo):
     def __init__(self, root_dir, server, lektor):
-        self.root_dir = pathlib.Path(root_dir)
+        self.storage = Storage(root_dir)
         self.server = server
         self.lektor = lektor
         self.init_sites()
@@ -29,40 +58,35 @@ class Repo(BaseRepo):
     def init_sites(self):
         for site_id, site in self.config.items():
             if site.production_url is None:
-                site_root = self.root_dir / site_id / 'master'
-                site.production_url = self.server.serve_static(site_root)
+                session_dir = self.sessions_root / site_id / 'production'
+                self.storage.create_session(site_id, 'production', session_dir)
+                site.production_url = self.server.serve_static(session_dir)
 
     @cached_property
-    def session_dir(self):
+    def sessions_root(self):
         return pathlib.Path(closer(tempfile.TemporaryDirectory()))
 
     @cached_property
     def config(self):
-        config_path = (self.root_dir / 'config.yml')
         config = {}
-        if config_path.exists():
-            with config_path.open('rb') as config_file:
+        if self.storage.config_path.exists():
+            with self.storage.config_path.open('rb') as config_file:
                 def iter_sites(config_file):
                     config_data = yaml.load(config_file, Loader=yaml.Loader)
                     for site_id, props in config_data.items():
                         url = props.pop('url', None)
+                        config = self.storage.site_config(site_id)
+                        name = config.get('project.name')
+                        if name is not None:
+                            props['name'] = name
                         if url is None:
-                            site_root = self.root_dir / site_id / 'master'
-                            config = list(site_root.glob('*.lektorproject'))
-                            if config:
-                                config = inifile.IniFile(config[0])
-                                name = config.get('project.name')
-                                if name is not None:
-                                    props['name'] = name
-                                project_url = config.get('project.url')
-                                if project_url is not None:
-                                    url = project_url
+                            url = config.get('project.url')
                         props['production_url'] = url
                         props['site_id'] = site_id
                         yield props
                 sites = (Site(**props) for props in iter_sites(config_file))
                 config = {s['site_id']: s for s in sites}
-        return Config(config_path, config)
+        return Config(self.storage.config_path, config)
 
     @property
     def sites(self):
@@ -89,8 +113,8 @@ class Repo(BaseRepo):
         if any(not s.parked for s in site.sessions.values()):
             raise DuplicateEditSession()
         session_id = self.generate_session_id()
-        session_dir = self.session_dir / site_id / session_id
-        shutil.copytree(self.root_dir / site_id / 'master', session_dir)
+        session_dir = self.sessions_root / site_id / session_id
+        self.storage.create_session(site_id, session_id, session_dir)
         session_object = Session(
             session_id=session_id,
             creation_time=datetime.datetime.now(),
@@ -106,7 +130,7 @@ class Repo(BaseRepo):
         if session_id not in self.sessions:
             raise SessionNotFound()
         site = self.sessions[session_id][1]
-        session_dir = self.session_dir / site['site_id'] / session_id
+        session_dir = self.sessions_root / site['site_id'] / session_id
         self.server.stop_server(
             session_dir,
             functools.partial(shutil.rmtree, session_dir)
@@ -117,7 +141,7 @@ class Repo(BaseRepo):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]
-        session_dir = self.session_dir / site['site_id'] / session_id
+        session_dir = self.sessions_root / site['site_id'] / session_id
         if session.parked:
             raise InvalidSessionState()
         self.server.stop_server(session_dir)
@@ -128,7 +152,7 @@ class Repo(BaseRepo):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]
-        session_dir = (self.session_dir / site['site_id'] / session_id)
+        session_dir = self.sessions_root / site['site_id'] / session_id
         if not session.parked:
             raise InvalidSessionState()
         if any(not s.parked for s in site.sessions.values()):
@@ -138,11 +162,10 @@ class Repo(BaseRepo):
 
     def create_site(self, site_id, name, owner=None):
         owner, email = owner or self.DEFAULT_USER
-        master_path = self.root_dir / site_id / 'master'
-        self.lektor.create_site(name, owner, master_path)
+        site_root = self.storage.create_site(self.lektor, name, owner, site_id)
         self.config[site_id] = Site(site_id, **dict(
             name=name,
             owner=owner,
             email=email,
-            production_url=self.server.serve_static(master_path)
+            production_url=self.server.serve_static(site_root)
         ))
