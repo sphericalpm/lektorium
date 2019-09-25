@@ -1,12 +1,9 @@
-import collections
 import datetime
 import functools
-import inifile
 import pathlib
 import shutil
 import tempfile
 
-import yaml
 from cached_property import cached_property
 
 from ...utils import closer
@@ -16,41 +13,13 @@ from ..interface import (
     Repo as BaseRepo,
     SessionNotFound,
 )
-from .config import Config
 from .objects import Session, Site
-
-
-class Storage:
-    def __init__(self, root):
-        self.root = pathlib.Path(root).resolve()
-
-    def site_dir(self, site_id):
-        return self.root / site_id / 'master'
-
-    def site_config(self, site_id):
-        site_root = self.site_dir(site_id)
-        config = list(site_root.glob('*.lektorproject'))
-        if config:
-            return inifile.IniFile(config[0])
-        return collections.defaultdict(type(None))
-
-    @property
-    def config_path(self):
-        return self.root / 'config.yml'
-
-    def create_site(self, lektor, name, owner, site_id):
-        site_root = self.site_dir(site_id)
-        lektor.create_site(name, owner, site_root)
-        return site_root
-
-    def create_session(self, site_id, session_id, session_dir):
-        site_root = self.site_dir(site_id)
-        shutil.copytree(site_root, session_dir)
+from .storage import FileStorage
 
 
 class Repo(BaseRepo):
     def __init__(self, root_dir, server, lektor):
-        self.storage = Storage(root_dir)
+        self.storage = FileStorage(root_dir)
         self.server = server
         self.lektor = lektor
         self.init_sites()
@@ -68,25 +37,7 @@ class Repo(BaseRepo):
 
     @cached_property
     def config(self):
-        config = {}
-        if self.storage.config_path.exists():
-            with self.storage.config_path.open('rb') as config_file:
-                def iter_sites(config_file):
-                    config_data = yaml.load(config_file, Loader=yaml.Loader)
-                    for site_id, props in config_data.items():
-                        url = props.pop('url', None)
-                        config = self.storage.site_config(site_id)
-                        name = config.get('project.name')
-                        if name is not None:
-                            props['name'] = name
-                        if url is None:
-                            url = config.get('project.url')
-                        props['production_url'] = url
-                        props['site_id'] = site_id
-                        yield props
-                sites = (Site(**props) for props in iter_sites(config_file))
-                config = {s['site_id']: s for s in sites}
-        return Config(self.storage.config_path, config)
+        return self.storage.config
 
     @property
     def sites(self):
