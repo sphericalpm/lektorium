@@ -98,7 +98,7 @@ class FileStorage(Storage):
 
     def create_site(self, lektor, name, owner, site_id):
         site_root = self.__site_dir(site_id)
-        lektor.create_site(name, owner, site_root)
+        lektor.quickstart(name, owner, site_root)
         return site_root
 
     def site_config(self, site_id):
