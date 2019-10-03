@@ -42,7 +42,7 @@ def create_app(repo_type=RepoType.LIST, auth=''):
         from .repo.local import LocalLektor
         if repo_type == RepoType.LOCAL_FAKE:
             from .repo.local import FakeServer
-            server = FakeServer
+            server = FakeServer()
         else:
             from .repo.local import AsyncLocalServer
             server = AsyncLocalServer()
