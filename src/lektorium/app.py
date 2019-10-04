@@ -1,7 +1,8 @@
 import enum
-import functools
 import logging
+import pathlib
 import sys
+import tempfile
 
 
 import aiohttp.web
@@ -10,8 +11,15 @@ from graphql.execution.executors.asyncio import AsyncioExecutor
 import bs4
 import graphene
 
-from . import install as client
-from . import schema
+from . import install as client, schema, repo
+from .utils import closer
+from .repo.local import (
+    AsyncLocalServer,
+    FakeServer,
+    FileStorage,
+    GitStorage,
+    LocalLektor,
+)
 
 
 async def index(request, app_path, auth0_options=None):
@@ -27,32 +35,59 @@ async def index(request, app_path, auth0_options=None):
     )
 
 
-class RepoType(enum.Enum):
+class BaseEnum(enum.Enum):
+    @classmethod
+    def get(cls, name):
+        names = tuple(x.name for x in cls)
+        if name not in names:
+            cls_name, names = cls.__name__, ', '.join(names)
+            msg = f'Wrong {cls_name} value "{name}" should be one of {names}'
+            raise ValueError(msg)
+        return cls[name]
+
+
+class RepoType(BaseEnum):
     LIST = enum.auto()
-    LOCAL_FAKE = enum.auto()
-    LOCAL_ASYNC = enum.auto()
-    GIT = enum.auto()
+    LOCAL = enum.auto()
 
 
-def create_app(repo_type=RepoType.LIST, auth=''):
-    from . import repo
+class StorageType(BaseEnum):
+    FILE = FileStorage
+    GIT = GitStorage
+
+
+class ServerType(BaseEnum):
+    FAKE = FakeServer
+    ASYNC = AsyncLocalServer
+
+
+def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
+    init_logging()
+
     if repo_type == RepoType.LIST:
-        repo = repo.ListRepo(repo.SITES)
-    elif repo_type in (RepoType.LOCAL_FAKE, RepoType.LOCAL_ASYNC):
-        from .repo.local import LocalLektor
-        if repo_type == RepoType.LOCAL_FAKE:
-            from .repo.local import FakeServer
-            server = FakeServer()
-        else:
-            from .repo.local import AsyncLocalServer
-            server = AsyncLocalServer()
-        repo = repo.LocalRepo('gitlab', server, LocalLektor)
-    else:
-        repo = repo.GitRepo('gitlab/service')
+        if repo_args:
+            raise ValueError('LIST repo does not support arguments')
+        lektorium_repo = repo.ListRepo(repo.SITES)
+    elif repo_type == RepoType.LOCAL:
+        server_type, _, storage_config = repo_args.partition(',')
+        server = ServerType.get(server_type or 'FAKE').value()
+
+        storage_config = storage_config or 'FILE'
+        storage_type, _, storage_path = storage_config.partition('=')
+        storage_class = StorageType.get(storage_type).value
+        if not storage_path:
+            storage_path = pathlib.Path(closer(tempfile.TemporaryDirectory()))
+            storage_path = storage_class.init(storage_path)
+        storage = storage_class(storage_path)
+
+        lektorium_repo = repo.LocalRepo(storage, server, LocalLektor)
+
     auth_attributes = ('domain', 'id', 'api')
     auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
     auth0_options = dict(zip(auth_attributes, auth.split(',')))
-    return init_app(repo, auth0_options)
+
+    logging.getLogger('lektorium').info(f'Start with {lektorium_repo}')
+    return init_app(lektorium_repo, auth0_options)
 
 
 async def log_application_ready(app):
@@ -76,8 +111,6 @@ def init_logging(stream=sys.stderr, level=logging.DEBUG):
 
 
 def init_app(repo, auth0_options=None):
-    init_logging()
-
     app = aiohttp.web.Application()
     app_path = client.install()
 
@@ -85,10 +118,14 @@ def init_app(repo, auth0_options=None):
     app.router.add_static('/img', (app_path / 'img').resolve())
     app.router.add_static('/js', (app_path / 'js').resolve())
 
-    index_handler = functools.partial(
-        index, app_path=app_path,
-        auth0_options=auth0_options,
-    )
+    async def index_handler(*args, **kwargs):
+        return await index(
+            *args,
+            **kwargs,
+            app_path=app_path,
+            auth0_options=auth0_options
+        )
+
     app.router.add_route('*', '/', index_handler)
     app.router.add_route('*', '/callback', index_handler)
     app.router.add_route('*', '/profile', index_handler)
@@ -110,10 +147,12 @@ def init_app(repo, auth0_options=None):
 
 
 def main(repo_type='', auth=''):
-    repo_type_names = [x.name for x in RepoType]
-    if repo_type not in repo_type_names:
-        message = 'Please provide repo type as argument. Use one of: {}'
-        print(message.format(', '.join(repo_type_names)), file=sys.stderr)
-        sys.exit(1)
-    repo_type = RepoType[repo_type]
-    aiohttp.web.run_app(create_app(repo_type, auth), port=8000)
+    repo_type, _, repo_args = repo_type.partition(':')
+    aiohttp.web.run_app(
+        create_app(
+            RepoType.get(repo_type),
+            auth,
+            repo_args
+        ),
+        port=8000
+    )

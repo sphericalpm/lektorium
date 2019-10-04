@@ -14,12 +14,11 @@ from ..interface import (
     SessionNotFound,
 )
 from .objects import Session, Site
-from .storage import FileStorage
 
 
 class Repo(BaseRepo):
-    def __init__(self, root_dir, server, lektor):
-        self.storage = FileStorage(root_dir)
+    def __init__(self, storage, server, lektor):
+        self.storage = storage
         self.server = server
         self.lektor = lektor
         self.init_sites()
@@ -113,10 +112,16 @@ class Repo(BaseRepo):
 
     def create_site(self, site_id, name, owner=None):
         owner, email = owner or self.DEFAULT_USER
-        site_root = self.storage.create_site(self.lektor, name, owner, site_id)
+        result = self.storage.create_site(self.lektor, name, owner, site_id)
+        site_root, site_options = result
         self.config[site_id] = Site(site_id, **dict(
             name=name,
             owner=owner,
             email=email,
-            production_url=self.server.serve_static(site_root)
+            production_url=self.server.serve_static(site_root),
+            **site_options,
         ))
+
+    def __repr__(self):
+        qname = f'{self.__class__.__module__}.{self.__class__.__name__}'
+        return f'{qname}({self.storage}, {self.server}, {self.lektor})'

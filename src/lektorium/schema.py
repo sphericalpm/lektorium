@@ -12,6 +12,12 @@ import lektorium.repo
 
 
 class Site(ObjectType):
+    def __init__(self, **kwargs):
+        super().__init__(**{
+            k: v for k, v in kwargs.items()
+            if k in self._meta.fields
+        })
+
     site_id = String()
     site_name = String()
     custodian = String()

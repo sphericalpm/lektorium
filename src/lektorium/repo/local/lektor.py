@@ -13,6 +13,7 @@ class FakeLektor(Lektor):
     @classmethod
     def quickstart(cls, name, owner, folder):
         folder.mkdir(parents=True)
+        (folder / 'fake-lektor.file').touch()
 
 
 class LocalLektor(Lektor):

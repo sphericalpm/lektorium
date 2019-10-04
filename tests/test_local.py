@@ -1,15 +1,19 @@
 import pytest
 import unittest.mock
 from lektorium.repo import LocalRepo
-from lektorium.repo.local import FakeServer, FakeLektor, LocalLektor
+from lektorium.repo.local import (
+    FakeLektor,
+    FakeServer,
+    FileStorage,
+    LocalLektor,
+)
 from lektorium.repo.local.repo import Site, Session
+from conftest import local_repo, git_repo
 
 
-@pytest.fixture
-def repo(tmpdir):
-    repo = LocalRepo(tmpdir, FakeServer(), FakeLektor)
-    repo.create_site('bow', 'Buy Our Widgets')
-    return repo
+@pytest.fixture(scope='function', params=[local_repo, git_repo])
+def repo(request, tmpdir):
+    return request.param(tmpdir)
 
 
 def test_fake_server():
@@ -22,14 +26,14 @@ def test_fake_server():
 
 
 def test_create_site(tmpdir):
-    repo = LocalRepo(tmpdir, FakeServer(), FakeLektor)
+    repo = LocalRepo(FileStorage(tmpdir), FakeServer(), FakeLektor)
     assert not len(list(repo.storage.root.iterdir()))
     assert not len(list(repo.sites))
     repo.create_site('bow', 'Buy Our Widgets')
     assert len(list(repo.sites)) == 1
     server = unittest.mock.Mock()
     server.serve_static.assert_not_called()
-    repo = LocalRepo(tmpdir, server, FakeLektor)
+    repo = LocalRepo(FileStorage(tmpdir), server, FakeLektor)
     assert len(list(repo.sites)) == 1
     server.serve_static.assert_called_once()
 
@@ -74,6 +78,6 @@ def test_session_create(repo):
 
 
 def test_lektor_config_loading(tmpdir):
-    repo = LocalRepo(tmpdir, FakeServer(), LocalLektor)
+    repo = LocalRepo(FileStorage(tmpdir), FakeServer(), LocalLektor)
     repo.create_site('a', 'b')
-    LocalRepo(tmpdir, FakeServer(), LocalLektor)
+    LocalRepo(FileStorage(tmpdir), FakeServer(), LocalLektor)
