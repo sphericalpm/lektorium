@@ -29,7 +29,8 @@
               <td>
                 <a
                   v-if="site.productionUrl.startsWith('http')"
-                  :href="site.productionUrl"
+                  href="#"
+                  @click="openNewTab(site.productionUrl)"
                 >{{ site.productionUrl }}</a>
                 <span v-else>{{ site.productionUrl }}</span>
               </td>
@@ -86,7 +87,8 @@
               <td>
                 <a
                   v-if="session.editUrl.startsWith('http')"
-                  :href="session.editUrl"
+                  href="#"
+                  @click="openNewTab(session.editUrl)"
                 >{{ session.editUrl }}</a>
                 <span v-else>{{ session.editUrl }}</span>
               </td>
@@ -505,6 +507,10 @@ export default {
       if(admin_result || production_result || production_result){
         setTimeout(this.getPanelData,5000);
       }
+    },
+
+    openNewTab(url) {
+      window.open(url);
     },
   },
 
