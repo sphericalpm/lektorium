@@ -40,7 +40,7 @@ def test_create_site(tmpdir):
 
 def test_site_restrict_fields():
     restrict_props = {'sessions': [], 'staging_url': 'http://stag.test'}
-    with pytest.raises(RuntimeError):
+    with pytest.raises(ValueError):
         assert Site('test_id', 'http://site.test', **(restrict_props))
 
 

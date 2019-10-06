@@ -112,8 +112,12 @@ class Repo(BaseRepo):
 
     def create_site(self, site_id, name, owner=None):
         owner, email = owner or self.DEFAULT_USER
-        result = self.storage.create_site(self.lektor, name, owner, site_id)
-        site_root, site_options = result
+        site_root, site_options = self.storage.create_site(
+            self.lektor,
+            name,
+            owner,
+            site_id
+        )
         self.config[site_id] = Site(site_id, **dict(
             name=name,
             owner=owner,

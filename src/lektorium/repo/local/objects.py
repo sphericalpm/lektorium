@@ -8,12 +8,12 @@ class Site(collections.abc.Mapping):
         'email': 'custodian_email',
         'owner': 'custodian',
     })
+    RESTRICTED_KEYS = ('sessions', 'staging_url')
 
     def __init__(self, site_id, production_url, **props):
         self.data = dict(props)
-        restricted_keys = ('sessions', 'staging_url')
-        if set(self.data.keys()).intersection(restricted_keys):
-            raise RuntimeError()
+        if set(self.data.keys()).intersection(self.RESTRICTED_KEYS):
+            raise ValueError('Site constructor called with restricted param')
         self.data['site_id'] = site_id
         self.data['staging_url'] = None
         self.production_url = production_url
@@ -24,7 +24,7 @@ class Site(collections.abc.Mapping):
             return list(self.sessions.values())
         elif key == 'production_url':
             result = self.production_url
-            if callable(self.production_url):
+            if callable(result):
                 self.production_url, result = result()
             return result
         elif key in self.ATTR_MAPPING.inverse:

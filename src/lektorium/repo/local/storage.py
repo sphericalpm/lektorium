@@ -153,8 +153,8 @@ class GitStorage(FileStorage):
         )
         super().__init__(lektorium_workdir)
 
-    @classmethod
-    def init(cls, path):
+    @staticmethod
+    def init(path):
         lektorium = (path / 'lektorium')
         lektorium.mkdir(parents=True, exist_ok=True)
         subprocess.check_call(f'git init --bare .', shell=True, cwd=lektorium)

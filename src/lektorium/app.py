@@ -81,6 +81,8 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
         storage = storage_class(storage_path)
 
         lektorium_repo = repo.LocalRepo(storage, server, LocalLektor)
+    else:
+        raise ValueError(f'repo_type not supported {repo_type}')
 
     auth_attributes = ('domain', 'id', 'api')
     auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
