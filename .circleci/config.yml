@@ -18,8 +18,8 @@ jobs:
       - run:
           name: set up env
           command: |
-            sudo apt-get update
-            sudo apt-get -y install git
+            git config --global user.email "circle@ci.example.com"
+            git config --global user.name "Circle Ci"
             python3 -m venv venv
             . venv/bin/activate
             pip install -e .[dev]
