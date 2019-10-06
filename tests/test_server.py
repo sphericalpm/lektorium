@@ -42,6 +42,7 @@ async def test_start_stop_server():
 
 
 @pytest.mark.asyncio
+@pytest.mark.xfail("sys.platform != 'darwin'")
 async def test_start_stop_lektor(tmpdir):
     LocalLektor.quickstart('a', 'b', tmpdir / 'c')
     server = AsyncLocalServer()
