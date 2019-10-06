@@ -10,10 +10,7 @@ jobs:
 
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "setup.py" }}
-            - v1-dependencies-
+      - restore_cache
 
       - run:
           name: set up env
@@ -22,7 +19,7 @@ jobs:
             git config --global user.name "Circle Ci"
             python3 -m venv venv
             . venv/bin/activate
-            pip install -e .[dev]
+            pip install -Ue .[dev]
 
       - run:
           name: check style
@@ -44,4 +41,3 @@ jobs:
       - save_cache:
           paths:
             - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
