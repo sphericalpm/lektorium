@@ -10,7 +10,6 @@ jobs:
 
     steps:
       - checkout
-      - restore_cache
 
       - run:
           name: set up env
@@ -37,7 +36,3 @@ jobs:
       - codecov/upload:
           file: coverage.xml
           token: 154a6f93-3f50-40bb-b3e9-d3c18fa3c626
-
-      - save_cache:
-          paths:
-            - ./venv
