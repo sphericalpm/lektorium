@@ -130,3 +130,9 @@ def test_create_site(repo):
     site_count_before = len(list(repo.sites))
     repo.create_site('cri', 'Common Redundant Idioms')
     assert len(list(repo.sites)) == site_count_before + 1
+
+
+@pytest.mark.xfail
+def test_request_release(repo):
+    session_id = repo.create_session('uci')
+    repo.request_release(session_id)

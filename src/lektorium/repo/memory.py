@@ -152,6 +152,13 @@ class Repo(BaseRepo):
             custodian_email=email,
         ))
 
+    def request_release(self, session_id):
+        if session_id not in self.sessions:
+            raise SessionNotFound()
+        session, _ = self.sessions[session_id]
+        if session.pop('edit_url', None) is None:
+            raise InvalidSessionState()
+
     def __repr__(self):
         qname = f'{self.__class__.__module__}.{self.__class__.__name__}'
         return f'{qname}({self.data})'
