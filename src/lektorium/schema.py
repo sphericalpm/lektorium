@@ -108,13 +108,6 @@ class ParkSession(MutationBase):
         session_id = String()
 
 
-class Stage(MutationBase):
-    REPO_METHOD = 'stage'
-
-    class Arguments:
-        session_id = String()
-
-
 class RequestRelease(MutationBase):
     REPO_METHOD = 'request_release'
 
