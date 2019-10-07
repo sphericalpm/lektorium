@@ -72,18 +72,14 @@ class FileConfig(dict):
             config_file.write(yaml.dump(config).encode())
 
 
-class FileStorage(Storage):
-    CONFIG_CLASS = FileConfig
+class FileStorageMixin:
     CONFIG_FILENAME = 'config.yml'
-
-    def __init__(self, root):
-        self.root = pathlib.Path(root).resolve()
 
     @property
     def config(self):
         config = {}
-        if self.__config_path.exists():
-            with self.__config_path.open('rb') as config_file:
+        if self._config_path.exists():
+            with self._config_path.open('rb') as config_file:
                 def iter_sites(config_file):
                     config_data = yaml.load(config_file, Loader=yaml.Loader)
                     for site_id, props in config_data.items():
@@ -100,7 +96,18 @@ class FileStorage(Storage):
                         yield props
                 sites = (Site(**props) for props in iter_sites(config_file))
                 config = {s['site_id']: s for s in sites}
-        return self.CONFIG_CLASS(self.__config_path, config)
+        return self.CONFIG_CLASS(self._config_path, config)
+
+    @property
+    def _config_path(self):
+        return self.root / self.CONFIG_FILENAME
+
+
+class FileStorage(FileStorageMixin, Storage):
+    CONFIG_CLASS = FileConfig
+
+    def __init__(self, root):
+        self.root = pathlib.Path(root).resolve()
 
     def create_session(self, site_id, session_id, session_dir):
         site_root = self._site_dir(site_id)
@@ -121,10 +128,6 @@ class FileStorage(Storage):
     def _site_dir(self, site_id):
         return self.root / site_id / 'master'
 
-    @property
-    def __config_path(self):
-        return self.root / self.CONFIG_FILENAME
-
     def __repr__(self):
         return f'{self.__class__.__name__}("{str(self.root)}")'
 
@@ -138,20 +141,19 @@ class GitConfig(FileConfig):
         subprocess.check_call('git push origin', shell=True, cwd=parent)
 
 
-class GitStorage(FileStorage):
+class GitStorage(FileStorageMixin, Storage):
     CONFIG_CLASS = GitConfig
 
     def __init__(self, git):
         self.git = git
         self.workdir = pathlib.Path(closer(tempfile.TemporaryDirectory()))
-        lektorium_workdir = self.workdir / 'lektorium'
-        lektorium_workdir.mkdir()
+        self.root = self.workdir / 'lektorium'
+        self.root.mkdir()
         subprocess.check_call(
             f'git clone {self.git} .',
             shell=True,
-            cwd=lektorium_workdir
+            cwd=self.root
         )
-        super().__init__(lektorium_workdir)
 
     @staticmethod
     def init(path):
@@ -160,12 +162,15 @@ class GitStorage(FileStorage):
         subprocess.check_call(f'git init --bare .', shell=True, cwd=lektorium)
         return lektorium
 
-    @property
-    def config(self):
-        return super().config
-
     def create_session(self, site_id, session_id, session_dir):
-        return super().create_session(site_id, session_id, session_dir)
+        repo = self.config[site_id].get('repo', None)
+        branch = self.config[site_id].get('branch', '')
+        if branch:
+            branch = f'-b {branch}'
+        subprocess.check_call(
+            f'git clone {repo} {branch} {session_dir}',
+            shell=True
+        )
 
     def create_site(self, lektor, name, owner, site_id):
         site_workdir = self.workdir / site_id
@@ -207,21 +212,6 @@ class GitStorage(FileStorage):
 
     def site_config(self, site_id):
         return collections.defaultdict(type(None))
-
-    def _site_dir(self, site_id):
-        if site_id in self.config:
-            site_dir = self.workdir / site_id
-            if not site_dir.exists():
-                site_repo = self.config[site_id].get('repo', None)
-                branch = self.config[site_id].get('branch', '')
-                if branch:
-                    branch = f'-b {branch}'
-                subprocess.check_call(
-                    f'git clone {site_repo} {branch} {site_dir}',
-                    shell=True
-                )
-            return site_dir
-        raise RuntimeError('wrong site request')
 
     def __repr__(self):
         name = self.__class__.__name__
