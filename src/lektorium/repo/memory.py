@@ -151,3 +151,7 @@ class Repo(BaseRepo):
             custodian=owner,
             custodian_email=email,
         ))
+
+    def __repr__(self):
+        qname = f'{self.__class__.__module__}.{self.__class__.__name__}'
+        return f'{qname}({self.data})'

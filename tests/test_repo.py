@@ -4,32 +4,24 @@ from lektorium.repo import (
     DuplicateEditSession,
     InvalidSessionState,
     ListRepo,
-    LocalRepo,
     SessionNotFound,
     SITES,
 )
-from lektorium.repo.local import FakeServer, FakeLektor
-
-
-def local_repo(root_dir):
-    repo = LocalRepo(root_dir, FakeServer(), FakeLektor)
-    repo.create_site('bow', 'Buy Our Widgets')
-    repo.create_site('uci', 'Underpants Collectors International')
-    return repo
+from conftest import local_repo, git_repo
 
 
 def memory_repo(_):
     return ListRepo(copy.deepcopy(SITES))
 
 
-@pytest.fixture(scope='function', params=[memory_repo, local_repo])
+@pytest.fixture(scope='function', params=[memory_repo, local_repo, git_repo])
 def repo(request, tmpdir):
     return request.param(tmpdir)
 
 
 def test_site_attributes(repo):
     attributes = set({a: s[a] for s in repo.sites for a in s})
-    assert attributes == {
+    assert attributes.issuperset({
         'custodian',
         'custodian_email',
         'production_url',
@@ -37,7 +29,7 @@ def test_site_attributes(repo):
         'site_id',
         'site_name',
         'staging_url',
-    }
+    })
 
 
 def test_session_attributes(repo):

@@ -37,7 +37,7 @@ setuptools.setup(
     },
     install_requires=[
         'aiohttp-graphql',
-        'aiohttp<3.6',
+        'aiohttp!=3.6.0',
         'appdirs',
         'beautifulsoup4',
         'bidict',
@@ -71,6 +71,7 @@ setuptools.setup(
             'flake8-mutable',
             'flake8-spellcheck',
             'pep8-naming',
+            'wrapt',
         ]
     },
     zip_safe=True,

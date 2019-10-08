@@ -5,19 +5,20 @@ import subprocess
 
 class Lektor(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def create_site(cls, name, owner, folder):
+    def quickstart(cls, name, owner, folder):
         raise NotImplementedError()
 
 
 class FakeLektor(Lektor):
     @classmethod
-    def create_site(cls, name, owner, folder):
+    def quickstart(cls, name, owner, folder):
         folder.mkdir(parents=True)
+        (folder / 'fake-lektor.file').touch()
 
 
 class LocalLektor(Lektor):
     @classmethod
-    def create_site(cls, name, owner, folder):
+    def quickstart(cls, name, owner, folder):
         proc = subprocess.Popen(
             'lektor quickstart',
             shell=True,

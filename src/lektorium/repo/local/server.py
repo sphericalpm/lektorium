@@ -31,6 +31,9 @@ class Server(metaclass=abc.ABCMeta):
     def stop_server(self, path, finalizer=None):
         pass
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}()'
+
 
 class FakeServer(Server):
     def __init__(self):
