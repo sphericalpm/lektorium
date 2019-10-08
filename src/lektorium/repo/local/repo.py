@@ -126,6 +126,17 @@ class Repo(BaseRepo):
             **site_options,
         ))
 
+    def request_release(self, session_id):
+        if session_id not in self.sessions:
+            raise SessionNotFound()
+        session, site = self.sessions[session_id]
+        if session.parked:
+            raise InvalidSessionState()
+        site_id = site['site_id']
+        session_dir = self.sessions_root / site_id / session_id
+        self.storage.request_release(site_id, session_id, session_dir)
+        self.destroy_session(session_id)
+
     def __repr__(self):
         qname = f'{self.__class__.__module__}.{self.__class__.__name__}'
         return f'{qname}({self.storage}, {self.server}, {self.lektor})'

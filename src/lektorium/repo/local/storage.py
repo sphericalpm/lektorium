@@ -3,9 +3,12 @@ import collections
 import functools
 import inifile
 import pathlib
+import requests
 import shutil
 import subprocess
 import tempfile
+from cached_property import cached_property
+from more_itertools import one
 import yaml
 
 from .objects import Site
@@ -105,7 +108,7 @@ class FileStorageMixin:
                 config = {s['site_id']: s for s in sites}
         return cls.CONFIG_CLASS(path, config)
 
-    @property
+    @cached_property
     def config(self):
         return self.load_config(self._config_path, self.site_config)
 
@@ -185,11 +188,15 @@ class GitStorage(FileStorageMixin, Storage):
 
     def create_session(self, site_id, session_id, session_dir):
         repo = self.config[site_id].get('repo', None)
+        if repo is None:
+            raise ValueError('site repo not found')
         branch = self.config[site_id].get('branch', '')
         if branch:
             branch = f'-b {branch}'
         run(f'git clone {repo} {branch} {session_dir}')
-        run(f'git checkout -b {session_id}', cwd=session_dir)
+        run_local = functools.partial(run, cwd=session_dir)
+        run_local(f'git checkout -b session-{session_id}')
+        run_local(f'git push --set-upstream origin session-{session_id}')
 
     def create_site(self, lektor, name, owner, site_id):
         site_workdir = self.workdir / site_id
@@ -223,6 +230,38 @@ class GitStorage(FileStorageMixin, Storage):
             run_local('git push')
 
         return site_repo
+
+    def request_release(self, site_id, session_id, session_dir):
+        run_local = functools.partial(run, cwd=session_dir)
+        run_local('git add -A .')
+        run_local('git commit -m autosave')
+        run_local('git push')
+        site = self.config[site_id]
+        gitlab = site['gitlab']
+        headers = {'Authorization': 'Bearer {token}'.format(**gitlab)}
+        response = requests.get(
+            '{scheme}://{host}/api/v4/projects'.format(**gitlab),
+            headers=headers,
+        )
+        response.raise_for_status()
+        projects = response.json()
+        path = '{namespace}/{project}'.format(**gitlab)
+        project = one(x for x in projects if x['path_with_namespace'] == path)
+        session = site.sessions[session_id]
+        title_template = 'Request from: "{custodian}" <{custodian_email}>'
+        response = requests.post(
+            '{scheme}://{host}/api/v4/projects/{pid}/merge_requests'.format(
+                **gitlab,
+                pid=project['id']
+            ),
+            data=dict(
+                source_branch=f'session-{session_id}',
+                target_branch=site.get('branch', 'master'),
+                title=title_template.format(**session),
+            ),
+            headers=headers,
+        )
+        response.raise_for_status()
 
     def site_config(self, site_id):
         return collections.defaultdict(type(None))
