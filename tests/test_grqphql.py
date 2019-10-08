@@ -2,6 +2,7 @@ import copy
 import pytest
 import collections
 import graphene.test
+from graphql.execution.executors.asyncio import AsyncioExecutor
 import lektorium.schema
 import lektorium.repo
 
@@ -26,7 +27,8 @@ def client():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             )
-        }
+        },
+        executor=AsyncioExecutor(),
     )
 
 
