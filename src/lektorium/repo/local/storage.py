@@ -78,16 +78,16 @@ class FileConfig(dict):
 class FileStorageMixin:
     CONFIG_FILENAME = 'config.yml'
 
-    @property
-    def config(self):
+    @classmethod
+    def load_config(cls, path, site_config_fetcher):
         config = {}
-        if self._config_path.exists():
-            with self._config_path.open('rb') as config_file:
+        if path.exists():
+            with path.open('rb') as config_file:
                 def iter_sites(config_file):
                     config_data = yaml.load(config_file, Loader=yaml.Loader)
                     for site_id, props in config_data.items():
                         url = props.pop('url', None)
-                        config = self.site_config(site_id)
+                        config = site_config_fetcher(site_id)
                         name = config.get('project.name')
                         if name is not None:
                             props['name'] = name
@@ -99,7 +99,11 @@ class FileStorageMixin:
                         yield props
                 sites = (Site(**props) for props in iter_sites(config_file))
                 config = {s['site_id']: s for s in sites}
-        return self.CONFIG_CLASS(self._config_path, config)
+        return cls.CONFIG_CLASS(path, config)
+
+    @property
+    def config(self):
+        return self.load_config(self._config_path, self.site_config)
 
     @property
     def _config_path(self):
