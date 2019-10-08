@@ -12,6 +12,9 @@ from .objects import Site
 from ...utils import closer
 
 
+run = functools.partial(subprocess.check_call, shell=True)
+
+
 class Storage:
     @property
     @abc.abstractmethod
@@ -136,9 +139,9 @@ class GitConfig(FileConfig):
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
         parent, name = self.path.parent, self.path.name
-        subprocess.check_call(f'git add {name}', shell=True, cwd=parent)
-        subprocess.check_call('git commit -m autosave', shell=True, cwd=parent)
-        subprocess.check_call('git push origin', shell=True, cwd=parent)
+        run(f'git add {name}', cwd=parent)
+        run('git commit -m autosave', cwd=parent)
+        run('git push origin', cwd=parent)
 
 
 class GitStorage(FileStorageMixin, Storage):
@@ -149,17 +152,13 @@ class GitStorage(FileStorageMixin, Storage):
         self.workdir = pathlib.Path(closer(tempfile.TemporaryDirectory()))
         self.root = self.workdir / 'lektorium'
         self.root.mkdir()
-        subprocess.check_call(
-            f'git clone {self.git} .',
-            shell=True,
-            cwd=self.root
-        )
+        run(f'git clone {self.git} .', cwd=self.root)
 
     @staticmethod
     def init(path):
         lektorium = (path / 'lektorium')
         lektorium.mkdir(parents=True, exist_ok=True)
-        subprocess.check_call(f'git init --bare .', shell=True, cwd=lektorium)
+        run(f'git init --bare .', cwd=lektorium)
         return lektorium
 
     def create_session(self, site_id, session_id, session_dir):
@@ -167,10 +166,8 @@ class GitStorage(FileStorageMixin, Storage):
         branch = self.config[site_id].get('branch', '')
         if branch:
             branch = f'-b {branch}'
-        subprocess.check_call(
-            f'git clone {repo} {branch} {session_dir}',
-            shell=True
-        )
+        run(f'git clone {repo} {branch} {session_dir}')
+        run(f'git checkout -b {session_id}', cwd=session_dir)
 
     def create_site(self, lektor, name, owner, site_id):
         site_workdir = self.workdir / site_id
@@ -179,18 +176,14 @@ class GitStorage(FileStorageMixin, Storage):
 
         site_repo = self.create_site_repo(site_id)
         lektor.quickstart(name, owner, site_workdir)
-        run = functools.partial(
-            subprocess.check_call,
-            shell=True,
-            cwd=site_workdir
-        )
-        run('git init')
-        run(f'git remote add origin {site_repo}')
-        run('git fetch')
-        run('git reset origin/master')
-        run('git add .')
-        run('git commit -m quickstart')
-        run('git push --set-upstream origin master')
+        run_local = functools.partial(run, cwd=site_workdir)
+        run_local('git init')
+        run_local(f'git remote add origin {site_repo}')
+        run_local('git fetch')
+        run_local('git reset origin/master')
+        run_local('git add .')
+        run_local('git commit -m quickstart')
+        run_local('git push --set-upstream origin master')
 
         return site_workdir, dict(repo=str(site_repo))
 
@@ -200,13 +193,12 @@ class GitStorage(FileStorageMixin, Storage):
             raise ValueError('repo for such site-id already exists')
 
         site_repo.mkdir()
-        run = functools.partial(subprocess.check_call, shell=True)
         run('git init --bare .', cwd=site_repo)
         with tempfile.TemporaryDirectory() as workdir:
-            run = functools.partial(run, cwd=workdir)
-            run(f'git clone {site_repo} .')
-            run('git commit -m initial --allow-empty')
-            run('git push')
+            run_local = functools.partial(run, cwd=workdir)
+            run_local(f'git clone {site_repo} .')
+            run_local('git commit -m initial --allow-empty')
+            run_local('git push')
 
         return site_repo
 
