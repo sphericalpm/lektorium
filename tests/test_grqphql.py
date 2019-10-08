@@ -2,6 +2,7 @@ import copy
 import pytest
 import collections
 import graphene.test
+from graphql.execution.executors.asyncio import AsyncioExecutor
 import lektorium.schema
 import lektorium.repo
 
@@ -26,7 +27,8 @@ def client():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             )
-        }
+        },
+        executor=AsyncioExecutor(),
     )
 
 
@@ -406,6 +408,34 @@ def test_create_site(client):
                 {'siteId': 'uci'},
                 {'siteId': 'ldi'},
                 {'siteId': 'test'},
+            ]
+        }
+    }
+
+
+def test_parked_resolve(client):
+    client.execute(r'''mutation {
+        createSession(siteId: "uci") {
+            ok
+        }
+    }''')
+    result = client.execute(r'''{
+        sites {
+            sessions {
+                parked
+            }
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sites': [
+                {'sessions': [{'parked': False}]},
+                {'sessions': [
+                    {'parked': True},
+                    {'parked': True},
+                    {'parked': False}
+                ]},
+                {'sessions': None},
             ]
         }
     }

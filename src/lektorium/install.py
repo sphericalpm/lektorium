@@ -8,11 +8,11 @@ import shutil
 import subprocess
 import appdirs
 import lektorium
+from .utils import closer
 
 
 def install():
-    path = importlib_resources.path(lektorium.__name__, 'client')
-    path = lektorium.utils.closer(path)
+    path = closer(importlib_resources.path(lektorium.__name__, 'client'))
     if (path / 'build').exists():
         return (path / 'build')
     return deploy(path)

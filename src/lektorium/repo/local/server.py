@@ -31,6 +31,9 @@ class Server(metaclass=abc.ABCMeta):
     def stop_server(self, path, finalizer=None):
         pass
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}()'
+
 
 class FakeServer(Server):
     def __init__(self):
@@ -73,12 +76,12 @@ class AsyncLocalServer(Server):
                     if line.strip().startswith(b'Finished prune'):
                         break
                 else:
-                    await proc.wait()
+                    await proc.communicate()
                     raise RuntimeError('early process end')
             except Exception as exc:
                 log.error('failed')
                 started.set_exception(exc)
-                raise
+                return
             log.info('started')
             started.set_result(port)
             try:
@@ -86,7 +89,7 @@ class AsyncLocalServer(Server):
                     pass
             finally:
                 proc.terminate()
-                await proc.wait()
+                await proc.communicate()
         finally:
             log.info('finished')
 

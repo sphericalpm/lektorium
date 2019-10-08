@@ -10,17 +10,15 @@ jobs:
 
     steps:
       - checkout
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "setup.py" }}
-            - v1-dependencies-
 
       - run:
           name: set up env
           command: |
+            git config --global user.email "circle@ci.example.com"
+            git config --global user.name "Circle Ci"
             python3 -m venv venv
             . venv/bin/activate
-            pip install -e .[dev]
+            pip install -Ue .[dev]
 
       - run:
           name: check style
@@ -38,8 +36,3 @@ jobs:
       - codecov/upload:
           file: coverage.xml
           token: 154a6f93-3f50-40bb-b3e9-d3c18fa3c626
-
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}

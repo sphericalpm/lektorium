@@ -102,7 +102,7 @@ class Repo(BaseRepo):
         if any(s.get('edit_url', None) for s in site.get('sessions', ())):
             raise DuplicateEditSession()
         session_id = self.generate_session_id()
-        site.setdefault('sessions', []).append(dict(
+        site.setdefault('sessions', []).append(Session(
             session_id=session_id,
             view_url=f'https://{session_id}-created.example.com',
             edit_url=f'https://edit.{session_id}-created.example.com',
@@ -151,3 +151,7 @@ class Repo(BaseRepo):
             custodian=owner,
             custodian_email=email,
         ))
+
+    def __repr__(self):
+        qname = f'{self.__class__.__module__}.{self.__class__.__name__}'
+        return f'{qname}({self.data})'
