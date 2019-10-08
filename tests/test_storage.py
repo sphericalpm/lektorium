@@ -1,3 +1,4 @@
+import collections
 import shutil
 import pytest
 from lektorium.repo.local.objects import Site
@@ -38,3 +39,36 @@ def test_everything(tmpdir, storage_factory):
     if (tmpdir / site_id).exists():
         shutil.rmtree(tmpdir / site_id)
         storage.site_config(site_id).get('project.name')
+
+
+CONFIG = '''
+patrushev.me:
+  branch: src
+  email: apatrushev@gmail.com
+  owner: Anton Patrushev
+  repo: git@gitlab:apatrushev/apatrushev.github.io.git
+  url: https://patrushev.me
+spherical-website:
+  email: mv@spherical.pm
+  gitlab:
+    host: gitlab
+    namespace: apatrushev
+    project: spherical-website
+  owner: Michael Vartanyan
+'''.lstrip()
+
+
+def test_config_gitlab_repo(tmpdir):
+    storage = git_prepare(GitStorage)(tmpdir)
+    storage._config_path.write_text(CONFIG)
+
+    def site_config_getter(_):
+        return collections.defaultdict(type(None))
+
+    config = GitStorage.load_config(storage._config_path, site_config_getter)
+    site = config['spherical-website']
+    gitlab_repo = site['repo']
+    assert gitlab_repo == 'git@gitlab:apatrushev/spherical-website.git'
+    assert site.sessions is not None
+    config['spherical-website'] = config['spherical-website']
+    assert CONFIG == storage._config_path.read_text()

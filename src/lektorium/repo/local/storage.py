@@ -65,14 +65,18 @@ class FileConfig(dict):
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
         with self.path.open('wb') as config_file:
-            config = {
-                k: {
-                    sk: sv
-                    for sk, sv in v.data.items()
-                    if sk not in ('site_id', 'staging_url')
-                } for k, v in self.items()
-            }
+            config = {k: self.unprepare(v) for k, v in self.items()}
             config_file.write(yaml.dump(config).encode())
+
+    @staticmethod
+    def unprepare(site_config):
+        return {
+            sk: sv
+            for sk, sv in site_config.data.items()
+            if sk not in ('site_id', 'staging_url') and (
+                sk != 'repo' or 'gitlab' not in site_config.data
+            ) and (sk != 'name' or sv != site_config['site_id'])
+        }
 
 
 class FileStorageMixin:
@@ -86,7 +90,7 @@ class FileStorageMixin:
                 def iter_sites(config_file):
                     config_data = yaml.load(config_file, Loader=yaml.Loader)
                     for site_id, props in config_data.items():
-                        url = props.pop('url', None)
+                        url = props.get('url', None)
                         config = site_config_fetcher(site_id)
                         name = config.get('project.name')
                         if name is not None:
@@ -140,12 +144,26 @@ class FileStorage(FileStorageMixin, Storage):
 
 
 class GitConfig(FileConfig):
+    def __getitem__(self, key):
+        return self.prepare(super().__getitem__(key))
+
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
         parent, name = self.path.parent, self.path.name
         run(f'git add {name}', cwd=parent)
         run('git commit -m autosave', cwd=parent)
         run('git push origin', cwd=parent)
+
+    @classmethod
+    def prepare(cls, site_config):
+        repo = site_config.get('repo', None)
+        gitlab = site_config.get('gitlab', None)
+        if repo is None:
+            if gitlab is None:
+                raise ValueError('repo/gitlab site config values not found')
+            repo = 'git@{host}:{namespace}/{project}.git'.format(**gitlab)
+        site_config.data['repo'] = repo
+        return site_config
 
 
 class GitStorage(FileStorageMixin, Storage):
