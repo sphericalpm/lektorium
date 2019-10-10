@@ -46,6 +46,7 @@ setuptools.setup(
         'graphql-core<3',
         'importlib-resources ; python_version < "3.7"',
         'lektor',
+        'more-itertools',
         'nodeenv',
         'python-dateutil',
         'pyyaml',
@@ -71,6 +72,7 @@ setuptools.setup(
             'flake8-mutable',
             'flake8-spellcheck',
             'pep8-naming',
+            'requests-mock',
             'wrapt',
         ]
     },

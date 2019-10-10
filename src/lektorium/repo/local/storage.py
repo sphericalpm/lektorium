@@ -3,13 +3,19 @@ import collections
 import functools
 import inifile
 import pathlib
+import requests
 import shutil
 import subprocess
 import tempfile
+from cached_property import cached_property
+from more_itertools import one
 import yaml
 
 from .objects import Site
 from ...utils import closer
+
+
+run = functools.partial(subprocess.check_call, shell=True)
 
 
 class Storage:
@@ -62,33 +68,33 @@ class FileConfig(dict):
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
         with self.path.open('wb') as config_file:
-            config = {
-                k: {
-                    sk: sv
-                    for sk, sv in v.data.items()
-                    if sk not in ('site_id', 'staging_url')
-                } for k, v in self.items()
-            }
+            config = {k: self.unprepare(v) for k, v in self.items()}
             config_file.write(yaml.dump(config).encode())
 
+    @staticmethod
+    def unprepare(site_config):
+        return {
+            sk: sv
+            for sk, sv in site_config.data.items()
+            if sk not in ('site_id', 'staging_url') and (
+                sk != 'repo' or 'gitlab' not in site_config.data
+            ) and (sk != 'name' or sv != site_config['site_id'])
+        }
 
-class FileStorage(Storage):
-    CONFIG_CLASS = FileConfig
+
+class FileStorageMixin:
     CONFIG_FILENAME = 'config.yml'
 
-    def __init__(self, root):
-        self.root = pathlib.Path(root).resolve()
-
-    @property
-    def config(self):
+    @classmethod
+    def load_config(cls, path, site_config_fetcher):
         config = {}
-        if self.__config_path.exists():
-            with self.__config_path.open('rb') as config_file:
+        if path.exists():
+            with path.open('rb') as config_file:
                 def iter_sites(config_file):
                     config_data = yaml.load(config_file, Loader=yaml.Loader)
                     for site_id, props in config_data.items():
-                        url = props.pop('url', None)
-                        config = self.site_config(site_id)
+                        url = props.get('url', None)
+                        config = site_config_fetcher(site_id)
                         name = config.get('project.name')
                         if name is not None:
                             props['name'] = name
@@ -100,7 +106,22 @@ class FileStorage(Storage):
                         yield props
                 sites = (Site(**props) for props in iter_sites(config_file))
                 config = {s['site_id']: s for s in sites}
-        return self.CONFIG_CLASS(self.__config_path, config)
+        return cls.CONFIG_CLASS(path, config)
+
+    @cached_property
+    def config(self):
+        return self.load_config(self._config_path, self.site_config)
+
+    @property
+    def _config_path(self):
+        return self.root / self.CONFIG_FILENAME
+
+
+class FileStorage(FileStorageMixin, Storage):
+    CONFIG_CLASS = FileConfig
+
+    def __init__(self, root):
+        self.root = pathlib.Path(root).resolve()
 
     def create_session(self, site_id, session_id, session_dir):
         site_root = self._site_dir(site_id)
@@ -121,51 +142,61 @@ class FileStorage(Storage):
     def _site_dir(self, site_id):
         return self.root / site_id / 'master'
 
-    @property
-    def __config_path(self):
-        return self.root / self.CONFIG_FILENAME
-
     def __repr__(self):
         return f'{self.__class__.__name__}("{str(self.root)}")'
 
 
 class GitConfig(FileConfig):
+    def __getitem__(self, key):
+        return self.prepare(super().__getitem__(key))
+
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
         parent, name = self.path.parent, self.path.name
-        subprocess.check_call(f'git add {name}', shell=True, cwd=parent)
-        subprocess.check_call('git commit -m autosave', shell=True, cwd=parent)
-        subprocess.check_call('git push origin', shell=True, cwd=parent)
+        run(f'git add {name}', cwd=parent)
+        run('git commit -m autosave', cwd=parent)
+        run('git push origin', cwd=parent)
+
+    @classmethod
+    def prepare(cls, site_config):
+        repo = site_config.get('repo', None)
+        gitlab = site_config.get('gitlab', None)
+        if repo is None:
+            if gitlab is None:
+                raise ValueError('repo/gitlab site config values not found')
+            repo = 'git@{host}:{namespace}/{project}.git'.format(**gitlab)
+        site_config.data['repo'] = repo
+        return site_config
 
 
-class GitStorage(FileStorage):
+class GitStorage(FileStorageMixin, Storage):
     CONFIG_CLASS = GitConfig
 
     def __init__(self, git):
         self.git = git
         self.workdir = pathlib.Path(closer(tempfile.TemporaryDirectory()))
-        lektorium_workdir = self.workdir / 'lektorium'
-        lektorium_workdir.mkdir()
-        subprocess.check_call(
-            f'git clone {self.git} .',
-            shell=True,
-            cwd=lektorium_workdir
-        )
-        super().__init__(lektorium_workdir)
+        self.root = self.workdir / 'lektorium'
+        self.root.mkdir()
+        run(f'git clone {self.git} .', cwd=self.root)
 
     @staticmethod
     def init(path):
         lektorium = (path / 'lektorium')
         lektorium.mkdir(parents=True, exist_ok=True)
-        subprocess.check_call(f'git init --bare .', shell=True, cwd=lektorium)
+        run(f'git init --bare .', cwd=lektorium)
         return lektorium
 
-    @property
-    def config(self):
-        return super().config
-
     def create_session(self, site_id, session_id, session_dir):
-        return super().create_session(site_id, session_id, session_dir)
+        repo = self.config[site_id].get('repo', None)
+        if repo is None:
+            raise ValueError('site repo not found')
+        branch = self.config[site_id].get('branch', '')
+        if branch:
+            branch = f'-b {branch}'
+        run(f'git clone {repo} {branch} {session_dir}')
+        run_local = functools.partial(run, cwd=session_dir)
+        run_local(f'git checkout -b session-{session_id}')
+        run_local(f'git push --set-upstream origin session-{session_id}')
 
     def create_site(self, lektor, name, owner, site_id):
         site_workdir = self.workdir / site_id
@@ -174,18 +205,14 @@ class GitStorage(FileStorage):
 
         site_repo = self.create_site_repo(site_id)
         lektor.quickstart(name, owner, site_workdir)
-        run = functools.partial(
-            subprocess.check_call,
-            shell=True,
-            cwd=site_workdir
-        )
-        run('git init')
-        run(f'git remote add origin {site_repo}')
-        run('git fetch')
-        run('git reset origin/master')
-        run('git add .')
-        run('git commit -m quickstart')
-        run('git push --set-upstream origin master')
+        run_local = functools.partial(run, cwd=site_workdir)
+        run_local('git init')
+        run_local(f'git remote add origin {site_repo}')
+        run_local('git fetch')
+        run_local('git reset origin/master')
+        run_local('git add .')
+        run_local('git commit -m quickstart')
+        run_local('git push --set-upstream origin master')
 
         return site_workdir, dict(repo=str(site_repo))
 
@@ -195,33 +222,49 @@ class GitStorage(FileStorage):
             raise ValueError('repo for such site-id already exists')
 
         site_repo.mkdir()
-        run = functools.partial(subprocess.check_call, shell=True)
         run('git init --bare .', cwd=site_repo)
         with tempfile.TemporaryDirectory() as workdir:
-            run = functools.partial(run, cwd=workdir)
-            run(f'git clone {site_repo} .')
-            run('git commit -m initial --allow-empty')
-            run('git push')
+            run_local = functools.partial(run, cwd=workdir)
+            run_local(f'git clone {site_repo} .')
+            run_local('git commit -m initial --allow-empty')
+            run_local('git push')
 
         return site_repo
 
+    def request_release(self, site_id, session_id, session_dir):
+        run_local = functools.partial(run, cwd=session_dir)
+        run_local('git add -A .')
+        run_local('git commit -m autosave')
+        run_local('git push')
+        site = self.config[site_id]
+        gitlab = site['gitlab']
+        headers = {'Authorization': 'Bearer {token}'.format(**gitlab)}
+        response = requests.get(
+            '{scheme}://{host}/api/v4/projects'.format(**gitlab),
+            headers=headers,
+        )
+        response.raise_for_status()
+        projects = response.json()
+        path = '{namespace}/{project}'.format(**gitlab)
+        project = one(x for x in projects if x['path_with_namespace'] == path)
+        session = site.sessions[session_id]
+        title_template = 'Request from: "{custodian}" <{custodian_email}>'
+        response = requests.post(
+            '{scheme}://{host}/api/v4/projects/{pid}/merge_requests'.format(
+                **gitlab,
+                pid=project['id']
+            ),
+            data=dict(
+                source_branch=f'session-{session_id}',
+                target_branch=site.get('branch', 'master'),
+                title=title_template.format(**session),
+            ),
+            headers=headers,
+        )
+        response.raise_for_status()
+
     def site_config(self, site_id):
         return collections.defaultdict(type(None))
-
-    def _site_dir(self, site_id):
-        if site_id in self.config:
-            site_dir = self.workdir / site_id
-            if not site_dir.exists():
-                site_repo = self.config[site_id].get('repo', None)
-                branch = self.config[site_id].get('branch', '')
-                if branch:
-                    branch = f'-b {branch}'
-                subprocess.check_call(
-                    f'git clone {site_repo} {branch} {site_dir}',
-                    shell=True
-                )
-            return site_dir
-        raise RuntimeError('wrong site request')
 
     def __repr__(self):
         name = self.__class__.__name__

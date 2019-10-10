@@ -94,7 +94,6 @@
               <td>
                 <b-button variant="primary" @click="parkSession(session)">Park</b-button>
                 <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
-                <!-- <b-button variant="dark" @click="stage(session)">Stage</b-button> -->
                 <b-button variant="success" @click="requestRelease(session)">Request release</b-button>
               </td>
             </tr>
@@ -339,32 +338,6 @@ export default {
       }
       else {
         this.showMessage(`Unable to unpark '${id}'`, `danger`);
-      }
-    },
-
-    async stage(session) {
-      let id = session.sessionId;
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        headers: await this.getHeaders(),
-        data: {
-          query: `
-                mutation {
-                stage(sessionId: "${id}") {
-                  ok
-                }
-              }
-          `
-        }
-      });
-      if(result.data.data.stage.ok)
-      {
-        this.showMessage(`'${id}' staged.`, `success`);
-        this.getPanelData();
-      }
-      else {
-        this.showMessage(`Unable to stage '${id}'`, `danger`);
       }
     },
 
