@@ -1,14 +1,20 @@
 import json
 from graphql import GraphQLError
 from six.moves.urllib.request import urlopen
+from authlib.jose import JsonWebToken, jwk
+from cached_property import cached_property
 
 
 class JWTMiddleware:
     def __init__(self, auth):
         self.auth = auth
 
-    def resolve(self, next, root, info, **args):
-        pass  # TODO: implement middleware logic here
+    def resolve(self, next, root, info, **kwargs):
+        token = self.get_token_auth(info.context['request'].headers)
+        key = self.public_key
+        payload = self.decode_token(token, key)
+        if payload:
+            return next(root, info, **kwargs)
 
     def get_token_auth(self, headers):
         """Obtains the Access Token from the Authorization Header
@@ -33,12 +39,24 @@ class JWTMiddleware:
 
         return token
 
-    def get_jwks(self):
+    @cached_property
+    def public_key(self):
         auth_domain = self.auth['data-auth0-domain']
         jsonurl = urlopen(f"https://{auth_domain}/.well-known/jwks.json")
         jwks = json.loads(jsonurl.read())
+        key = jwk.loads(jwks['keys'][0])
 
-        return jwks
+        return key
+
+    def decode_token(self, token, key):
+        jwt = JsonWebToken(['RS256'])
+        try:
+            claims = jwt.decode(token, key)
+            claims.validate()
+        except Exception:
+            raise GraphExecutionError("Unable to decode token", code=401)
+        else:
+            return claims
 
 
 class GraphExecutionError(GraphQLError):
