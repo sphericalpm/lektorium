@@ -11,6 +11,7 @@ from graphql.execution.executors.asyncio import AsyncioExecutor
 import bs4
 import graphene
 
+from lektorium.jwt import JWTMiddleware
 from . import install as client, schema, repo
 from .utils import closer
 from .repo.local import (
@@ -20,6 +21,7 @@ from .repo.local import (
     GitStorage,
     LocalLektor,
 )
+
 
 
 async def index(request, app_path, auth0_options=None):
@@ -138,6 +140,7 @@ def init_app(repo, auth0_options=None):
             query=schema.Query,
             mutation=schema.MutationQuery,
         ),
+        middleware=[JWTMiddleware(auth0_options)],
         graphiql=True,
         executor=AsyncioExecutor(),
         context=dict(repo=repo),
