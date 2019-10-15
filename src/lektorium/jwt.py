@@ -14,6 +14,8 @@ class JWTMiddleware:
         key = self.public_key
         payload = self.decode_token(token, key)
         if payload:
+            userdata = dict(name=payload['name'], email=payload['email'])
+            info.context['userdata'] = userdata
             return next(root, info, **kwargs)
 
     def get_token_auth(self, headers):
