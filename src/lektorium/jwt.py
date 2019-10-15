@@ -1,4 +1,6 @@
+import json
 from graphql import GraphQLError
+from six.moves.urllib.request import urlopen
 
 
 class JWTMiddleware:
@@ -6,7 +8,7 @@ class JWTMiddleware:
         self.auth = auth
 
     def resolve(self, next, root, info, **args):
-        pass #TODO: implement middleware logic here
+        pass  # TODO: implement middleware logic here
 
     def get_token_auth(self, headers):
         """Obtains the Access Token from the Authorization Header
@@ -30,6 +32,13 @@ class JWTMiddleware:
         token = '.'.join(splited_token[:3])
 
         return token
+
+    def get_jwks(self):
+        auth_domain = self.auth['data-auth0-domain']
+        jsonurl = urlopen(f"https://{auth_domain}/.well-known/jwks.json")
+        jwks = json.loads(jsonurl.read())
+
+        return jwks
 
 
 class GraphExecutionError(GraphQLError):
