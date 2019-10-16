@@ -128,6 +128,11 @@ class CreateSession(MutationBase):
     class Arguments:
         site_id = String()
 
+    @classmethod
+    async def mutate(self, root, info, **kwargs):
+        kwargs['custodian'] = info.context['userdata']
+        return super().mutate(root, info, **kwargs)
+
 
 class CreateSite(MutationBase):
     REPO_METHOD = 'create_site'

@@ -10,11 +10,13 @@ class JWTMiddleware:
         self.auth = auth
 
     def resolve(self, next, root, info, **kwargs):
+        if not all(self.auth.values()):
+            return next(root, info, **kwargs)
         token = self.get_token_auth(info.context['request'].headers)
         key = self.public_key
         payload = self.decode_token(token, key)
         if payload:
-            userdata = dict(name=payload['name'], email=payload['email'])
+            userdata = (payload['nickname'], payload['email'])
             info.context['userdata'] = userdata
             return next(root, info, **kwargs)
 
