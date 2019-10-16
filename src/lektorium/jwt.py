@@ -1,18 +1,16 @@
-import json
+import aiohttp
 from graphql import GraphQLError
-from six.moves.urllib.request import urlopen
-from authlib.jose import JsonWebToken, jwk
-from cached_property import cached_property
+from authlib.jose import JsonWebToken
 
 
 class JWTMiddleware:
     def __init__(self, auth):
         self.auth = auth
 
-    def resolve(self, next, root, info, **kwargs):
+    async def resolve(self, next, root, info, **kwargs):
         if all(self.auth.values()):
             token = self.get_token_auth(info.context['request'].headers)
-            key = self.public_key
+            key = await self.public_key()
             payload = self.decode_token(token, key)
             if payload:
                 userdata = (payload['nickname'], payload['email'])
@@ -42,14 +40,11 @@ class JWTMiddleware:
 
         return token
 
-    @cached_property
-    def public_key(self):
+    async def public_key(self):
         auth_domain = self.auth['data-auth0-domain']
-        jsonurl = urlopen(f'https://{auth_domain}/.well-known/jwks.json')
-        jwks = json.loads(jsonurl.read())
-        key = jwk.loads(jwks['keys'][0])
-
-        return key
+        async with aiohttp.ClientSession() as client:
+            async with client.get(f'https://{auth_domain}/.well-known/jwks.json') as resp:
+                return await resp.json()
 
     def decode_token(self, token, key):
         jwt = JsonWebToken(['RS256'])
