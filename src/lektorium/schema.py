@@ -130,8 +130,7 @@ class CreateSession(MutationBase):
 
     @classmethod
     async def mutate(self, root, info, **kwargs):
-        kwargs['custodian'] = info.context.get('userdata')
-        return super().mutate(root, info, **kwargs)
+        return super().mutate(root, info, custodian=info.context.get('userdata'), **kwargs)
 
 
 class CreateSite(MutationBase):
@@ -143,8 +142,7 @@ class CreateSite(MutationBase):
 
     @classmethod
     async def mutate(self, root, info, **kwargs):
-        kwargs['owner'] = info.context.get('userdata')
-        return super().mutate(root, info, **kwargs)
+        return super().mutate(root, info, owner=info.context.get('userdata'), **kwargs)
 
 
 MutationQuery = type(
