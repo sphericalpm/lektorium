@@ -23,7 +23,6 @@ from .repo.local import (
 )
 
 
-
 async def index(request, app_path, auth0_options=None):
     index = app_path / 'index.html'
     data = index.resolve().read_bytes()
