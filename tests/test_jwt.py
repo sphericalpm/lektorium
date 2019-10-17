@@ -69,3 +69,29 @@ def test_get_token_auth(jwt_middleware):
     with pytest.raises(GraphExecutionError) as excinfo:
         jwt_middleware.get_token_auth(dict(Authorization='token token token'))
     assert 'Authorization header must be Bearer token' == str(excinfo.value)
+
+
+def test_decode_token(jwt_middleware):
+    test_token = (
+        'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiSm9obiBEb2UifQ.FL7foy7kV9SVoC6GLE'
+        'qwatuYz39BWoEUpZ9sv00zg2oJneJFkwPYYBCj92xu0Fry7zqLRkhFeveUKtSgZV6AinDvdWWH9Is8ku3l'
+        '871ut-ECiR8-Co7qdIbQet3IhiLggHko4Z9Ez7F-pWmppV7BRJmYdFjbrurLfgN191VE9xC8AmnzSIPTFc'
+        'zg9g_aycqhea4ncd9YjiGV2QlmNB4q1aCZ3V7QyO4KwJnnLeI4tykXjNRVXfPuInaE_f0TpzpRbzJelAGh'
+        'L5cmO_b0kJswCEqonYMvsVdGqM9jxWMebs7L2k2s2nZ3MQNo-gVIv3E2GfaBpCgGxO-8kyh8sBal3A'
+    )
+    test_key = (
+        '-----BEGIN PUBLIC KEY-----\n'
+        'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnzyis1ZjfNB0bBgKFMSv'
+        'vkTtwlvBsaJq7S5wA+kzeVOVpVWwkWdVha4s38XM/pa/yr47av7+z3VTmvDRyAHc'
+        'aT92whREFpLv9cj5lTeJSibyr/Mrm/YtjCZVWgaOYIhwrXwKLqPr/11inWsAkfIy'
+        'tvHWTxZYEcXLgAXFuUuaS3uF9gEiNQwzGTU1v0FqkqTBr4B8nW3HCN47XUu0t8Y0'
+        'e+lf4s4OxQawWD79J9/5d3Ry0vbV3Am1FtGJiJvOwRsIfVChDpYStTcHTCMqtvWb'
+        'V6L11BWkpzGXSW4Hv43qa+GSYOD2QU68Mb59oSk2OB+BtOLpJofmbGEGgvmwyCI9'
+        'MwIDAQAB\n'
+        '-----END PUBLIC KEY-----'
+    )
+    assert jwt_middleware.decode_token(test_token, test_key) == {"name": "John Doe"}
+    with pytest.raises(GraphExecutionError):
+        jwt_middleware.decode_token('', test_key)
+    with pytest.raises(ValueError):
+        jwt_middleware.decode_token(test_token, '')
