@@ -11,14 +11,16 @@ class JWTMiddleware:
     async def resolve(self, next, root, info, **kwargs):
         if self.auth is None:
             raise AttributeError('auth should be not None')
-        if all(self.auth.values()):
+        if all(self.auth.values()) and len(self.auth.values()) == 3:
             token = self.get_token_auth(info.context['request'].headers)
             key = await self.public_key()
             payload = self.decode_token(token, key)
             if payload:
                 userdata = (payload['nickname'], payload['email'])
                 info.context['userdata'] = userdata
-        return next(root, info, **kwargs)
+            return next(root, info, **kwargs)
+        else:
+            raise ValueError('Check auth0 params')
 
     def get_token_auth(self, headers):
         """Obtains the Access Token from the Authorization Header

@@ -133,13 +133,15 @@ def init_app(repo, auth0_options=None):
     app.router.add_route('*', '/callback', index_handler)
     app.router.add_route('*', '/profile', index_handler)
 
+    middleware = [JWTMiddleware(auth0_options)] if auth0_options is not None else []
+
     aiohttp_graphql.GraphQLView.attach(
         app,
         schema=graphene.Schema(
             query=schema.Query,
             mutation=schema.MutationQuery,
         ),
-        middleware=[JWTMiddleware(auth0_options)],
+        middleware=middleware,
         graphiql=True,
         executor=AsyncioExecutor(),
         context=dict(repo=repo),
