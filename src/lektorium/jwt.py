@@ -1,6 +1,7 @@
 import aiohttp
 from graphql import GraphQLError
 from authlib.jose import JsonWebToken
+from authlib.jose.errors import JoseError
 
 
 class JWTMiddleware:
@@ -51,8 +52,8 @@ class JWTMiddleware:
         try:
             claims = jwt.decode(token, key)
             claims.validate()
-        except Exception:
-            raise GraphExecutionError('Unable to decode token', code=401)
+        except JoseError as e:
+            raise GraphExecutionError(f'Unable to decode token: {e.error}', code=401)
         else:
             return claims
 
