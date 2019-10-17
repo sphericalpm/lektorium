@@ -50,6 +50,7 @@ setuptools.setup(
         'nodeenv',
         'python-dateutil',
         'pyyaml',
+        'Authlib',
     ],
     extras_require={
         'dev': [
