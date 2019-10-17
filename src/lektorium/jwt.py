@@ -9,6 +9,8 @@ class JWTMiddleware:
         self.auth = auth
 
     async def resolve(self, next, root, info, **kwargs):
+        if self.auth is None:
+            raise AttributeError('auth should be not None')
         if all(self.auth.values()):
             token = self.get_token_auth(info.context['request'].headers)
             key = await self.public_key()
@@ -22,7 +24,7 @@ class JWTMiddleware:
         """Obtains the Access Token from the Authorization Header
         """
         auth = headers.get('Authorization', None)
-        if not auth:
+        if auth is None:
             raise GraphExecutionError('Authorization header is expected', code=401)
 
         parts = auth.split()
