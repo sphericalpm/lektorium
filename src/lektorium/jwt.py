@@ -35,8 +35,7 @@ class JWTMiddleware:
         elif parts[0].lower() != 'bearer':
             raise GraphExecutionError('Authorization header must start with Bearer', code=401)
 
-        splited_token = parts[1].split('.')
-        token = '.'.join(splited_token[:3])
+        token = '.'.join(parts[1].split('.')[:3])
 
         return token
 
