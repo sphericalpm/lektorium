@@ -84,7 +84,7 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
         lektorium_repo = repo.LocalRepo(storage, server, LocalLektor)
     else:
         raise ValueError(f'repo_type not supported {repo_type}')
-    
+
     if auth:
         auth_attributes = ('domain', 'id', 'api')
         auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
@@ -136,7 +136,9 @@ def init_app(repo, auth0_options=None):
     app.router.add_route('*', '/callback', index_handler)
     app.router.add_route('*', '/profile', index_handler)
 
-    middleware = [JWTMiddleware(auth0_options)] if auth0_options is not None else []
+    middleware = []
+    if auth0_options is not None:
+        middleware.append(JWTMiddleware(auth0_options))
 
     aiohttp_graphql.GraphQLView.attach(
         app,
