@@ -49,10 +49,9 @@ class JWTMiddleware:
         try:
             claims = jwt.decode(token, key)
             claims.validate()
+            return claims
         except JoseError as e:
             raise GraphExecutionError(f'Unable to decode token: {e.error}', code=401)
-        else:
-            return claims
 
 
 class GraphExecutionError(GraphQLError):
