@@ -6,21 +6,21 @@ from authlib.jose.errors import JoseError
 
 class JWTMiddleware:
     def __init__(self, auth):
-        self.auth = auth
-
-    async def resolve(self, next, root, info, **kwargs):
-        if self.auth is None:
+        if auth is None:
             raise AttributeError('auth should be not None')
         if all(self.auth.values()) and len(self.auth.values()) == 3:
-            token = self.get_token_auth(info.context['request'].headers)
-            key = await self.public_key()
-            payload = self.decode_token(token, key)
-            if payload:
-                userdata = (payload['nickname'], payload['email'])
-                info.context['userdata'] = userdata
-            return next(root, info, **kwargs)
+            self.auth = auth
         else:
             raise ValueError('Check auth0 params')
+
+    async def resolve(self, next, root, info, **kwargs):
+        token = self.get_token_auth(info.context['request'].headers)
+        key = await self.public_key()
+        payload = self.decode_token(token, key)
+        if payload:
+            userdata = (payload['nickname'], payload['email'])
+            info.context['userdata'] = userdata
+        return next(root, info, **kwargs)
 
     def get_token_auth(self, headers):
         """Obtains the Access Token from the Authorization Header
