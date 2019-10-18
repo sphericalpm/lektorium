@@ -60,7 +60,7 @@ def test_get_token_auth(jwt_middleware):
 
     with pytest.raises(GraphExecutionError) as excinfo:
         jwt_middleware.get_token_auth(dict(Authorization='token testtoken'))
-    assert 'Authorization header must start with Bearer' == str(excinfo.value)
+    assert 'Authorization header must be Bearer token' == str(excinfo.value)
 
     with pytest.raises(GraphExecutionError) as excinfo:
         jwt_middleware.get_token_auth(dict(Authorization='testtoken'))

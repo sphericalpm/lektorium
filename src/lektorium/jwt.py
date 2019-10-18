@@ -8,7 +8,7 @@ class JWTMiddleware:
     def __init__(self, auth):
         if auth is None:
             raise AttributeError('auth should be not None')
-        if all(self.auth.values()) and len(self.auth.values()) == 3:
+        if all(auth.values()) and len(auth.values()) == 3:
             self.auth = auth
         else:
             raise ValueError('Check auth0 params')
