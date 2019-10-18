@@ -2,6 +2,7 @@ import aiohttp
 from graphql import GraphQLError
 from authlib.jose import JsonWebToken
 from authlib.jose.errors import JoseError
+from cached_property import cached_property
 
 
 class JWTMiddleware:
@@ -15,7 +16,7 @@ class JWTMiddleware:
 
     async def resolve(self, next, root, info, **kwargs):
         token = self.get_token_auth(info.context['request'].headers)
-        key = await self.public_key()
+        key = await self.public_key
         payload = self.decode_token(token, key)
         if payload:
             userdata = (payload['nickname'], payload['email'])
@@ -38,6 +39,7 @@ class JWTMiddleware:
 
         return token
 
+    @cached_property
     async def public_key(self):
         auth_domain = self.auth['data-auth0-domain']
         async with aiohttp.ClientSession() as client:
