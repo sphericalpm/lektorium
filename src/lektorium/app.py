@@ -84,10 +84,13 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
         lektorium_repo = repo.LocalRepo(storage, server, LocalLektor)
     else:
         raise ValueError(f'repo_type not supported {repo_type}')
-
-    auth_attributes = ('domain', 'id', 'api')
-    auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
-    auth0_options = dict(zip(auth_attributes, auth.split(',')))
+    
+    if auth:
+        auth_attributes = ('domain', 'id', 'api')
+        auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
+        auth0_options = dict(zip(auth_attributes, auth.split(',')))
+    else:
+        auth0_options = None
 
     logging.getLogger('lektorium').info(f'Start with {lektorium_repo}')
     return init_app(lektorium_repo, auth0_options)
