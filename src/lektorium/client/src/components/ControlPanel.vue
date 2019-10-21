@@ -31,6 +31,7 @@
                 <a
                   v-if="site.productionUrl.startsWith('http')"
                   :href="site.productionUrl"
+                  target="_blank"
                 >{{ site.productionUrl }}</a>
                 <span v-else>{{ site.productionUrl }}</span>
               </td>
@@ -88,6 +89,7 @@
                 <a
                   v-if="session.editUrl.startsWith('http')"
                   :href="session.editUrl"
+                  target="_blank"
                 >{{ session.editUrl }}</a>
                 <span v-else>{{ session.editUrl }}</span>
               </td>
@@ -498,6 +500,7 @@ export default {
         setTimeout(this.getPanelData,5000);
       }
     },
+
   },
 
 created() {
