@@ -1,5 +1,6 @@
 <template>
   <div v-shortkey="['shift', 'o']" @shortkey="changeHiddenButton">
+    <loading :active.sync="isLoading" :is-full-page="true"></loading>
     <b-card no-body>
       <b-tabs pills card vertical v-model="tab_index">
         <b-tab @click="getPanelData(); is_message_visible = false;">
@@ -182,6 +183,8 @@
 <script>
 import axios from 'axios';
 import Alert from './Alert.vue';
+import Loading from 'vue-loading-overlay';
+import 'vue-loading-overlay/dist/vue-loading.css';
 
 export default {
   name: 'ControlPanel',
@@ -200,10 +203,12 @@ export default {
       message_type: 'success',
       destroy_status: '',
       tab_index: 0,
+      isLoading: false,
     };
   },
   components: {
     alert: Alert,
+    Loading,
   },
   methods: {
 
@@ -214,6 +219,7 @@ export default {
     },
 
     async getPanelData() {
+      this.isLoading = true;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -262,10 +268,12 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
       this.checkStarting();
+      this.isLoading = false;
     },
 
     async destroySession(session) {
       let id = session.sessionId;
+      this.isLoading = true;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -280,6 +288,7 @@ export default {
           `
         }
       });
+      this.isLoading = false;
       if(result.data.data.destroySession.ok) {
         this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
@@ -291,6 +300,7 @@ export default {
 
     async parkSession(session) {
       let id = session.sessionId;
+      this.isLoading = true;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -305,6 +315,7 @@ export default {
           `
         }
       });
+      this.isLoading = false;
       if(result.data.data.parkSession.ok)
       {
         this.showMessage(`'${id}' parked successfully.`,`success`);
@@ -317,6 +328,7 @@ export default {
 
     async unparkSession(session) {
       let id = session.sessionId;
+      this.isLoading = true;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -331,6 +343,7 @@ export default {
           `
         }
       });
+      this.isLoading = false;
       if(result.data.data.unparkSession.ok)
       {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
@@ -343,6 +356,7 @@ export default {
 
     async requestRelease(session) {
       let id = session.sessionId;
+      this.isLoading = true;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -357,6 +371,7 @@ export default {
           `
         }
       });
+      this.isLoading = false;
       if(result.data.data.requestRelease.ok)
       {
         this.showMessage(`Release request was sent.`, `success`);
@@ -369,6 +384,7 @@ export default {
 
     async createSession(site) {
       let id = site.siteId;
+      this.isLoading = true;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -383,6 +399,7 @@ export default {
           `
         }
       });
+      this.isLoading = false;
       if(result.data.data.createSession.ok)
       {
         this.showMessage(`Session created successfully.`, `success`);
@@ -412,6 +429,7 @@ export default {
     async addSite(payload) {
       const site_name = payload.title;
       const site_id = payload.site_id;
+      this.isLoading = true;
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -430,6 +448,7 @@ export default {
           `
         }
       });
+      this.isLoading = false;
       if(result.data.data.createSite.ok) {
         this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
