@@ -29,8 +29,8 @@
               <td>
                 <a
                   v-if="site.productionUrl.startsWith('http')"
-                  href="#"
-                  @click="openNewTab(site.productionUrl)"
+                  :href="site.productionUrl"
+                  target="_blank"
                 >{{ site.productionUrl }}</a>
                 <span v-else>{{ site.productionUrl }}</span>
               </td>
@@ -87,8 +87,8 @@
               <td>
                 <a
                   v-if="session.editUrl.startsWith('http')"
-                  href="#"
-                  @click="openNewTab(session.editUrl)"
+                  :href="session.editUrl"
+                  target="_blank"
                 >{{ session.editUrl }}</a>
                 <span v-else>{{ session.editUrl }}</span>
               </td>
@@ -509,9 +509,6 @@ export default {
       }
     },
 
-    openNewTab(url) {
-      window.open(url);
-    },
   },
 
 created() {
