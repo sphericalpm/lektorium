@@ -1,4 +1,7 @@
+from collections import namedtuple
+
 import pytest
+import json
 from lektorium.jwt import JWTMiddleware, GraphExecutionError
 
 TEST_TOKEN = (
@@ -14,17 +17,22 @@ TEST_TOKEN = (
 TEST_HEADERS = {'Authorization': f'Bearer {TEST_TOKEN}.{TEST_TOKEN}'}
 
 TEST_KEY = (
-        '-----BEGIN PUBLIC KEY-----\n'
-        'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnzyis1ZjfNB0bBgKFMSv'
-        'vkTtwlvBsaJq7S5wA+kzeVOVpVWwkWdVha4s38XM/pa/yr47av7+z3VTmvDRyAHc'
-        'aT92whREFpLv9cj5lTeJSibyr/Mrm/YtjCZVWgaOYIhwrXwKLqPr/11inWsAkfIy'
-        'tvHWTxZYEcXLgAXFuUuaS3uF9gEiNQwzGTU1v0FqkqTBr4B8nW3HCN47XUu0t8Y0'
-        'e+lf4s4OxQawWD79J9/5d3Ry0vbV3Am1FtGJiJvOwRsIfVChDpYStTcHTCMqtvWb'
-        'V6L11BWkpzGXSW4Hv43qa+GSYOD2QU68Mb59oSk2OB+BtOLpJofmbGEGgvmwyCI9'
-        'MwIDAQAB\n'
-        '-----END PUBLIC KEY-----'
-    )
+    '-----BEGIN PUBLIC KEY-----\n'
+    'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnzyis1ZjfNB0bBgKFMSv'
+    'vkTtwlvBsaJq7S5wA+kzeVOVpVWwkWdVha4s38XM/pa/yr47av7+z3VTmvDRyAHc'
+    'aT92whREFpLv9cj5lTeJSibyr/Mrm/YtjCZVWgaOYIhwrXwKLqPr/11inWsAkfIy'
+    'tvHWTxZYEcXLgAXFuUuaS3uF9gEiNQwzGTU1v0FqkqTBr4B8nW3HCN47XUu0t8Y0'
+    'e+lf4s4OxQawWD79J9/5d3Ry0vbV3Am1FtGJiJvOwRsIfVChDpYStTcHTCMqtvWb'
+    'V6L11BWkpzGXSW4Hv43qa+GSYOD2QU68Mb59oSk2OB+BtOLpJofmbGEGgvmwyCI9'
+    'MwIDAQAB\n'
+    '-----END PUBLIC KEY-----'
+)
 
+TEST_JWK = {
+    "kty": "RSA",
+    "e": "AQAB",
+    "n": "nzyis1ZjfNB0bBgKFMSvvkTtwlvBsaJq7S5wA-kzeVOVpVWwkWdVha4s38XM_pa_yr47av7-z3VTmvDRyAHcaT92whREFpLv9cj5lTeJSibyr_Mrm_YtjCZVWgaOYIhwrXwKLqPr_11inWsAkfIytvHWTxZYEcXLgAXFuUuaS3uF9gEiNQwzGTU1v0FqkqTBr4B8nW3HCN47XUu0t8Y0e-lf4s4OxQawWD79J9_5d3Ry0vbV3Am1FtGJiJvOwRsIfVChDpYStTcHTCMqtvWbV6L11BWkpzGXSW4Hv43qa-GSYOD2QU68Mb59oSk2OB-BtOLpJofmbGEGgvmwyCI9Mw",
+}
 
 @pytest.fixture
 def jwt_middleware():
@@ -84,3 +92,30 @@ async def test_public_key(aresponses, jwt_middleware):
     aresponses.add(jwt_middleware.auth['data-auth0-domain'], '/.well-known/jwks.json', 'get', response_handler)
     key = await jwt_middleware.public_key
     assert key == {'public_key': 'somekey'}
+
+
+def test_m(monkeypatch):
+    Info = namedtuple('Info', 'context')
+    Request = namedtuple('Request', 'headers')
+    info = Info({'request': Request(TEST_HEADERS)})
+    assert info.context['request'].headers == TEST_HEADERS
+
+
+@pytest.mark.asyncio
+async def test_jwt_resolve(aresponses, jwt_middleware, monkeypatch):
+    Info = namedtuple('Info', 'context')
+    Request = namedtuple('Request', 'headers')
+    info = Info({'request': Request(TEST_HEADERS)})
+
+    def test_next(root, info, **kwargs):
+        return info
+
+    def response_handler(request):
+        return aresponses.Response(
+            status=200,
+            headers={'Content-Type': 'application/json'}, body=bytes(json.dumps(TEST_JWK), encoding='utf-8')
+        )
+
+    aresponses.add(jwt_middleware.auth['data-auth0-domain'], '/.well-known/jwks.json', 'get', response_handler)
+    resolve = await jwt_middleware.resolve(test_next, None, info)
+    assert resolve.context['userdata'] == ('Max Jekov', 'mj@mail.me')
