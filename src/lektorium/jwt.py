@@ -7,12 +7,9 @@ from cached_property import cached_property
 
 class JWTMiddleware:
     def __init__(self, auth):
-        if auth is None:
-            raise AttributeError('auth should be not None')
-        if all(auth.values()) and len(auth.values()) == 3:
-            self.auth = auth
-        else:
-            raise ValueError('Check auth0 params')
+        if auth is None or len(auth.values()) != 3 or not all(auth.values()):
+            raise ValueError('check jwt auth param')
+        self.auth = auth
 
     async def resolve(self, next, root, info, **kwargs):
         token = self.get_token_auth(info.context['request'].headers)
@@ -24,16 +21,21 @@ class JWTMiddleware:
         return next(root, info, **kwargs)
 
     def get_token_auth(self, headers):
-        """Obtains the Access Token from the Authorization Header
-        """
+        """Obtains the Access Token from the Authorization Header"""
         auth = headers.get('Authorization', None)
         if auth is None:
-            raise GraphExecutionError('Authorization header is expected', code=401)
+            raise GraphExecutionError(
+                'Authorization header is expected',
+                code=401
+            )
 
         parts = auth.split()
 
-        if len(parts) == 1 or len(parts) > 2 or parts[0].lower() != 'bearer':
-            raise GraphExecutionError('Authorization header must be Bearer token', code=401)
+        if len(parts) != 2 or parts[0].lower() != 'bearer':
+            raise GraphExecutionError(
+                'Authorization header must be Bearer token',
+                code=401
+            )
 
         token = '.'.join(parts[1].split('.')[:3])
 
@@ -43,7 +45,8 @@ class JWTMiddleware:
     async def public_key(self):
         auth_domain = self.auth['data-auth0-domain']
         async with aiohttp.ClientSession() as client:
-            async with client.get(f'https://{auth_domain}/.well-known/jwks.json') as resp:
+            jwks_url = f'https://{auth_domain}/.well-known/jwks.json'
+            async with client.get(jwks_url) as resp:
                 return await resp.json()
 
     def decode_token(self, token, key):
@@ -53,7 +56,10 @@ class JWTMiddleware:
             claims.validate()
             return claims
         except JoseError as e:
-            raise GraphExecutionError(f'Unable to decode token: {e.error}', code=401)
+            raise GraphExecutionError(
+                f'Unable to decode token: {e.error}',
+                code=401
+            )
 
 
 class GraphExecutionError(GraphQLError):
