@@ -1,6 +1,5 @@
 import pytest
 import aiohttp
-import aresponses
 from lektorium.jwt import JWTMiddleware, GraphExecutionError
 
 
@@ -112,11 +111,22 @@ def test_decode_token(jwt_middleware):
         jwt_middleware.decode_token(test_token, '')
 
 
-@pytest.mark.asyncio
-async def test_public_key(jwt_middleware):
-    pass
+def test_jwt_middleware_init():
+    with pytest.raises(ValueError):
+        jwt_middleware = JWTMiddleware(None)
+    with pytest.raises(ValueError):
+        jwt_middleware = JWTMiddleware({'auth1': '', 'auth2': ''})
+    with pytest.raises(ValueError):
+        jwt_middleware = JWTMiddleware({'auth1': '', 'auth2': '', 'auth3': ''})
 
 
 @pytest.mark.asyncio
-async def test_middleware(jwt_middleware):
-    pass
+async def test_public_key(aresponses, jwt_middleware):
+    def response_handler(request):
+        return aresponses.Response(
+            status=200,
+            headers={'Content-Type': 'application/json'}, body=b'{"public_key": "somekey"}'
+        )
+    aresponses.add(jwt_middleware.auth['data-auth0-domain'], '/.well-known/jwks.json', 'get', response_handler)
+    key = await jwt_middleware.public_key
+    assert key == {'public_key': 'somekey'}

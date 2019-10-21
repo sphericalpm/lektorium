@@ -55,6 +55,7 @@ setuptools.setup(
     extras_require={
         'dev': [
             'aiohttp-devtools',
+            'aresponses',
             'async-timeout',
 
             'mypy',
