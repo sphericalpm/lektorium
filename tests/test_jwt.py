@@ -1,4 +1,6 @@
 import pytest
+import aiohttp
+import aresponses
 from lektorium.jwt import JWTMiddleware, GraphExecutionError
 
 
@@ -108,3 +110,13 @@ def test_decode_token(jwt_middleware):
         jwt_middleware.decode_token('', test_key)
     with pytest.raises(ValueError):
         jwt_middleware.decode_token(test_token, '')
+
+
+@pytest.mark.asyncio
+async def test_public_key(jwt_middleware):
+    pass
+
+
+@pytest.mark.asyncio
+async def test_middleware(jwt_middleware):
+    pass
