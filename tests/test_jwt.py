@@ -83,9 +83,15 @@ async def test_public_key(aresponses, jwt_middleware):
     def response_handler(request):
         return aresponses.Response(
             status=200,
-            headers={'Content-Type': 'application/json'}, body=b'{"public_key": "somekey"}'
+            headers={'Content-Type': 'application/json'},
+            body=b'{"public_key": "somekey"}'
         )
-    aresponses.add(jwt_middleware.auth['data-auth0-domain'], '/.well-known/jwks.json', 'get', response_handler)
+    aresponses.add(
+        jwt_middleware.auth['data-auth0-domain'],
+        '/.well-known/jwks.json',
+        'get',
+        response_handler
+    )
     key = await jwt_middleware.public_key
     assert key == {'public_key': 'somekey'}
 
@@ -109,9 +115,15 @@ async def test_jwt_resolve(aresponses, jwt_middleware, monkeypatch):
     def response_handler(request):
         return aresponses.Response(
             status=200,
-            headers={'Content-Type': 'application/json'}, body=bytes(json.dumps(TEST_JWK), encoding='utf-8')
+            headers={'Content-Type': 'application/json'},
+            body=bytes(json.dumps(TEST_JWK), encoding='utf-8')
         )
 
-    aresponses.add(jwt_middleware.auth['data-auth0-domain'], '/.well-known/jwks.json', 'get', response_handler)
+    aresponses.add(
+        jwt_middleware.auth['data-auth0-domain'],
+        '/.well-known/jwks.json',
+        'get',
+        response_handler
+    )
     resolve = await jwt_middleware.resolve(test_next, None, info)
     assert resolve.context['userdata'] == ('Max Jekov', 'mj@mail.me')
