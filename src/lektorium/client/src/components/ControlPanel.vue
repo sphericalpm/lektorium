@@ -220,6 +220,19 @@ export default {
       return {Authorization: `Bearer ${tokens.join('.')}`};
     },
 
+    async makeRequest(query) {
+      this.isLoading = true;
+      var result = await axios({
+        method: "POST",
+        url: "/graphql",
+        headers: await this.getHeaders(),
+        data: {
+          query: query
+        }
+      });
+      return result;
+    },
+
     async getPanelData() {
       this.isLoading = true;
       var result = await axios({
