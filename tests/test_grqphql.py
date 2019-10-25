@@ -238,7 +238,10 @@ def test_unpark_session_another_exist(client):
                 'ok': False,
             },
         }
-    }, 'Server should fail to unpark session when there is an active session for same website'
+    }, (
+        'Server should fail to unpark session when there is an active session '
+        'for same website'
+    )
 
 
 def test_unpark_unknown_session(client):

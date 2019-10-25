@@ -39,6 +39,7 @@ setuptools.setup(
         'aiohttp-graphql',
         'aiohttp!=3.6.0',
         'appdirs',
+        'authlib',
         'beautifulsoup4',
         'bidict',
         'cached-property',
@@ -54,6 +55,7 @@ setuptools.setup(
     extras_require={
         'dev': [
             'aiohttp-devtools',
+            'aresponses',
             'async-timeout',
 
             'mypy',

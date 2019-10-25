@@ -128,6 +128,11 @@ class CreateSession(MutationBase):
     class Arguments:
         site_id = String()
 
+    @classmethod
+    async def mutate(self, root, info, **kwargs):
+        jwt_user = info.context.get('userdata')
+        return super().mutate(root, info, custodian=jwt_user, **kwargs)
+
 
 class CreateSite(MutationBase):
     REPO_METHOD = 'create_site'
@@ -135,6 +140,11 @@ class CreateSite(MutationBase):
     class Arguments:
         site_id = String()
         name = String(name='siteName')
+
+    @classmethod
+    async def mutate(self, root, info, **kwargs):
+        jwt_user = info.context.get('userdata')
+        return super().mutate(root, info, owner=jwt_user, **kwargs)
 
 
 MutationQuery = type(
