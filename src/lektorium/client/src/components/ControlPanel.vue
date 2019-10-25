@@ -221,18 +221,18 @@ export default {
     },
 
     startLoadingModal() {
-      const delay = 1000;
-      let timerid = setTimeout(() => this.isLoading = true, delay);
-      return timerid;
+      const delay = 800;
+      let timer_id = setTimeout(() => this.isLoading = true, delay);
+      return timer_id;
     },
 
-    finishLoadingModal(timerid) {
-      clearTimeout(timerid);
+    finishLoadingModal(timer_id) {
+      clearTimeout(timer_id);
       this.isLoading = false;
     },
 
     async getPanelData() {
-      let timerid = this.startLoadingModal();
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -281,12 +281,12 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
       this.checkStarting();
-      this.finishLoadingModal(timerid);
+      this.finishLoadingModal(timer_id);
     },
 
     async destroySession(session) {
       let id = session.sessionId;
-      let timerid = this.startLoadingModal();
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -301,7 +301,7 @@ export default {
           `
         }
       });
-      this.finishLoadingModal(timerid);
+      this.finishLoadingModal(timer_id);
       if(result.data.data.destroySession.ok) {
         this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
@@ -313,7 +313,7 @@ export default {
 
     async parkSession(session) {
       let id = session.sessionId;
-      let timerid = this.startLoadingModal();
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -328,7 +328,7 @@ export default {
           `
         }
       });
-      this.finishLoadingModal(timerid);
+      this.finishLoadingModal(timer_id);
       if(result.data.data.parkSession.ok)
       {
         this.showMessage(`'${id}' parked successfully.`,`success`);
@@ -341,7 +341,7 @@ export default {
 
     async unparkSession(session) {
       let id = session.sessionId;
-      let timerid = this.startLoadingModal();
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -356,7 +356,7 @@ export default {
           `
         }
       });
-      this.finishLoadingModal(timerid);
+      this.finishLoadingModal(timer_id);
       if(result.data.data.unparkSession.ok)
       {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
@@ -369,7 +369,7 @@ export default {
 
     async requestRelease(session) {
       let id = session.sessionId;
-      let timerid = this.startLoadingModal();
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -384,7 +384,7 @@ export default {
           `
         }
       });
-      this.finishLoadingModal(timerid);
+      this.finishLoadingModal(timer_id);
       if(result.data.data.requestRelease.ok)
       {
         this.showMessage(`Release request was sent.`, `success`);
@@ -397,7 +397,7 @@ export default {
 
     async createSession(site) {
       let id = site.siteId;
-      let timerid = this.startLoadingModal();
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -412,7 +412,7 @@ export default {
           `
         }
       });
-      this.finishLoadingModal(timerid);
+      this.finishLoadingModal(timer_id);
       if(result.data.data.createSession.ok)
       {
         this.showMessage(`Session created successfully.`, `success`);
@@ -442,7 +442,7 @@ export default {
     async addSite(payload) {
       const site_name = payload.title;
       const site_id = payload.site_id;
-      let timerid = this.startLoadingModal();
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -461,7 +461,7 @@ export default {
           `
         }
       });
-      this.finishLoadingModal(timerid);
+      this.finishLoadingModal(timer_id);
       if(result.data.data.createSite.ok) {
         this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
@@ -499,7 +499,7 @@ export default {
       this.initForm();
     },
 
-    changeHiddenButton(event) {
+    changeHiddenButton() {
       this.is_hidden_btn_visible = !this.is_hidden_btn_visible;
     },
 
@@ -507,7 +507,7 @@ export default {
       let production_result = this.available_sites.find(item => item.productionUrl == "Starting");
       let admin_result = this.edit_sessions.find(item => item.editUrl == "Starting");
       let view_result = this.edit_sessions.find(item => item.viewUrl == "Starting");
-      if(admin_result || production_result || production_result){
+      if(admin_result || production_result || view_result){
         setTimeout(this.getPanelData,5000);
       }
     },
