@@ -220,8 +220,19 @@ export default {
       return {Authorization: `Bearer ${tokens.join('.')}`};
     },
 
+    startLoadingModal() {
+      const delay = 1000;
+      let timerid = setTimeout(() => this.isLoading = true, delay);
+      return timerid;
+    },
+
+    finishLoadingModal(timerid) {
+      clearTimeout(timerid);
+      this.isLoading = false;
+    },
+
     async getPanelData() {
-      this.isLoading = true;
+      let timerid = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -270,12 +281,12 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
       this.checkStarting();
-      this.isLoading = false;
+      this.finishLoadingModal(timerid);
     },
 
     async destroySession(session) {
       let id = session.sessionId;
-      this.isLoading = true;
+      let timerid = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -290,7 +301,7 @@ export default {
           `
         }
       });
-      this.isLoading = false;
+      this.finishLoadingModal(timerid);
       if(result.data.data.destroySession.ok) {
         this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
@@ -302,7 +313,7 @@ export default {
 
     async parkSession(session) {
       let id = session.sessionId;
-      this.isLoading = true;
+      let timerid = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -317,7 +328,7 @@ export default {
           `
         }
       });
-      this.isLoading = false;
+      this.finishLoadingModal(timerid);
       if(result.data.data.parkSession.ok)
       {
         this.showMessage(`'${id}' parked successfully.`,`success`);
@@ -330,7 +341,7 @@ export default {
 
     async unparkSession(session) {
       let id = session.sessionId;
-      this.isLoading = true;
+      let timerid = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -345,7 +356,7 @@ export default {
           `
         }
       });
-      this.isLoading = false;
+      this.finishLoadingModal(timerid);
       if(result.data.data.unparkSession.ok)
       {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
@@ -358,7 +369,7 @@ export default {
 
     async requestRelease(session) {
       let id = session.sessionId;
-      this.isLoading = true;
+      let timerid = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -373,7 +384,7 @@ export default {
           `
         }
       });
-      this.isLoading = false;
+      this.finishLoadingModal(timerid);
       if(result.data.data.requestRelease.ok)
       {
         this.showMessage(`Release request was sent.`, `success`);
@@ -386,7 +397,7 @@ export default {
 
     async createSession(site) {
       let id = site.siteId;
-      this.isLoading = true;
+      let timerid = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -401,7 +412,7 @@ export default {
           `
         }
       });
-      this.isLoading = false;
+      this.finishLoadingModal(timerid);
       if(result.data.data.createSession.ok)
       {
         this.showMessage(`Session created successfully.`, `success`);
@@ -431,7 +442,7 @@ export default {
     async addSite(payload) {
       const site_name = payload.title;
       const site_id = payload.site_id;
-      this.isLoading = true;
+      let timerid = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -450,7 +461,7 @@ export default {
           `
         }
       });
-      this.isLoading = false;
+      this.finishLoadingModal(timerid);
       if(result.data.data.createSite.ok) {
         this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
