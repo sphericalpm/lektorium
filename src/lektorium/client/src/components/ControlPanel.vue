@@ -220,8 +220,19 @@ export default {
       return {Authorization: `Bearer ${tokens.join('.')}`};
     },
 
+    startLoadingModal() {
+      const delay = 800;
+      let timer_id = setTimeout(() => this.isLoading = true, delay);
+      return timer_id;
+    },
+
+    finishLoadingModal(timer_id) {
+      clearTimeout(timer_id);
+      this.isLoading = false;
+    },
+
     async makeRequest(query) {
-      this.isLoading = true;
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -230,7 +241,7 @@ export default {
           query: query
         }
       });
-      this.isLoading = false;
+      this.finishLoadingModal(timer_id);
       return result;
     },
 
@@ -447,7 +458,7 @@ export default {
       this.initForm();
     },
 
-    changeHiddenButton(event) {
+    changeHiddenButton() {
       this.is_hidden_btn_visible = !this.is_hidden_btn_visible;
     },
 
@@ -455,7 +466,7 @@ export default {
       let production_result = this.available_sites.find(item => item.productionUrl == "Starting");
       let admin_result = this.edit_sessions.find(item => item.editUrl == "Starting");
       let view_result = this.edit_sessions.find(item => item.viewUrl == "Starting");
-      if(admin_result || production_result || production_result){
+      if(admin_result || production_result || view_result){
         setTimeout(this.getPanelData,5000);
       }
     },
