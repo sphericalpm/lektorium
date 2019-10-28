@@ -215,7 +215,7 @@ export default {
   methods: {
 
     async getHeaders() {
-      if (this.$auth ===undefined) return {};
+      if (this.$auth === undefined) return {};
       const tokens = await this.$auth.getTokens();
       return {Authorization: `Bearer ${tokens.join('.')}`};
     },
@@ -231,14 +231,20 @@ export default {
       this.isLoading = false;
     },
 
-    async getPanelData() {
-      let timer_id = this.startLoadingModal();
+    async makeRequest(query) {
       var result = await axios({
         method: "POST",
         url: "/graphql",
         headers: await this.getHeaders(),
         data: {
-          query: `
+          query: query
+        }
+      });
+      return result;
+    },
+
+    async getPanelData() {
+      let query = `
               {
                 sites {
                   siteId
@@ -274,9 +280,9 @@ export default {
                   }
                 }
               }
-          `
-        }
-      });
+          `;
+      let timer_id = this.startLoadingModal();
+      let result = await this.makeRequest(query);
       this.available_sites = result.data.data.sites;
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
@@ -286,21 +292,15 @@ export default {
 
     async destroySession(session) {
       let id = session.sessionId;
-      let timer_id = this.startLoadingModal();
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        headers: await this.getHeaders(),
-        data: {
-          query: `
+      let query = `
                 mutation {
                 destroySession(sessionId: "${id}") {
                   ok
                 }
               }
-          `
-        }
-      });
+          `;
+      let timer_id = this.startLoadingModal();
+      let result = await this.makeRequest(query);
       this.finishLoadingModal(timer_id);
       if(result.data.data.destroySession.ok) {
         this.showMessage(`'${id}' removed successfully.`, `success`);
@@ -313,21 +313,15 @@ export default {
 
     async parkSession(session) {
       let id = session.sessionId;
-      let timer_id = this.startLoadingModal();
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        headers: await this.getHeaders(),
-        data: {
-          query: `
+      let query = `
                 mutation {
                 parkSession(sessionId: "${id}") {
                   ok
                 }
               }
-          `
-        }
-      });
+          `;
+      let timer_id = this.startLoadingModal();
+      let result = await this.makeRequest(query);
       this.finishLoadingModal(timer_id);
       if(result.data.data.parkSession.ok)
       {
@@ -341,21 +335,15 @@ export default {
 
     async unparkSession(session) {
       let id = session.sessionId;
-      let timer_id = this.startLoadingModal();
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        headers: await this.getHeaders(),
-        data: {
-          query: `
+      let query = `
                 mutation {
                 unparkSession(sessionId: "${id}") {
                   ok
                 }
               }
-          `
-        }
-      });
+          `;
+      let timer_id = this.startLoadingModal();
+      let result = await this.makeRequest(query);
       this.finishLoadingModal(timer_id);
       if(result.data.data.unparkSession.ok)
       {
@@ -369,21 +357,15 @@ export default {
 
     async requestRelease(session) {
       let id = session.sessionId;
-      let timer_id = this.startLoadingModal();
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        headers: await this.getHeaders(),
-        data: {
-          query: `
+      let query = `
                 mutation {
                 requestRelease(sessionId: "${id}") {
                   ok
                 }
               }
-          `
-        }
-      });
+          `;
+      let timer_id = this.startLoadingModal();
+      let result = await this.makeRequest(query);
       this.finishLoadingModal(timer_id);
       if(result.data.data.requestRelease.ok)
       {
@@ -397,21 +379,15 @@ export default {
 
     async createSession(site) {
       let id = site.siteId;
-      let timer_id = this.startLoadingModal();
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        headers: await this.getHeaders(),
-        data: {
-          query: `
+      let query = `
                 mutation {
                 createSession(siteId: "${id}") {
                   ok
                 }
               }
-          `
-        }
-      });
+          `;
+      let timer_id = this.startLoadingModal();
+      let result = await this.makeRequest(query);
       this.finishLoadingModal(timer_id);
       if(result.data.data.createSession.ok)
       {
@@ -442,13 +418,7 @@ export default {
     async addSite(payload) {
       const site_name = payload.title;
       const site_id = payload.site_id;
-      let timer_id = this.startLoadingModal();
-      var result = await axios({
-        method: "POST",
-        url: "/graphql",
-        headers: await this.getHeaders(),
-        data: {
-          query: `
+      let query = `
                 mutation {
                 createSite(
                   siteId: "${site_id}",
@@ -458,9 +428,9 @@ export default {
                   ok
                 }
               }
-          `
-        }
-      });
+          `;
+      let timer_id = this.startLoadingModal();
+      var result = await this.makeRequest(query);
       this.finishLoadingModal(timer_id);
       if(result.data.data.createSite.ok) {
         this.showMessage(`${site_name} was created`, `success`);

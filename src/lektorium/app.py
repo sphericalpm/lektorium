@@ -11,6 +11,7 @@ from graphql.execution.executors.asyncio import AsyncioExecutor
 import bs4
 import graphene
 
+from lektorium.jwt import JWTMiddleware
 from . import install as client, schema, repo
 from .utils import closer
 from .repo.local import (
@@ -84,9 +85,11 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
     else:
         raise ValueError(f'repo_type not supported {repo_type}')
 
-    auth_attributes = ('domain', 'id', 'api')
-    auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
-    auth0_options = dict(zip(auth_attributes, auth.split(',')))
+    auth0_options = None
+    if auth:
+        auth_attributes = ('domain', 'id', 'api')
+        auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
+        auth0_options = dict(zip(auth_attributes, auth.split(',')))
 
     logging.getLogger('lektorium').info(f'Start with {lektorium_repo}')
     return init_app(lektorium_repo, auth0_options)
@@ -132,12 +135,17 @@ def init_app(repo, auth0_options=None):
     app.router.add_route('*', '/callback', index_handler)
     app.router.add_route('*', '/profile', index_handler)
 
+    middleware = []
+    if auth0_options is not None:
+        middleware.append(JWTMiddleware(auth0_options))
+
     aiohttp_graphql.GraphQLView.attach(
         app,
         schema=graphene.Schema(
             query=schema.Query,
             mutation=schema.MutationQuery,
         ),
+        middleware=middleware,
         graphiql=True,
         executor=AsyncioExecutor(),
         context=dict(repo=repo),
