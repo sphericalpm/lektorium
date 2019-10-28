@@ -232,6 +232,7 @@ export default {
     },
 
     async makeRequest(query) {
+      let timer_id = this.startLoadingModal();
       var result = await axios({
         method: "POST",
         url: "/graphql",
@@ -240,6 +241,7 @@ export default {
           query: query
         }
       });
+      this.finishLoadingModal(timer_id);
       return result;
     },
 
@@ -281,13 +283,11 @@ export default {
                 }
               }
           `;
-      let timer_id = this.startLoadingModal();
       let result = await this.makeRequest(query);
       this.available_sites = result.data.data.sites;
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
       this.checkStarting();
-      this.finishLoadingModal(timer_id);
     },
 
     async destroySession(session) {
@@ -299,9 +299,7 @@ export default {
                 }
               }
           `;
-      let timer_id = this.startLoadingModal();
       let result = await this.makeRequest(query);
-      this.finishLoadingModal(timer_id);
       if(result.data.data.destroySession.ok) {
         this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
@@ -320,9 +318,7 @@ export default {
                 }
               }
           `;
-      let timer_id = this.startLoadingModal();
       let result = await this.makeRequest(query);
-      this.finishLoadingModal(timer_id);
       if(result.data.data.parkSession.ok)
       {
         this.showMessage(`'${id}' parked successfully.`,`success`);
@@ -342,9 +338,7 @@ export default {
                 }
               }
           `;
-      let timer_id = this.startLoadingModal();
       let result = await this.makeRequest(query);
-      this.finishLoadingModal(timer_id);
       if(result.data.data.unparkSession.ok)
       {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
@@ -364,9 +358,7 @@ export default {
                 }
               }
           `;
-      let timer_id = this.startLoadingModal();
       let result = await this.makeRequest(query);
-      this.finishLoadingModal(timer_id);
       if(result.data.data.requestRelease.ok)
       {
         this.showMessage(`Release request was sent.`, `success`);
@@ -386,9 +378,7 @@ export default {
                 }
               }
           `;
-      let timer_id = this.startLoadingModal();
       let result = await this.makeRequest(query);
-      this.finishLoadingModal(timer_id);
       if(result.data.data.createSession.ok)
       {
         this.showMessage(`Session created successfully.`, `success`);
@@ -429,9 +419,7 @@ export default {
                 }
               }
           `;
-      let timer_id = this.startLoadingModal();
       var result = await this.makeRequest(query);
-      this.finishLoadingModal(timer_id);
       if(result.data.data.createSite.ok) {
         this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
