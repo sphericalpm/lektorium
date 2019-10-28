@@ -331,6 +331,7 @@ export default {
       if(result.data.data.unparkSession.ok)
       {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
+        this.tab_index = 1;
         this.getPanelData();
       }
       else {
