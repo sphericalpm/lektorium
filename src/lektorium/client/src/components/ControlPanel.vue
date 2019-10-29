@@ -96,9 +96,11 @@
               </td>
               <td>{{ session.viewUrl }}</td>
               <td>
-                <b-button class="rounded" variant="primary" @click="parkSession(session)">Park</b-button>
-                <b-button class="rounded" variant="danger" @click="destroySession(session)">Destroy</b-button>
-                <b-button class="rounded" variant="success" @click="requestRelease(session)">Request release</b-button>
+                <b-button-group>
+                  <b-button class="rounded mb-1 mr-1" variant="primary" @click="parkSession(session)">Park</b-button>
+                  <b-button class="rounded mb-1 mr-1" variant="danger" @click="destroySession(session)">Destroy</b-button>
+                  <b-button class="rounded mb-1 mr-1" variant="success" @click="requestRelease(session)">Request release</b-button>
+                </b-button-group>
               </td>
             </tr>
           </tbody>
@@ -125,14 +127,16 @@
               <td>{{ session.siteName }}</td>
               <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>
-                <b-button
-                class="rounded"
-                variant="primary"
-                @click="unparkSession(session)"
-                :disabled="checkUnparkedSessions(session)">
-                  Unpark
-                </b-button>
-                <b-button class="rounded" variant="danger" @click="destroySession(session)">Destroy</b-button>
+                <b-button-group>
+                  <b-button
+                  class="rounded mb-1 mr-1"
+                  variant="primary"
+                  @click="unparkSession(session)"
+                  :disabled="checkUnparkedSessions(session)">
+                    Unpark
+                  </b-button>
+                  <b-button class="rounded mb-1 mr-1" variant="danger" @click="destroySession(session)">Destroy</b-button>
+                </b-button-group>
               </td>
             </tr>
           </tbody>
@@ -172,8 +176,10 @@
             placeholder="Enter site id">
           </b-form-input>
         </b-form-group>
-        <b-button class="rounded" type="submit" variant="primary">OK</b-button>
-        <b-button class="rounded" type="reset" variant="danger">Cancel</b-button>
+        <b-button-group>
+          <b-button class="rounded mb-1 mr-1" type="submit" variant="primary">OK</b-button>
+          <b-button class="rounded mb-1 mr-1" type="reset" variant="danger">Cancel</b-button>
+        </b-button-group>
       </b-form>
     </b-modal>
     <b-alert
