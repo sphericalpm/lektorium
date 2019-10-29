@@ -480,6 +480,11 @@ created() {
 </script>
 
 <style>
+  .rounded
+  {
+    border-radius: 10px;
+  }
+
   .modal-backdrop
   {
       opacity:0.5 !important;
