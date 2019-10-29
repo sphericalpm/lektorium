@@ -17,7 +17,7 @@
               <th scope="col">Custodian</th>
               <th>
                 <div class="text-right">
-                  <b-button variant="success" v-b-modal.site-modal v-if="is_hidden_btn_visible">
+                  <b-button class="rounded" variant="success" v-b-modal.site-modal v-if="is_hidden_btn_visible">
                     + Create New Site
                   </b-button>
                 </div>
@@ -43,6 +43,7 @@
               </td>
               <td>
                   <b-button
+                  class="rounded"
                   variant="success"
                   @click="createSession(site)"
                   :disabled="checkActiveSession(site)">
@@ -95,9 +96,9 @@
               </td>
               <td>{{ session.viewUrl }}</td>
               <td>
-                <b-button variant="primary" @click="parkSession(session)">Park</b-button>
-                <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
-                <b-button variant="success" @click="requestRelease(session)">Request release</b-button>
+                <b-button class="rounded" variant="primary" @click="parkSession(session)">Park</b-button>
+                <b-button class="rounded" variant="danger" @click="destroySession(session)">Destroy</b-button>
+                <b-button class="rounded" variant="success" @click="requestRelease(session)">Request release</b-button>
               </td>
             </tr>
           </tbody>
@@ -125,12 +126,13 @@
               <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>
                 <b-button
+                class="rounded"
                 variant="primary"
                 @click="unparkSession(session)"
                 :disabled="checkUnparkedSessions(session)">
                   Unpark
                 </b-button>
-                <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
+                <b-button class="rounded" variant="danger" @click="destroySession(session)">Destroy</b-button>
               </td>
             </tr>
           </tbody>
@@ -170,8 +172,8 @@
             placeholder="Enter site id">
           </b-form-input>
         </b-form-group>
-        <b-button type="submit" variant="primary">OK</b-button>
-        <b-button type="reset" variant="danger">Cancel</b-button>
+        <b-button class="rounded" type="submit" variant="primary">OK</b-button>
+        <b-button class="rounded" type="reset" variant="danger">Cancel</b-button>
       </b-form>
     </b-modal>
     <b-alert
