@@ -41,17 +41,17 @@ class Session(ObjectType):
     site = Field(Site)
     parked = Boolean()
 
-    def resolve_production_url(parent, info):
-        return parent.site.production_url
+    def resolve_production_url(self, info):
+        return self.site.production_url
 
-    def resolve_staging_url(parent, info):
-        return parent.site.staging_url
+    def resolve_staging_url(self, info):
+        return self.site.staging_url
 
-    def resolve_site_name(parent, info):
-        return parent.site.site_name
+    def resolve_site_name(self, info):
+        return self.site.site_name
 
-    def resolve_parked(parent, info):
-        return not bool(parent.edit_url)
+    def resolve_parked(self, info):
+        return not bool(self.edit_url)
 
 
 class Query(ObjectType):
@@ -65,11 +65,11 @@ class Query(ObjectType):
             for session in site.sessions or ():
                 yield dict(**session, site=site)
 
-    def resolve_sites(root, info):
+    def resolve_sites(self, info):
         repo = info.context['repo']
         return [Site(**x) for x in repo.sites]
 
-    def resolve_sessions(root, info, parked):
+    def resolve_sessions(self, info, parked):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
@@ -83,9 +83,9 @@ class MutationBase(Mutation):
     Output = MutationResult
 
     @classmethod
-    async def mutate(self, root, info, **kwargs):
+    async def mutate(cls, root, info, **kwargs):
         try:
-            method = getattr(info.context['repo'], self.REPO_METHOD)
+            method = getattr(info.context['repo'], cls.REPO_METHOD)
             result = method(**kwargs)
             if isinstance(result, Future) or iscoroutine(result):
                 await result
@@ -129,7 +129,7 @@ class CreateSession(MutationBase):
         site_id = String()
 
     @classmethod
-    async def mutate(self, root, info, **kwargs):
+    async def mutate(cls, root, info, **kwargs):
         jwt_user = info.context.get('userdata')
         return super().mutate(root, info, custodian=jwt_user, **kwargs)
 
@@ -142,7 +142,7 @@ class CreateSite(MutationBase):
         name = String(name='siteName')
 
     @classmethod
-    async def mutate(self, root, info, **kwargs):
+    async def mutate(cls, root, info, **kwargs):
         jwt_user = info.context.get('userdata')
         return super().mutate(root, info, owner=jwt_user, **kwargs)
 
