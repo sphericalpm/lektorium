@@ -347,8 +347,14 @@ export default {
                 }
               }
           `;
-      let result = await this.makeRequest(query);
-      if(result.data.data.requestRelease.ok)
+      const result = await this.makeRequest(query);
+      const data = result.data;
+      if(data.errors)
+      {
+        const message = data.errors[0].message;
+        this.showMessage(`Error: ${message}`, `danger`);
+      }
+      else if(data.requestRelease.ok)
       {
         this.showMessage(`Release request was sent.`, `success`);
         this.getPanelData();
