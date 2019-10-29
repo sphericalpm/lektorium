@@ -53,12 +53,49 @@ class FakeServer(Server):
     serve_static = serve_lektor
 
 
-class AsyncLocalServer(Server):
-    COMMAND = 'lektor server -h 0.0.0.0 -p {port}'
+class AsyncServer(Server):
     LOGGER = logging.getLogger()
 
     def __init__(self):
         self.serves = {}
+
+    def serve_lektor(self, path):
+        def resolver(started):
+            if started.done():
+                if started.exception() is not None:
+                    try:
+                        started.result()
+                    except Exception:
+                        self.LOGGER.exception('error')
+                    return ('Failed to start',) * 2
+                return (started.result(),) * 2
+            return (functools.partial(resolver, started), 'Starting')
+        started = asyncio.Future()
+        task = asyncio.ensure_future(self.start(path, started))
+        self.serves[path] = [lambda: task if task.cancel() else task, started]
+        return functools.partial(resolver, started)
+
+    serve_static = serve_lektor
+
+    def stop_server(self, path, finalizer=None):
+        result = asyncio.ensure_future(self.stop(path, finalizer))
+        result.add_done_callback(lambda _: result.result())
+
+    @abc.abstractmethod
+    async def start(self, path, started):
+        pass
+
+    async def stop(self, path, finalizer=None):
+        task_cancel, _ = self.serves[path]
+        finalize = asyncio.gather(task_cancel(), return_exceptions=True)
+        finalize.add_done_callback(
+            lambda _: callable(finalizer) and finalizer()
+        )
+        await finalize
+
+
+class AsyncLocalServer(AsyncServer):
+    COMMAND = 'lektor server -h 0.0.0.0 -p {port}'
 
     async def start(self, path, started):
         log = logging.getLogger(f'Server({path})')
@@ -83,7 +120,7 @@ class AsyncLocalServer(Server):
                 started.set_exception(exc)
                 return
             log.info('started')
-            started.set_result(port)
+            started.set_result(f'http://localhost:{port}/')
             try:
                 async for line in proc.stdout:
                     pass
@@ -92,31 +129,3 @@ class AsyncLocalServer(Server):
                 await proc.communicate()
         finally:
             log.info('finished')
-
-    async def stop(self, path, finalizer=None):
-        task, _ = self.serves[path]
-        task.cancel()
-        task.add_done_callback(lambda _: callable(finalizer) and finalizer())
-        await task
-
-    def serve_lektor(self, path):
-        def resolver(started):
-            if started.done():
-                if started.exception() is not None:
-                    try:
-                        started.result()
-                    except Exception:
-                        self.LOGGER.exception('error')
-                    return ('Failed to start',) * 2
-                return (f'http://localhost:{started.result()}/',) * 2
-            return (functools.partial(resolver, started), 'Starting')
-        started = asyncio.Future()
-        task = asyncio.ensure_future(self.start(path, started))
-        self.serves[path] = [task, started]
-        return functools.partial(resolver, started)
-
-    serve_static = serve_lektor
-
-    def stop_server(self, path, finalizer=None):
-        result = asyncio.ensure_future(self.stop(path, finalizer))
-        result.add_done_callback(lambda _: result.result())
