@@ -17,7 +17,7 @@
               <th scope="col">Custodian</th>
               <th>
                 <div class="text-right">
-                  <b-button variant="success" v-b-modal.site-modal v-if="is_hidden_btn_visible">
+                  <b-button class="rounded" variant="success" v-b-modal.site-modal v-if="is_hidden_btn_visible">
                     + Create New Site
                   </b-button>
                 </div>
@@ -43,6 +43,7 @@
               </td>
               <td>
                   <b-button
+                  class="rounded"
                   variant="success"
                   @click="createSession(site)"
                   :disabled="checkActiveSession(site)">
@@ -95,9 +96,11 @@
               </td>
               <td>{{ session.viewUrl }}</td>
               <td>
-                <b-button variant="primary" @click="parkSession(session)">Park</b-button>
-                <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
-                <b-button variant="success" @click="requestRelease(session)">Request release</b-button>
+                <b-button-group>
+                  <b-button class="rounded mb-1 mr-1" variant="primary" @click="parkSession(session)">Park</b-button>
+                  <b-button class="rounded mb-1 mr-1" variant="danger" @click="destroySession(session)">Destroy</b-button>
+                  <b-button class="rounded mb-1 mr-1" variant="success" @click="requestRelease(session)">Request release</b-button>
+                </b-button-group>
               </td>
             </tr>
           </tbody>
@@ -124,13 +127,16 @@
               <td>{{ session.siteName }}</td>
               <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
               <td>
-                <b-button
-                variant="primary"
-                @click="unparkSession(session)"
-                :disabled="checkUnparkedSessions(session)">
-                  Unpark
-                </b-button>
-                <b-button variant="danger" @click="destroySession(session)">Destroy</b-button>
+                <b-button-group>
+                  <b-button
+                  class="rounded mb-1 mr-1"
+                  variant="primary"
+                  @click="unparkSession(session)"
+                  :disabled="checkUnparkedSessions(session)">
+                    Unpark
+                  </b-button>
+                  <b-button class="rounded mb-1 mr-1" variant="danger" @click="destroySession(session)">Destroy</b-button>
+                </b-button-group>
               </td>
             </tr>
           </tbody>
@@ -170,8 +176,10 @@
             placeholder="Enter site id">
           </b-form-input>
         </b-form-group>
-        <b-button type="submit" variant="primary">OK</b-button>
-        <b-button type="reset" variant="danger">Cancel</b-button>
+        <b-button-group>
+          <b-button class="rounded mb-1 mr-1" type="submit" variant="primary">OK</b-button>
+          <b-button class="rounded mb-1 mr-1" type="reset" variant="danger">Cancel</b-button>
+        </b-button-group>
       </b-form>
     </b-modal>
     <b-alert
@@ -480,6 +488,11 @@ created() {
 </script>
 
 <style>
+  .rounded
+  {
+    border-radius: 10px;
+  }
+
   .modal-backdrop
   {
       opacity:0.5 !important;
