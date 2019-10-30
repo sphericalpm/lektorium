@@ -78,7 +78,7 @@
             <tr v-for="(session, index) in edit_sessions" :key="index">
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
-              <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
+              <td>{{ session.creationTime | moment("MM/DD/YY, HH:mm") }}</td>
               <td>
                 <a :href="'mailto:' + session.custodianEmail">
                   {{ session.custodian }}
@@ -125,7 +125,7 @@
             <tr v-for="(session, index) in parked_sessions" :key="index">
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
-              <td>{{ session.creationTime | moment("MM/DD/YY, hh:mm") }}</td>
+              <td>{{ session.creationTime | moment("MM/DD/YY, HH:mm") }}</td>
               <td>
                 <b-button-group>
                   <b-button
