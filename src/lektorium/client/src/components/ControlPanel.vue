@@ -78,7 +78,7 @@
             <tr v-for="(session, index) in edit_sessions" :key="index">
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
-              <td>{{ session.creationTime | moment("MM/DD/YY, HH:mm") }}</td>
+              <td>{{ session.creationTime | moment('timezone', userTimeZone,"MM/DD/YY, HH:mm")}}</td>
               <td>
                 <a :href="'mailto:' + session.custodianEmail">
                   {{ session.custodian }}
@@ -125,7 +125,7 @@
             <tr v-for="(session, index) in parked_sessions" :key="index">
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
-              <td>{{ session.creationTime | moment("MM/DD/YY, HH:mm") }}</td>
+              <td>{{ session.creationTime | moment('timezone', userTimeZone,"MM/DD/YY, HH:mm") }}</td>
               <td>
                 <b-button-group>
                   <b-button
@@ -194,6 +194,7 @@
 import axios from 'axios';
 import Alert from './Alert.vue';
 import Loading from 'vue-loading-overlay';
+import moments from 'moment-timezone';
 import 'vue-loading-overlay/dist/vue-loading.css';
 
 export default {
@@ -214,6 +215,7 @@ export default {
       destroy_status: '',
       tab_index: 0,
       isLoading: false,
+      userTimeZone: moments.tz.guess(),
     };
   },
   components: {
