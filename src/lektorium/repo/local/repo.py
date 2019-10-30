@@ -17,10 +17,12 @@ from .objects import Session, Site
 
 
 class Repo(BaseRepo):
-    def __init__(self, storage, server, lektor):
+    def __init__(self, storage, server, lektor, sessions_root=None):
         self.storage = storage
         self.server = server
         self.lektor = lektor
+        if sessions_root is not None:
+            self.sessions_root = pathlib.Path(sessions_root)
         self.init_sites()
 
     def init_sites(self):

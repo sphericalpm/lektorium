@@ -2,8 +2,10 @@ import abc
 import asyncio
 import functools
 import logging
+import pathlib
 import random
 import subprocess
+import aiodocker
 
 
 class Server(metaclass=abc.ABCMeta):
@@ -129,3 +131,72 @@ class AsyncLocalServer(AsyncServer):
                 await proc.communicate()
         finally:
             log.info('finished')
+
+
+class AsyncDockerServer(AsyncServer):
+    def __init__(
+        self,
+        *,
+        auto_remove=True,
+        image='lektorium-lektor',
+        net=None,
+    ):
+        super().__init__()
+        if not pathlib.Path('/var/run/docker.sock').exists():
+            raise RuntimeError('/var/run/docker.sock not exists')
+        self.auto_remove = auto_remove
+        self.image = image
+        self.net = net
+
+    async def start(self, path, started):
+        log = logging.getLogger(f'Server({path})')
+        log.info('starting')
+        container, stream = None, None
+        try:
+            try:
+                name = f'lektorium-lektor-{pathlib.Path(path).name}'
+                docker = aiodocker.Docker()
+                container = await docker.containers.run(
+                    name=name,
+                    config=dict(
+                        HostConfig=dict(
+                            AutoRemove=self.auto_remove,
+                            NetworkMode=self.net,
+                            VolumesFrom=[
+                                'lektorium',
+                            ],
+                        ),
+                        Cmd=[
+                            '--project',
+                            f'{path}',
+                            'server',
+                        ],
+                        Image='lektorium-lektor',
+                    ),
+                )
+                stream = container.log(stdout=True, follow=True)
+                async for line in stream:
+                    if line.strip().startswith('Finished prune'):
+                        break
+                else:
+                    raise RuntimeError('early process end')
+            except Exception as exc:
+                log.error('failed')
+                started.set_exception(exc)
+                if container is not None:
+                    await asyncio.gather(
+                        container.kill(),
+                        return_exceptions=True
+                    )
+            else:
+                log.info('started')
+                started.set_result(f'http://{name}:5000/')
+                self.serves[path][0] = container.kill
+            finally:
+                if stream is not None:
+                    await asyncio.gather(
+                        stream.aclose(),
+                        return_exceptions=True
+                    )
+        finally:
+            log.info('start ended')
