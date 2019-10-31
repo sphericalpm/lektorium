@@ -6,6 +6,7 @@ import pathlib
 import random
 import subprocess
 import aiodocker
+from more_itertools import one
 
 
 class Server(metaclass=abc.ABCMeta):
@@ -139,14 +140,30 @@ class AsyncDockerServer(AsyncServer):
         *,
         auto_remove=True,
         image='lektorium-lektor',
-        net=None,
+        network=None,
     ):
         super().__init__()
         if not pathlib.Path('/var/run/docker.sock').exists():
             raise RuntimeError('/var/run/docker.sock not exists')
         self.auto_remove = auto_remove
         self.image = image
-        self.net = net
+        self.network = network
+
+    @property
+    async def network_mode(self):
+        if self.network is None:
+            docker = aiodocker.Docker()
+            containers = (
+                await c.show()
+                for c in await docker.containers.list()
+            )
+            networks = [
+                c['HostConfig']['NetworkMode']
+                async for c in containers
+                if c['Name'] == '/lektorium'
+            ]
+            self.network = one(networks)
+        return self.network
 
     async def start(self, path, started):
         log = logging.getLogger(f'Server({path})')
@@ -161,7 +178,7 @@ class AsyncDockerServer(AsyncServer):
                     config=dict(
                         HostConfig=dict(
                             AutoRemove=self.auto_remove,
-                            NetworkMode=self.net,
+                            NetworkMode=await self.network_mode,
                             VolumesFrom=[
                                 'lektorium',
                             ],
@@ -170,6 +187,8 @@ class AsyncDockerServer(AsyncServer):
                             '--project',
                             f'{path}',
                             'server',
+                            '--host',
+                            '0.0.0.0',
                         ],
                         Image='lektorium-lektor',
                     ),
