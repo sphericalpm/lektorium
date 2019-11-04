@@ -78,7 +78,7 @@
             <tr v-for="(session, index) in edit_sessions" :key="index">
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
-              <td>{{ session.creationTime | moment('timezone', userTimeZone,"MM/DD/YY, HH:mm")}}</td>
+              <td>{{ convertTime(session.creationTime) }}</td>
               <td>
                 <a :href="'mailto:' + session.custodianEmail">
                   {{ session.custodian }}
@@ -125,7 +125,7 @@
             <tr v-for="(session, index) in parked_sessions" :key="index">
               <td>{{ session.sessionId }}</td>
               <td>{{ session.siteName }}</td>
-              <td>{{ session.creationTime | moment('timezone', userTimeZone,"MM/DD/YY, HH:mm") }}</td>
+              <td>{{ convertTime(session.creationTime) }}</td>
               <td>
                 <b-button-group>
                   <b-button
@@ -194,7 +194,6 @@
 import axios from 'axios';
 import Alert from './Alert.vue';
 import Loading from 'vue-loading-overlay';
-import moments from 'moment-timezone';
 import 'vue-loading-overlay/dist/vue-loading.css';
 
 export default {
@@ -215,7 +214,6 @@ export default {
       destroy_status: '',
       tab_index: 0,
       isLoading: false,
-      userTimeZone: moments.tz.guess(),
     };
   },
   components: {
@@ -479,6 +477,13 @@ export default {
       if(admin_result || production_result || view_result){
         setTimeout(this.getPanelData,5000);
       }
+    },
+
+    convertTime(time) {
+      let utc_time = new Date(time);
+      utc_time.setMinutes(utc_time.getMinutes()-utc_time.getTimezoneOffset());
+      const user_time = utc_time.toLocaleString();
+      return user_time;
     },
 
   },
