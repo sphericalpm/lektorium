@@ -42,7 +42,7 @@ inv -pe build-proxy-image run-proxy
 inv -pe build run --auth=''
 ```
 
-## Sites configuration file
+## Site configuration file
 
 Lektorium stores configuration of managed websites in YAML format.
 The file must be stored in the root of your git repo.
