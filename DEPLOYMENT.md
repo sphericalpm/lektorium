@@ -1,6 +1,6 @@
 
 # Quickstart guide
-Current implementation of hosted authoring central supports different method of storing configuration and sites sources, execution environments. Here we will discuss only main one - everything will be stored in GitLab repositories and executed in docker containers.
+The current implementation of the hosted authoring central supports different methods of storing configuration of site sources and execution environments. Here we will discuss only main one: everything stored in GitLab repositories and executed in docker containers.
 
 Lektorium server needs separate repository to store its configuration. It will fetch this repository on start and use `config.yml` from repository root as registry of managed sites. The format of this registry file is described in separate section at the end of this article.
 
