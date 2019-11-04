@@ -11,6 +11,10 @@ env:
   GIT_USER: Lektorium
 ```
 
+
+[Config file documentation](/CONFIG.md)
+
+
 Example `config.yml` (server configuration file to be placed in git repo):
 ```yaml
 patrushev.me:
