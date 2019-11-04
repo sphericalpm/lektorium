@@ -2,7 +2,7 @@
 # Quickstart guide
 The current implementation of the hosted authoring central supports different methods of storing configuration of site sources and execution environments. Here we will discuss only main one: everything stored in GitLab repositories and executed in docker containers.
 
-Lektorium server needs separate repository to store its configuration. It will fetch this repository on start and use `config.yml` from repository root as registry of managed sites. The format of this registry file is described in separate section at the end of this article.
+Lektorium server needs a separate repository to store its configuration. It fetches this repository on start and uses `config.yml` from repository root as a registry of managed sites. The format of this registry file is described in a separate section at the end of this document.
 
 Docker is used to start lektorium, reverse proxy server and lektor instances. For GitLab access, lektorium uses ssh public key authentication so one needs to generate a keypair, place private key to `containers/server/key` and configure GitLab to allow access to lektorium and websites' repositories with this key.
 
