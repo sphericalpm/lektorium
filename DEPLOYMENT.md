@@ -23,7 +23,7 @@ env:
 * `server-name` option used by reverse proxy container;
 * `auth`  auth0 provider configuration (described in a separate section)
 * `cfg` option can be adopted with proper configuration repository path;
-* `network` option configure lektorium with docker network to be used to start containers, pay attention that it can not be default docker network because name resolution is not working with it;
+* `network` docker network to be used to start containers. Pay attention that it **can not** be the default docker network.
 * `env` is a list of additional environment options, where GIT_MAIL and GIT_USER options are mandatory for the proper work of git client.
 
 Deploy and start server:
