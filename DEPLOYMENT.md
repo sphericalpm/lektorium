@@ -22,7 +22,7 @@ env:
 
 * `server-name` host name of the hosted authoring central
 * `auth`  auth0 provider configuration (described in a separate section)
-* `cfg` option can be adopted with proper configuration repository path;
+* `cfg` may be used to locate the configuration repository
 * `network` docker network to be used to start containers. Pay attention that it **can not** be the default docker network.
 * `env` is a list of additional environment options, where GIT_MAIL and GIT_USER options are mandatory for the proper work of git client.
 
