@@ -20,7 +20,7 @@ env:
   GIT_USER: Lektorium
 ```
 
-* `server-name` option used by reverse proxy container;
+* `server-name` host name of the hosted authoring central
 * `auth`  auth0 provider configuration (described in a separate section)
 * `cfg` option can be adopted with proper configuration repository path;
 * `network` docker network to be used to start containers. Pay attention that it **can not** be the default docker network.
