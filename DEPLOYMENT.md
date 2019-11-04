@@ -7,7 +7,7 @@ Lektorium server needs a separate repository to store its configuration. It fetc
 Docker is used to start lektorium, reverse proxy server and lektor instances. For GitLab access, lektorium uses ssh public key authentication so one needs to generate a keypair, place private key to `containers/server/key` and configure GitLab to allow access to lektorium and websites' repositories with this key.
 
 ## Install and start
-You need to create config for you server in `invoke.yaml` file.
+You need to create a deployment options file for you server in the `invoke.yaml` file.
 Example config (used on test server):
 
 ```yaml
