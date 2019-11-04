@@ -2,8 +2,11 @@ import abc
 import asyncio
 import functools
 import logging
+import pathlib
 import random
 import subprocess
+import aiodocker
+from more_itertools import one
 
 
 class Server(metaclass=abc.ABCMeta):
@@ -53,12 +56,49 @@ class FakeServer(Server):
     serve_static = serve_lektor
 
 
-class AsyncLocalServer(Server):
-    COMMAND = 'lektor server -h 0.0.0.0 -p {port}'
+class AsyncServer(Server):
     LOGGER = logging.getLogger()
 
     def __init__(self):
         self.serves = {}
+
+    def serve_lektor(self, path):
+        def resolver(started):
+            if started.done():
+                if started.exception() is not None:
+                    try:
+                        started.result()
+                    except Exception:
+                        self.LOGGER.exception('error')
+                    return ('Failed to start',) * 2
+                return (started.result(),) * 2
+            return (functools.partial(resolver, started), 'Starting')
+        started = asyncio.Future()
+        task = asyncio.ensure_future(self.start(path, started))
+        self.serves[path] = [lambda: task if task.cancel() else task, started]
+        return functools.partial(resolver, started)
+
+    serve_static = serve_lektor
+
+    def stop_server(self, path, finalizer=None):
+        result = asyncio.ensure_future(self.stop(path, finalizer))
+        result.add_done_callback(lambda _: result.result())
+
+    @abc.abstractmethod
+    async def start(self, path, started):
+        pass
+
+    async def stop(self, path, finalizer=None):
+        task_cancel, _ = self.serves[path]
+        finalize = asyncio.gather(task_cancel(), return_exceptions=True)
+        finalize.add_done_callback(
+            lambda _: callable(finalizer) and finalizer()
+        )
+        await finalize
+
+
+class AsyncLocalServer(AsyncServer):
+    COMMAND = 'lektor server -h 0.0.0.0 -p {port}'
 
     async def start(self, path, started):
         log = logging.getLogger(f'Server({path})')
@@ -83,7 +123,7 @@ class AsyncLocalServer(Server):
                 started.set_exception(exc)
                 return
             log.info('started')
-            started.set_result(port)
+            started.set_result(f'http://localhost:{port}/')
             try:
                 async for line in proc.stdout:
                     pass
@@ -93,30 +133,89 @@ class AsyncLocalServer(Server):
         finally:
             log.info('finished')
 
-    async def stop(self, path, finalizer=None):
-        task, _ = self.serves[path]
-        task.cancel()
-        task.add_done_callback(lambda _: callable(finalizer) and finalizer())
-        await task
 
-    def serve_lektor(self, path):
-        def resolver(started):
-            if started.done():
-                if started.exception() is not None:
-                    try:
-                        started.result()
-                    except Exception:
-                        self.LOGGER.exception('error')
-                    return ('Failed to start',) * 2
-                return (f'http://localhost:{started.result()}/',) * 2
-            return (functools.partial(resolver, started), 'Starting')
-        started = asyncio.Future()
-        task = asyncio.ensure_future(self.start(path, started))
-        self.serves[path] = [task, started]
-        return functools.partial(resolver, started)
+class AsyncDockerServer(AsyncServer):
+    def __init__(
+        self,
+        *,
+        auto_remove=True,
+        image='lektorium-lektor',
+        network=None,
+    ):
+        super().__init__()
+        if not pathlib.Path('/var/run/docker.sock').exists():
+            raise RuntimeError('/var/run/docker.sock not exists')
+        self.auto_remove = auto_remove
+        self.image = image
+        self.network = network
 
-    serve_static = serve_lektor
+    @property
+    async def network_mode(self):
+        if self.network is None:
+            docker = aiodocker.Docker()
+            containers = (
+                await c.show()
+                for c in await docker.containers.list()
+            )
+            networks = [
+                c['HostConfig']['NetworkMode']
+                async for c in containers
+                if c['Name'] == '/lektorium'
+            ]
+            self.network = one(networks)
+        return self.network
 
-    def stop_server(self, path, finalizer=None):
-        result = asyncio.ensure_future(self.stop(path, finalizer))
-        result.add_done_callback(lambda _: result.result())
+    async def start(self, path, started):
+        log = logging.getLogger(f'Server({path})')
+        log.info('starting')
+        container, stream = None, None
+        try:
+            try:
+                name = f'lektorium-lektor-{pathlib.Path(path).name}'
+                docker = aiodocker.Docker()
+                container = await docker.containers.run(
+                    name=name,
+                    config=dict(
+                        HostConfig=dict(
+                            AutoRemove=self.auto_remove,
+                            NetworkMode=await self.network_mode,
+                            VolumesFrom=[
+                                'lektorium',
+                            ],
+                        ),
+                        Cmd=[
+                            '--project',
+                            f'{path}',
+                            'server',
+                            '--host',
+                            '0.0.0.0',
+                        ],
+                        Image='lektorium-lektor',
+                    ),
+                )
+                stream = container.log(stdout=True, follow=True)
+                async for line in stream:
+                    if line.strip().startswith('Finished prune'):
+                        break
+                else:
+                    raise RuntimeError('early process end')
+            except Exception as exc:
+                log.error('failed')
+                started.set_exception(exc)
+                if container is not None:
+                    await asyncio.gather(
+                        container.kill(),
+                        return_exceptions=True
+                    )
+            else:
+                log.info('started')
+                started.set_result(f'http://{name}:5000/')
+                self.serves[path][0] = container.kill
+            finally:
+                if stream is not None:
+                    await asyncio.gather(
+                        stream.aclose(),
+                        return_exceptions=True
+                    )
+        finally:
+            log.info('start ended')

@@ -16,6 +16,7 @@ from . import install as client, schema, repo
 from .utils import closer
 from .repo.local import (
     AsyncLocalServer,
+    AsyncDockerServer,
     FakeServer,
     FileStorage,
     GitStorage,
@@ -60,6 +61,7 @@ class StorageType(BaseEnum):
 class ServerType(BaseEnum):
     FAKE = FakeServer
     ASYNC = AsyncLocalServer
+    DOCKER = AsyncDockerServer
 
 
 def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
@@ -71,7 +73,8 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
         lektorium_repo = repo.ListRepo(repo.SITES)
     elif repo_type == RepoType.LOCAL:
         server_type, _, storage_config = repo_args.partition(',')
-        server = ServerType.get(server_type or 'FAKE').value()
+        server_type = ServerType.get(server_type or 'FAKE')
+        server = server_type.value()
 
         storage_config = storage_config or 'FILE'
         storage_type, _, storage_path = storage_config.partition('=')
@@ -81,7 +84,18 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
             storage_path = storage_class.init(storage_path)
         storage = storage_class(storage_path)
 
-        lektorium_repo = repo.LocalRepo(storage, server, LocalLektor)
+        sessions_root = None
+        if server_type == ServerType.DOCKER:
+            sessions_root = pathlib.Path('/sessions')
+            if not sessions_root.exists():
+                raise RuntimeError('/sessions not exists')
+
+        lektorium_repo = repo.LocalRepo(
+            storage,
+            server,
+            LocalLektor,
+            sessions_root=sessions_root
+        )
     else:
         raise ValueError(f'repo_type not supported {repo_type}')
 

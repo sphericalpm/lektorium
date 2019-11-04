@@ -17,10 +17,13 @@ from .objects import Session, Site
 
 
 class Repo(BaseRepo):
-    def __init__(self, storage, server, lektor):
+    def __init__(self, storage, server, lektor, sessions_root=None):
         self.storage = storage
         self.server = server
         self.lektor = lektor
+        if sessions_root is None:
+            sessions_root = closer(tempfile.TemporaryDirectory())
+        self.sessions_root = pathlib.Path(sessions_root)
         self.init_sites()
 
     def init_sites(self):
@@ -29,10 +32,6 @@ class Repo(BaseRepo):
                 session_dir = self.sessions_root / site_id / 'production'
                 self.storage.create_session(site_id, 'production', session_dir)
                 site.production_url = self.server.serve_static(session_dir)
-
-    @cached_property
-    def sessions_root(self):
-        return pathlib.Path(closer(tempfile.TemporaryDirectory()))
 
     @cached_property
     def config(self):

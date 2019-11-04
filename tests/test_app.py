@@ -10,5 +10,5 @@ def test_app():
         app.create_app(app.RepoType.LOCAL, '', '')
         LocalRepo.assert_called_once()
         (storage, *_), kwargs = LocalRepo.call_args
-        assert not kwargs
+        assert kwargs == dict(sessions_root=None)
         assert hasattr(storage, 'config')
