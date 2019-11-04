@@ -71,19 +71,19 @@ def test_request_release(tmpdir):
 
 
 CONFIG = '''
-patrushev.me:
-  branch: src
-  email: apatrushev@gmail.com
-  owner: Anton Patrushev
-  repo: git@gitlab:apatrushev/apatrushev.github.io.git
-  url: https://patrushev.me
-spherical-website:
-  email: mv@spherical.pm
+company-website:
+  email: mv@company.pm
   gitlab:
     host: gitlab
-    namespace: apatrushev
-    project: spherical-website
-  owner: Michael Vartanyan
+    namespace: user
+    project: company-website
+  owner: Muser Museryan
+site.url:
+  branch: src
+  email: user@example.com
+  owner: User Userovich
+  repo: git@gitlab:user/site.repo.git
+  url: https://site.url
 '''.lstrip()
 
 
@@ -95,9 +95,9 @@ def test_config_gitlab_repo(tmpdir):
         return collections.defaultdict(type(None))
 
     config = GitStorage.load_config(storage._config_path, site_config_getter)
-    site = config['spherical-website']
+    site = config['company-website']
     gitlab_repo = site['repo']
-    assert gitlab_repo == 'git@gitlab:apatrushev/spherical-website.git'
+    assert gitlab_repo == 'git@gitlab:user/company-website.git'
     assert site.sessions is not None
-    config['spherical-website'] = config['spherical-website']
+    config['company-website'] = config['company-website']
     assert CONFIG == storage._config_path.read_text()
