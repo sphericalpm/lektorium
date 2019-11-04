@@ -4,7 +4,7 @@ The current implementation of the hosted authoring central supports different me
 
 Lektorium server needs separate repository to store its configuration. It will fetch this repository on start and use `config.yml` from repository root as registry of managed sites. The format of this registry file is described in separate section at the end of this article.
 
-We will use docker to start lektorium, reverse proxy server and lektor instances. For GitLab access lektorium uses ssh public key authentication so you need to generate keypair, put private part to `containers/server/key` and configure GitLab to allow access to lektorium and websites repositories with this key.
+Docker is used to start lektorium, reverse proxy server and lektor instances. For GitLab access, lektorium uses ssh public key authentication so one needs to generate a keypair, place private key to `containers/server/key` and configure GitLab to allow access to lektorium and websites' repositories with this key.
 
 ## Install and start
 You need to create config for you server in `invoke.yaml` file.
