@@ -54,6 +54,9 @@ setuptools.setup(
         'pyyaml',
     ],
     extras_require={
+        'inv': [
+            'invoke',
+        ],
         'dev': [
             'aiohttp-devtools',
             'aresponses',
