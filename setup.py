@@ -36,6 +36,7 @@ setuptools.setup(
         ]
     },
     install_requires=[
+        'aiodocker',
         'aiohttp-graphql',
         'aiohttp!=3.6.0',
         'appdirs',
@@ -53,6 +54,9 @@ setuptools.setup(
         'pyyaml',
     ],
     extras_require={
+        'inv': [
+            'invoke',
+        ],
         'dev': [
             'aiohttp-devtools',
             'aresponses',

@@ -27,4 +27,5 @@ RUN chmod 700 /root/.ssh \
         /root/.npm
 ENV LC_ALL en_US.UTF-8
 ENV PATH "/env/bin:$PATH"
+VOLUME /sessions
 ENTRYPOINT ["/entrypoint.sh"]
