@@ -143,6 +143,30 @@
         </table>
           </b-card-text>
         </b-tab>
+        <b-tab @click="getPanelData(); is_message_visible = false;" title="Releasing">
+          <template slot="title">
+            Releasing <b-badge pill> 0 </b-badge>
+          </template>
+          <b-card-text>
+            <table class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col"></th>
+              <th scope="col"></th>
+              <th scope="col"></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+          </b-card-text>
+        </b-tab>
       </b-tabs>
     </b-card>
     <b-modal
