@@ -70,6 +70,33 @@ def test_request_release(tmpdir):
         storage.request_release(site_id, session_id, session_dir)
 
 
+def test_get_releasing(tmpdir):
+    site_id, storage = 'site-id', git_prepare(GitStorage)(tmpdir)
+    path, options = storage.create_site(LocalLektor, 's', 'o', site_id)
+    storage.config[site_id] = Site(site_id, None, **options)
+    session_id = 'session-id'
+    session_dir = tmpdir / session_id
+    storage.create_session(site_id, session_id, session_dir)
+    site = storage.config[site_id]
+    site.sessions[session_id] = dict(custodian='user', custodian_email='email')
+    site.data['gitlab'] = dict(
+        scheme='https',
+        host='server',
+        namespace='user',
+        project='project',
+        token='token',
+    )
+    storage.config[site_id] = site
+    with requests_mock.Mocker() as m:
+        merge_requests = [
+            {'id': 123, 'title': 'Request from "MJ" <mj@spherical.pm>', "target_branch": "master", "source_branch": "session-id"},
+            {'id': 124, 'title': 'test2', "target_branch": "master", "source_branch": "test2"},
+        ]
+        m.get('https://server/api/v4/merge_requests', json=merge_requests)
+        result = storage.get_releasing()
+        assert result == [merge_requests[0]]
+
+
 CONFIG = '''
 company-website:
   email: mv@company.pm

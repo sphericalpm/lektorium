@@ -263,7 +263,7 @@ class GitStorage(FileStorageMixin, Storage):
         )
         response.raise_for_status()
 
-    def get_merge_requests(self):
+    def get_releasing(self):
         pass
 
     def site_config(self, site_id):
