@@ -56,6 +56,10 @@ class Repo(BaseRepo):
                 if session.parked:
                     yield session
 
+    @property
+    def releasing(self):
+        pass  # TODO: Implement releasing here!
+
     def create_session(self, site_id, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER
         site = self.config[site_id]

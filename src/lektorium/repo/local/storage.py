@@ -263,8 +263,27 @@ class GitStorage(FileStorageMixin, Storage):
         )
         response.raise_for_status()
 
-    def get_releasing(self):
-        pass
+    def get_merge_requests(self, site_id):
+        site = self.config[site_id]
+        gitlab = site['gitlab']
+        headers = {'Authorization': 'Bearer {token}'.format(**gitlab)}
+        response = requests.get(
+            '{scheme}://{host}/api/v4/projects'.format(**gitlab),
+            headers=headers,
+        )
+        response.raise_for_status()
+        projects = response.json()
+        path = '{namespace}/{project}'.format(**gitlab)
+        project = one(x for x in projects if x['path_with_namespace'] == path)
+        response = requests.get(
+            '{scheme}://{host}/api/v4/projects/{pid}/merge_requests'.format(
+                **gitlab,
+                pid=project['id']
+            ),
+            headers=headers,
+        )
+        response.raise_for_status()
+        return response.json()
 
     def site_config(self, site_id):
         return collections.defaultdict(type(None))
