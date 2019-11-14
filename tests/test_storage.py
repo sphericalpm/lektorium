@@ -85,8 +85,12 @@ def test_get_merge_requests(tmpdir):
     storage.config[site_id] = site
     with requests_mock.Mocker() as m:
         projects = [{'id': 122, 'path_with_namespace': 'user/project'}]
-        merge_requests = [
-            {'id': 123, 'title': 'Request from "MJ" <mj@spherical.pm>', 'target_branch': 'master', 'source_branch': 'test1'},
+        merge_requests = [{
+            'id': 123,
+            'title': 'Request from "MJ" <mj@spherical.pm>',
+            'target_branch': 'master',
+            'source_branch': 'test1'
+        },
             {'id': 124, 'title': 'test2', 'target_branch': 'master', 'source_branch': 'test2'},
         ]
         m.get('https://server/api/v4/projects', json=projects)

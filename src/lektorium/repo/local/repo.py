@@ -58,7 +58,8 @@ class Repo(BaseRepo):
 
     @property
     def releasing(self):
-        pass  # TODO: Implement releasing here!
+        for site_id in self.config.keys():
+            yield self.storage.get_merge_requests(site_id)
 
     def create_session(self, site_id, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER
