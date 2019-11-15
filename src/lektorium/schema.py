@@ -57,7 +57,9 @@ class Session(ObjectType):
 class Releasing(ObjectType):
     title = String()
     id = String()
-    # TODO: specify fields here
+    target_branch = String()
+    source_branch = String()
+    state = String()
 
 
 class Query(ObjectType):
