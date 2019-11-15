@@ -60,8 +60,9 @@ class Repo(BaseRepo):
     def releasing(self):
         for site_id in self.config.keys():
             for mr in self.storage.get_merge_requests(site_id):
-                if mr and mr['source_branch'].starts_with('session-'):
-                    yield mr
+                if mr and mr['source_branch'].startswith('session-'):
+                    lektorium_mr = {k: mr[k] for k in ['title', 'id', 'target_branch', 'source_branch', 'state']}
+                    yield lektorium_mr
 
     def create_session(self, site_id, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER
