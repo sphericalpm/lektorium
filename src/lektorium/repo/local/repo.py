@@ -59,7 +59,9 @@ class Repo(BaseRepo):
     @property
     def releasing(self):
         for site_id in self.config.keys():
-            yield self.storage.get_merge_requests(site_id)
+            for mr in self.storage.get_merge_requests(site_id):
+                if mr and mr['source_branch'].starts_with('session-'):
+                    yield mr
 
     def create_session(self, site_id, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER
