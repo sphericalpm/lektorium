@@ -145,23 +145,21 @@
         </b-tab>
         <b-tab @click="getPanelData(); is_message_visible = false;" title="Releasing">
           <template slot="title">
-            Releasing <b-badge pill> 0 </b-badge>
+            Releasing <b-badge pill> {{releasing.length}} </b-badge>
           </template>
           <b-card-text>
             <table class="table table-hover">
           <thead>
             <tr>
-              <th scope="col"></th>
-              <th scope="col"></th>
-              <th scope="col"></th>
+              <th scope="col">Session ID</th>
+              <th scope="col">State</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td></td>
-              <td></td>
-              <td></td>
+            <tr v-for="(release, index) in releasing" :key="index">
+              <td>{{ release.sourceBranch }}</td>
+              <td>{{ release.state }}</td>
             </tr>
           </tbody>
         </table>
@@ -231,6 +229,7 @@ export default {
       available_sites: [],
       edit_sessions: [],
       parked_sessions: [],
+      releasing: [],
       message: '',
       is_message_visible: false,
       is_hidden_btn_visible: false,
@@ -313,12 +312,19 @@ export default {
                     siteId
                   }
                 }
+                releasing {
+                  id
+                  title
+                  state
+                  sourceBranch
+                }
               }
           `;
       let result = await this.makeRequest(query);
       this.available_sites = result.data.data.sites;
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
+      this.releasing = result.data.data.releasing;
       this.checkStarting();
     },
 
