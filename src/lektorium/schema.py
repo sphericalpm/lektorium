@@ -60,6 +60,7 @@ class Releasing(ObjectType):
     target_branch = String()
     source_branch = String()
     state = String()
+    web_url = String()
 
 
 class Query(ObjectType):

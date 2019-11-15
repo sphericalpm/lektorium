@@ -61,7 +61,14 @@ class Repo(BaseRepo):
         for site_id in self.config.keys():
             for mr in self.storage.get_merge_requests(site_id):
                 if mr and mr['source_branch'].startswith('session-'):
-                    lektorium_mr = {k: mr[k] for k in ['title', 'id', 'target_branch', 'source_branch', 'state']}
+                    lektorium_mr = {k: mr[k] for k in [
+                        'title',
+                        'id',
+                        'target_branch',
+                        'source_branch',
+                        'state',
+                        'web_url'
+                    ]}
                     yield lektorium_mr
 
     def create_session(self, site_id, custodian=None):

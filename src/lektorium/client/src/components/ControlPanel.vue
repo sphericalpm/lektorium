@@ -152,6 +152,7 @@
           <thead>
             <tr>
               <th scope="col">Session ID</th>
+              <th scope="col">Merge Request</th>
               <th scope="col">State</th>
               <th></th>
             </tr>
@@ -159,7 +160,16 @@
           <tbody>
             <tr v-for="(release, index) in releasing" :key="index">
               <td>{{ release.sourceBranch }}</td>
-              <td>{{ release.state }}</td>
+              <td>
+                <a v-if="release.webUrl.startsWith('http')"
+                  :href="release.webUrl"
+                  target="_blank">
+                  {{ release.title }}
+                </a>
+              </td>
+              <td>
+                {{ release.state }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -317,6 +327,7 @@ export default {
                   title
                   state
                   sourceBranch
+                  webUrl
                 }
               }
           `;
