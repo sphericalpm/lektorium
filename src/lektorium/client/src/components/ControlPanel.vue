@@ -152,6 +152,7 @@
           <thead>
             <tr>
               <th scope="col">Session ID</th>
+              <th>Site Name</th>
               <th scope="col">Merge Request</th>
               <th scope="col">State</th>
               <th></th>
@@ -160,6 +161,7 @@
           <tbody>
             <tr v-for="(release, index) in releasing" :key="index">
               <td>{{ release.sourceBranch }}</td>
+              <td>{{ release.siteName }}</td>
               <td>
                 <a v-if="release.webUrl.startsWith('http')"
                   :href="release.webUrl"
@@ -323,6 +325,8 @@ export default {
                   }
                 }
                 releasing {
+                  siteId
+                  siteName
                   id
                   title
                   state

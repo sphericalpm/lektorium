@@ -61,7 +61,11 @@ class Repo(BaseRepo):
         for site_id in self.config.keys():
             for mr in self.storage.get_merge_requests(site_id):
                 if mr and mr['source_branch'].startswith('session-'):
+                    mr['site_id'] = site_id
+                    mr['site_name'] = self.config[site_id]['name']
                     lektorium_mr = {k: mr[k] for k in [
+                        'site_id',
+                        'site_name',
                         'title',
                         'id',
                         'target_branch',

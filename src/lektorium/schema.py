@@ -55,6 +55,8 @@ class Session(ObjectType):
 
 
 class Releasing(ObjectType):
+    site_id = String()
+    site_name = String()
     title = String()
     id = String()
     target_branch = String()
