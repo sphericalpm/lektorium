@@ -132,6 +132,25 @@ def test_create_site(repo):
     assert len(list(repo.sites)) == site_count_before + 1
 
 
+def test_releasing(repo, monkeypatch):
+    if hasattr(repo, 'releasing') and hasattr(repo, 'storage'):
+        if hasattr(repo.storage, 'get_merge_requests'):
+            def mock_get_mr(site_id):
+                mr_data = [{
+                    'title': 'test_title',
+                    'id': 'test-id',
+                    'target_branch': 'master',
+                    'source_branch': 'session-test',
+                    'state': 'open',
+                    'web_url': 'test.url'
+                }]
+                return mr_data if site_id == 'bow' else []
+            monkeypatch.setattr(repo.storage, 'get_merge_requests', mock_get_mr)
+            result = list(repo.releasing)
+            assert len(result) == 1
+            assert result[0]['site_name'] == 'Buy Our Widgets'
+
+
 @pytest.mark.xfail
 def test_request_release(repo):
     session_id = repo.create_session('uci')
