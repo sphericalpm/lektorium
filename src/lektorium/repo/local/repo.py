@@ -64,7 +64,6 @@ class Repo(BaseRepo):
                     mr['site_id'] = site_id
                     mr['site_name'] = self.config[site_id]['name']
                     lektorium_mr = {k: mr[k] for k in [
-                        'site_id',
                         'site_name',
                         'title',
                         'id',

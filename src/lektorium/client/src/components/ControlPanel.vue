@@ -325,11 +325,10 @@ export default {
                   }
                 }
                 releasing {
-                  siteId
-                  siteName
                   id
                   title
                   state
+                  siteName
                   sourceBranch
                   webUrl
                 }
