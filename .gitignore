@@ -129,3 +129,5 @@ yarn-error.log*
 
 /container/*whl
 package-lock.json
+/containers/server/key
+/containers/server/*.whl
