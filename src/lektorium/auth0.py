@@ -1,3 +1,6 @@
+import aiohttp
+
+
 class AuthManagement:
     def __init__(self, domain, client_id, client_secret):
         self.url = f'https://{domain}/oauth/token'
@@ -8,8 +11,12 @@ class AuthManagement:
             'grant_type': 'client_credentials',
         }
 
-    def get_auth_token(self):
-        pass
+    async def get_auth_token(self):
+        async with aiohttp.ClientSession() as client:
+            async with client.post(self.url, json=self.data) as resp:
+                if resp.status == 200:
+                    result = await resp.json()
+                    return result['access_token']
 
     def get_users(self):
         pass
