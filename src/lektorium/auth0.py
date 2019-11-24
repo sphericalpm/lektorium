@@ -18,21 +18,34 @@ class Auth0Client:
                 if resp.status == 200:
                     result = await resp.json()
                     return result['access_token']
+                else:
+                    result = await resp.json()
+                    raise Auth0Error('{0}, {1}'.format(result['error'], result['error_description']))
 
     async def get_users(self):
         auth_token = await self.auth_token
-        headers = {"Authorization": "Bearer {0}".format(auth_token)}
+        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
         async with aiohttp.ClientSession(headers=headers) as client:
             url = self.data["audience"] + 'users'
             async with client.get(url) as resp:
                 if resp.status == 200:
                     return await resp.json()
+                else:
+                    result = await resp.json()
+                    raise Auth0Error('{0}, {1}'.format(result['error'], result['error_description']))
 
     async def get_user_permissions(self, user_id):
         auth_token = await self.auth_token
-        headers = {"Authorization": "Bearer {0}".format(auth_token)}
+        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
         async with aiohttp.ClientSession(headers=headers) as client:
-            url = "{0}users/{1}/permissions".format(self.data['audience'],user_id)
+            url = self.data['audience'] + f'users/{user_id}/permissions'
             async with client.get(url) as resp:
                 if resp.status == 200:
                     return await resp.json()
+                else:
+                    result = await resp.json()
+                    raise Auth0Error('{0}. {1}'.format(result['error'], result['error_description']))
+
+
+class Auth0Error(Exception):
+    pass
