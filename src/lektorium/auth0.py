@@ -31,8 +31,7 @@ class Auth0Client:
                 if resp.status == 200:
                     return await resp.json()
                 else:
-                    result = await resp.json()
-                    raise Auth0Error('{0}, {1}'.format(result['error'], result['error_description']))
+                    raise Auth0Error(f'Error {resp.status}')
 
     async def get_user_permissions(self, user_id):
         auth_token = await self.auth_token
@@ -43,8 +42,52 @@ class Auth0Client:
                 if resp.status == 200:
                     return await resp.json()
                 else:
-                    result = await resp.json()
-                    raise Auth0Error('{0}. {1}'.format(result['error'], result['error_description']))
+                    raise Auth0Error(f'Error {resp.status}')
+
+    async def set_user_permissions(self, user_id, api_id, permissions):
+        auth_token = await self.auth_token
+        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
+        data = []
+        for permission in permissions:
+            data.append({'resource_server_identifier': api_id, 'permission_name': permission})
+        async with aiohttp.ClientSession(headers=headers) as client:
+            url = self.data['audience'] + f'users/{user_id}/permissions'
+            async with client.post(url, json=data) as resp:
+                if resp.status == 200:
+                    return True
+                else:
+                    raise Auth0Error(f'Error {resp.status}')
+
+    async def delete_user_permissions(self, user_id, api_id, permissions):
+        auth_token = await self.auth_token
+        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
+        data = {'permissions': []}
+        for permission in permissions:
+            data['permissions'].append({'resource_server_identifier': api_id, 'permission_name': permission})
+        async with aiohttp.ClientSession(headers=headers) as client:
+            url = self.data['audience'] + f'users/{user_id}/permissions'
+            async with client.delete(url, json=data) as resp:
+                if resp.status == 204:
+                    return True
+                else:
+                    raise Auth0Error(f'Error {resp.status}')
+
+    async def get_api_permissions(self, api_identifier):
+        auth_token = await self.auth_token
+        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
+        async with aiohttp.ClientSession(headers=headers) as client:
+            url = self.data['audience'] + 'resource-servers'
+            async with client.get(url) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    data = list(filter(lambda x: x.get('identifier') == api_identifier, data))
+                    if data:
+                        result = data[0]['scopes']
+                        return result
+                    else:
+                        raise Auth0Error(f"'{api_identifier}' api was not found")
+                else:
+                    raise Auth0Error(f'Error {resp.status}')
 
 
 class Auth0Error(Exception):
