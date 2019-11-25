@@ -47,13 +47,13 @@ class Auth0Client:
     async def set_user_permissions(self, user_id, api_id, permissions):
         auth_token = await self.auth_token
         headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
-        data = []
+        data = {'permissions': []}
         for permission in permissions:
-            data.append({'resource_server_identifier': api_id, 'permission_name': permission})
+            data['permissions'].append({'resource_server_identifier': api_id, 'permission_name': permission})
         async with aiohttp.ClientSession(headers=headers) as client:
             url = self.data['audience'] + f'users/{user_id}/permissions'
             async with client.post(url, json=data) as resp:
-                if resp.status == 200:
+                if resp.status == 201:
                     return True
                 else:
                     raise Auth0Error(f'Error {resp.status}')
