@@ -11,6 +11,7 @@ from graphql.execution.executors.asyncio import AsyncioExecutor
 import bs4
 import graphene
 
+from lektorium.auth0 import Auth0Client
 from lektorium.jwt import JWTMiddleware
 from . import install as client, schema, repo
 from .utils import closer
@@ -162,7 +163,10 @@ def init_app(repo, auth0_options=None):
         middleware=middleware,
         graphiql=True,
         executor=AsyncioExecutor(),
-        context=dict(repo=repo),
+        context=dict(
+            repo=repo,
+            auth0_client=Auth0Client(auth0_options)
+        ),
     )
 
     app.on_startup.append(log_application_ready)
