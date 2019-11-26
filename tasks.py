@@ -42,11 +42,6 @@ def flake(ctx):
     ctx.run('flake8 src tests')
 
 
-@task(dev, test, flake)
-def clean(ctx):
-    pass
-
-
 @task(test, flake)
 def full(c):
     pass

@@ -3,6 +3,7 @@ try:
     import importlib.resources as importlib_resources
 except ModuleNotFoundError:
     import importlib_resources
+import logging
 import pathlib
 import shutil
 import subprocess
@@ -29,6 +30,7 @@ def deploy(path):
         return cache / 'build'
     elif cache.exists():
         shutil.rmtree(cache)
+    logging.warn('Building client could take a while')
     try:
         shutil.copytree(path, cache)
         env_dir = cache / 'env'
