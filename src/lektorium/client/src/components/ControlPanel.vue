@@ -162,7 +162,7 @@
         </b-tab>
         <b-tab @click="getPanelData(); is_message_visible = false;" title="Users">
           <template slot="title">
-            Users <b-badge pill>0</b-badge>
+            Users <b-badge pill>1</b-badge>
           </template>
           <b-card-text>
             <table class="table table-hover">
@@ -224,12 +224,15 @@
         </b-button-group>
       </b-form>
     </b-modal>
-    <b-modal id="user-modal" title="Max Jekov (mj@spherical.pm)">
+    <b-modal id="user-modal" title="Max Jekov (mj@spherical.pm)" hide-footer>
       <b-form-group>
         <b-checkbox-group>
           <b-form-checkbox value="write:projects">write:projects</b-form-checkbox>
           <b-form-checkbox value="read:projects">read:projects</b-form-checkbox>
         </b-checkbox-group>
+        <div class="text-center">
+          <b-button class="rounded mt-5" type="submit" variant="primary" centered>Save</b-button>
+        </div>
       </b-form-group>
     </b-modal>
     <b-alert
