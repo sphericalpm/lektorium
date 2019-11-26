@@ -36,6 +36,8 @@ def jwt_middleware():
         'data-auth0-domain': 'test.auth.com',
         'data-auth0-id': 'test_id',
         'data-auth0-api': 'test_api',
+        'data-auth0-management-id': 'test_id',
+        'data-auth0-management-secret': 'secret',
     }
     return JWTMiddleware(auth)
 

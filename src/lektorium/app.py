@@ -151,8 +151,10 @@ def init_app(repo, auth0_options=None):
     app.router.add_route('*', '/profile', index_handler)
 
     middleware = []
+    auth0_client = None
     if auth0_options is not None:
         middleware.append(JWTMiddleware(auth0_options))
+        auth0_client = Auth0Client(auth0_options)
 
     aiohttp_graphql.GraphQLView.attach(
         app,
@@ -165,7 +167,7 @@ def init_app(repo, auth0_options=None):
         executor=AsyncioExecutor(),
         context=dict(
             repo=repo,
-            auth0_client=Auth0Client(auth0_options)
+            auth0_client=auth0_client
         ),
     )
 
