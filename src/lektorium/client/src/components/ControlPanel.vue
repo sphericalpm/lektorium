@@ -3,7 +3,7 @@
     <loading :active.sync="isLoading" :is-full-page="true"></loading>
     <b-card no-body>
       <b-tabs pills card vertical v-model="tab_index">
-        <b-tab @click="getPanelData(); is_message_visible = false;">
+        <b-tab @click="refreshPanelData">
           <template slot="title">
             Available Sites <b-badge pill> {{available_sites.length}} </b-badge>
           </template>
@@ -55,7 +55,7 @@
         </table>
           </b-card-text>
         </b-tab>
-        <b-tab @click="getPanelData(); is_message_visible = false;">
+        <b-tab @click="refreshPanelData">
           <template slot="title">
             Edit Sessions <b-badge pill> {{edit_sessions.length}} </b-badge>
           </template>
@@ -107,7 +107,7 @@
         </table>
           </b-card-text>
         </b-tab>
-        <b-tab @click="getPanelData(); is_message_visible = false;" title="Parked Sessions">
+        <b-tab @click="refreshPanelData">
           <template slot="title">
             Parked Sessions <b-badge pill> {{parked_sessions.length}} </b-badge>
           </template>
@@ -251,6 +251,11 @@ export default {
       });
       this.finishLoadingModal(timer_id);
       return result;
+    },
+
+    refreshPanelData() {
+      this.getPanelData();
+      this.is_message_visible = false;
     },
 
     async getPanelData() {
