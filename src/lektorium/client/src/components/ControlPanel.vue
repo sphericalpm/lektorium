@@ -151,16 +151,20 @@
             <table class="table table-hover">
           <thead>
             <tr>
-              <th scope="col"></th>
-              <th scope="col"></th>
+              <th scope="col">Nick</th>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
               <th scope="col"></th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td></td>
-              <td></td>
-              <td></td>
+              <td>mj</td>
+              <td>Max Jekov</td>
+              <td>mj@spherical.pm</td>
+              <td>
+                <b-button v-b-modal.user-modal>Permissions</b-button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -204,6 +208,14 @@
           <b-button class="rounded mb-1 mr-1" type="reset" variant="danger">Cancel</b-button>
         </b-button-group>
       </b-form>
+    </b-modal>
+    <b-modal id="user-modal" title="Max Jekov (mj@spherical.pm)">
+      <b-form-group>
+        <b-checkbox-group>
+          <b-form-checkbox value="write:projects">write:projects</b-form-checkbox>
+          <b-form-checkbox value="read:projects">read:projects</b-form-checkbox>
+        </b-checkbox-group>
+      </b-form-group>
     </b-modal>
     <b-alert
       :show="is_message_visible"
