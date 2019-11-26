@@ -1,8 +1,8 @@
 <template>
   <div v-shortkey="['shift', 'o']" @shortkey="changeHiddenButton">
-    <loading :active.sync="isLoading" :is-full-page="true"></loading>
+    <loading :active.sync="loading_overlay_active" :is-full-page="true"></loading>
     <b-card no-body>
-      <b-tabs pills card vertical v-model="tab_index">
+      <b-tabs pills card vertical v-model="current_tab">
         <b-tab @click="refreshPanelData">
           <template slot="title">
             Available Sites <b-badge pill> {{available_sites.length}} </b-badge>
@@ -17,7 +17,7 @@
               <th scope="col">Custodian</th>
               <th>
                 <div class="text-right">
-                  <b-button class="rounded" variant="success" v-b-modal.site-modal v-if="is_hidden_btn_visible">
+                  <b-button class="rounded" variant="success" v-b-modal.site-modal v-if="create_site_btn_visible">
                     + Create New Site
                   </b-button>
                 </div>
@@ -159,7 +159,7 @@
           <b-form-input
             id="form-title-input"
             type="text"
-            v-model="addSiteForm.title"
+            v-model="add_site_form.title"
             required
             placeholder="Enter title">
           </b-form-input>
@@ -171,7 +171,7 @@
           <b-form-input
             id="form-id-input"
             type="text"
-            v-model="addSiteForm.site_id"
+            v-model="add_site_form.site_id"
             required
             placeholder="Enter site id">
           </b-form-input>
@@ -183,9 +183,9 @@
       </b-form>
     </b-modal>
     <b-alert
-      :show="is_message_visible"
+      :show="message_visible"
       :variant="message_type"
-      dismissible @dismissed="is_message_visible=false"
+      dismissible @dismissed="message_visible=false"
     >{{ message }}</b-alert>
   </div>
 </template>
@@ -200,20 +200,22 @@ export default {
   name: 'ControlPanel',
   data() {
     return {
-      addSiteForm: {
-        title: '',
-        site_id: '',
-      },
       available_sites: [],
       edit_sessions: [],
       parked_sessions: [],
+
+      add_site_form: {
+        title: '',
+        site_id: '',
+      },
+
+      create_site_btn_visible: false,
+      current_tab: 0,
+      loading_overlay_active: false,
+
       message: '',
-      is_message_visible: false,
-      is_hidden_btn_visible: false,
+      message_visible: false,
       message_type: 'success',
-      destroy_status: '',
-      tab_index: 0,
-      isLoading: false,
     };
   },
   components: {
@@ -230,13 +232,13 @@ export default {
 
     startLoadingModal() {
       const delay = 800;
-      let timer_id = setTimeout(() => this.isLoading = true, delay);
+      let timer_id = setTimeout(() => this.loading_overlay_active = true, delay);
       return timer_id;
     },
 
     finishLoadingModal(timer_id) {
       clearTimeout(timer_id);
-      this.isLoading = false;
+      this.loading_overlay_active = false;
     },
 
     async makeRequest(query) {
@@ -255,7 +257,7 @@ export default {
 
     refreshPanelData() {
       this.getPanelData();
-      this.is_message_visible = false;
+      this.message_visible = false;
     },
 
     async getPanelData() {
@@ -355,7 +357,7 @@ export default {
       if(result.data.data.unparkSession.ok)
       {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
-        this.tab_index = 1;
+        this.current_tab = 1;
         this.getPanelData();
       }
       else {
@@ -403,7 +405,7 @@ export default {
       {
         this.showMessage(`Session created successfully.`, `success`);
         this.getPanelData();
-        this.tab_index = 1;
+        this.current_tab = 1;
       }
       else {
         this.showMessage(`Unable to create session`, `danger`);
@@ -452,20 +454,20 @@ export default {
     showMessage(text, type) {
       this.message = text;
       this.message_type = type;
-      this.is_message_visible = true;
+      this.message_visible = true;
     },
 
     initForm() {
-      this.addSiteForm.title = '';
-      this.addSiteForm.site_id = '';
+      this.add_site_form.title = '';
+      this.add_site_form.site_id = '';
     },
 
     onSubmit(evt) {
       evt.preventDefault();
       this.$refs.addSiteModal.hide();
       const payload = {
-        title: this.addSiteForm.title,
-        site_id: this.addSiteForm.site_id,
+        title: this.add_site_form.title,
+        site_id: this.add_site_form.site_id,
       };
       this.addSite(payload);
       this.initForm
@@ -478,7 +480,7 @@ export default {
     },
 
     changeHiddenButton() {
-      this.is_hidden_btn_visible = !this.is_hidden_btn_visible;
+      this.create_site_btn_visible = !this.create_site_btn_visible;
     },
 
     checkStarting() {
