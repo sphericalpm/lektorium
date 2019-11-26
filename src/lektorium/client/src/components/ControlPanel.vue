@@ -182,9 +182,8 @@
                   <td>
                     <a v-if="release.webUrl.startsWith('http')"
                       :href="release.webUrl"
-                      target="_blank">
-                      {{ release.title }}
-                    </a>
+                      target="_blank"
+                    >{{ release.title }}</a>
                   </td>
                   <td>{{ release.state }}</td>
                 </tr>
