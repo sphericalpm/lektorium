@@ -9,50 +9,52 @@
           </template>
           <b-card-text>
             <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Site</th>
-              <th scope="col">Production</th>
-              <!-- <th scope="col">Staging</th> -->
-              <th scope="col">Custodian</th>
-              <th>
-                <div class="text-right">
-                  <b-button class="rounded" variant="success" v-b-modal.site-modal v-if="create_site_btn_visible">
-                    + Create New Site
-                  </b-button>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(site, index) in available_sites" :key="index">
-              <td>{{ site.siteName }}</td>
-              <td>
-                <a
-                  v-if="site.productionUrl.startsWith('http')"
-                  :href="site.productionUrl"
-                  target="_blank"
-                >{{ site.productionUrl }}</a>
-                <span v-else>{{ site.productionUrl }}</span>
-              </td>
-              <!-- <td> <a :href="site.stagingUrl">{{ site.stagingUrl }}</a></td> -->
-              <td>
-                <a :href="'mailto:' + site.custodianEmail">
-                  {{ site.custodian }}
-                </a>
-              </td>
-              <td>
-                  <b-button
-                  class="rounded"
-                  variant="success"
-                  @click="createSession(site)"
-                  :disabled="checkActiveSession(site)">
-                      Create Editor
-                  </b-button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <thead>
+                <tr>
+                  <th scope="col">Site</th>
+                  <th scope="col">Production</th>
+                  <!-- <th scope="col">Staging</th> -->
+                  <th scope="col">Custodian</th>
+                  <th>
+                    <div class="text-right">
+                      <b-button
+                        class="rounded"
+                        variant="success"
+                        v-b-modal.site-modal
+                        v-if="create_site_btn_visible"
+                      >+ Create New Site</b-button>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(site, index) in available_sites" :key="index">
+                  <td>{{ site.siteName }}</td>
+                  <td>
+                    <a
+                      v-if="site.productionUrl.startsWith('http')"
+                      :href="site.productionUrl"
+                      target="_blank"
+                    >{{ site.productionUrl }}</a>
+                    <span v-else>{{ site.productionUrl }}</span>
+                  </td>
+                  <!-- <td> <a :href="site.stagingUrl">{{ site.stagingUrl }}</a></td> -->
+                  <td>
+                    <a :href="'mailto:' + site.custodianEmail">
+                      {{ site.custodian }}
+                    </a>
+                  </td>
+                  <td>
+                      <b-button
+                        class="rounded"
+                        variant="success"
+                        @click="createSession(site)"
+                        :disabled="checkActiveSession(site)"
+                      >Create Editor</b-button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </b-card-text>
         </b-tab>
         <b-tab @click="refreshPanelData">
@@ -61,50 +63,62 @@
           </template>
           <b-card-text>
             <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Session</th>
-              <th scope="col">Site</th>
-              <th scope="col">Creation Time</th>
-              <th scope="col">Custodian</th>
-              <!-- <th scope="col">Production</th> -->
-              <!-- <th scope="col">Staging</th> -->
-              <th scope="col">Admin</th>
-              <th scope="col">Build</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(session, index) in edit_sessions" :key="index">
-              <td>{{ session.sessionId }}</td>
-              <td>{{ session.siteName }}</td>
-              <td>{{ convertTime(session.creationTime) }}</td>
-              <td>
-                <a :href="'mailto:' + session.custodianEmail">
-                  {{ session.custodian }}
-                </a>
-              </td>
-              <!-- <td>{{ session.productionUrl }}</td> -->
-              <!-- <td>{{ session.stagingUrl }}</td> -->
-              <td>
-                <a
-                  v-if="session.editUrl.startsWith('http')"
-                  :href="session.editUrl"
-                  target="_blank"
-                >{{ session.editUrl }}</a>
-                <span v-else>{{ session.editUrl }}</span>
-              </td>
-              <td>{{ session.viewUrl }}</td>
-              <td>
-                <b-button-group>
-                  <b-button class="rounded mb-1 mr-1" variant="primary" @click="parkSession(session)">Park</b-button>
-                  <b-button class="rounded mb-1 mr-1" variant="danger" @click="destroySession(session)">Destroy</b-button>
-                  <b-button class="rounded mb-1 mr-1" variant="success" @click="requestRelease(session)">Request release</b-button>
-                </b-button-group>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <thead>
+                <tr>
+                  <th scope="col">Session</th>
+                  <th scope="col">Site</th>
+                  <th scope="col">Creation Time</th>
+                  <th scope="col">Custodian</th>
+                  <!-- <th scope="col">Production</th> -->
+                  <!-- <th scope="col">Staging</th> -->
+                  <th scope="col">Admin</th>
+                  <th scope="col">Build</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(session, index) in edit_sessions" :key="index">
+                  <td>{{ session.sessionId }}</td>
+                  <td>{{ session.siteName }}</td>
+                  <td>{{ convertTime(session.creationTime) }}</td>
+                  <td>
+                    <a :href="'mailto:' + session.custodianEmail">
+                      {{ session.custodian }}
+                    </a>
+                  </td>
+                  <!-- <td>{{ session.productionUrl }}</td> -->
+                  <!-- <td>{{ session.stagingUrl }}</td> -->
+                  <td>
+                    <a
+                      v-if="session.editUrl.startsWith('http')"
+                      :href="session.editUrl"
+                      target="_blank"
+                    >{{ session.editUrl }}</a>
+                    <span v-else>{{ session.editUrl }}</span>
+                  </td>
+                  <td>{{ session.viewUrl }}</td>
+                  <td>
+                    <b-button-group>
+                      <b-button
+                        class="rounded mb-1 mr-1"
+                        variant="primary"
+                        @click="parkSession(session)"
+                      >Park</b-button>
+                      <b-button
+                        class="rounded mb-1 mr-1"
+                        variant="danger"
+                        @click="destroySession(session)"
+                      >Destroy</b-button>
+                      <b-button
+                        class="rounded mb-1 mr-1"
+                        variant="success"
+                        @click="requestRelease(session)"
+                      >Request release</b-button>
+                    </b-button-group>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </b-card-text>
         </b-tab>
         <b-tab @click="refreshPanelData">
@@ -113,34 +127,37 @@
           </template>
           <b-card-text>
             <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Session</th>
-              <th scope="col">Site</th>
-              <th scope="col">Creation Time</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(session, index) in parked_sessions" :key="index">
-              <td>{{ session.sessionId }}</td>
-              <td>{{ session.siteName }}</td>
-              <td>{{ convertTime(session.creationTime) }}</td>
-              <td>
-                <b-button-group>
-                  <b-button
-                  class="rounded mb-1 mr-1"
-                  variant="primary"
-                  @click="unparkSession(session)"
-                  :disabled="checkUnparkedSessions(session)">
-                    Unpark
-                  </b-button>
-                  <b-button class="rounded mb-1 mr-1" variant="danger" @click="destroySession(session)">Destroy</b-button>
-                </b-button-group>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <thead>
+                <tr>
+                  <th scope="col">Session</th>
+                  <th scope="col">Site</th>
+                  <th scope="col">Creation Time</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(session, index) in parked_sessions" :key="index">
+                  <td>{{ session.sessionId }}</td>
+                  <td>{{ session.siteName }}</td>
+                  <td>{{ convertTime(session.creationTime) }}</td>
+                  <td>
+                    <b-button-group>
+                      <b-button
+                        class="rounded mb-1 mr-1"
+                        variant="primary"
+                        @click="unparkSession(session)"
+                        :disabled="checkUnparkedSessions(session)"
+                      >Unpark</b-button>
+                      <b-button
+                        class="rounded mb-1 mr-1"
+                        variant="danger"
+                        @click="destroySession(session)"
+                      >Destroy</b-button>
+                    </b-button-group>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </b-card-text>
         </b-tab>
       </b-tabs>
@@ -153,7 +170,7 @@
       hide-footer>
       <b-form @submit="onSubmit" @reset="onReset" class="w-100">
         <b-form-group
-        id="form-title-group"
+          id="form-title-group"
           label="Title:"
           label-for="form-title-input">
           <b-form-input
@@ -161,8 +178,7 @@
             type="text"
             v-model="add_site_form.title"
             required
-            placeholder="Enter title">
-          </b-form-input>
+            placeholder="Enter title"></b-form-input>
         </b-form-group>
         <b-form-group
           id="form-id-group"
@@ -173,8 +189,7 @@
             type="text"
             v-model="add_site_form.site_id"
             required
-            placeholder="Enter site id">
-          </b-form-input>
+            placeholder="Enter site id"></b-form-input>
         </b-form-group>
         <b-button-group>
           <b-button class="rounded mb-1 mr-1" type="submit" variant="primary">OK</b-button>
