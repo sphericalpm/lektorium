@@ -61,10 +61,19 @@ class User(ObjectType):
     nickname = String()
 
 
+class Permission(ObjectType):
+    permission_name = String()
+    description = String()
+    resource_server_name = String()
+    resource_server_identifier = String()
+    sources = List()
+
+
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
     users = List(User)
+    permissions = List(Permission, user_id=String())
 
     @staticmethod
     def sessions_list(repo):
@@ -85,6 +94,10 @@ class Query(ObjectType):
     async def resolve_users(self, info):
         auth0_client = info.context['auth0_client']
         return [User(**x) for x in await auth0_client.get_users()]
+
+    async def resolve_permissions(self, info, user_id):
+        auth0_client = info.context['auth0_client']
+        return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
 
 
 class MutationResult(ObjectType):
