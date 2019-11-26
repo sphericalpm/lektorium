@@ -162,23 +162,25 @@
         </b-tab>
         <b-tab @click="getPanelData(); is_message_visible = false;" title="Users">
           <template slot="title">
-            Users <b-badge pill>1</b-badge>
+            Users <b-badge pill>{{users.length}}</b-badge>
           </template>
           <b-card-text>
             <table class="table table-hover">
           <thead>
             <tr>
               <th scope="col">User ID</th>
+              <th scope="col">Nickname</th>
               <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col"></th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>mj</td>
-              <td>Max Jekov</td>
-              <td>mj@spherical.pm</td>
+            <tr v-for="(user, index) in users" :key="index">
+              <td>{{ user.userId }}</td>
+              <td>{{ user.nickname }}</td>
+              <td>{{ user.name }}</td>
+              <td> {{ user.email }} </td>
               <td>
                 <b-button v-b-modal.user-modal>Permissions</b-button>
               </td>
@@ -256,6 +258,7 @@ export default {
       available_sites: [],
       edit_sessions: [],
       parked_sessions: [],
+      users: [],
 
       add_site_form: {
         title: '',
@@ -349,12 +352,19 @@ export default {
                     siteId
                   }
                 }
+                users {
+                  nickname
+                  name
+                  email
+                  userId
+                }
               }
           `;
       let result = await this.makeRequest(query);
       this.available_sites = result.data.data.sites;
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
+      this.users = result.data.data.users;
       this.checkStarting();
     },
 

@@ -58,6 +58,7 @@ class User(ObjectType):
     user_id = String()
     email = String()
     name = String()
+    nickname = String()
 
 
 class Query(ObjectType):
