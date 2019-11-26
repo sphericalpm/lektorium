@@ -66,7 +66,7 @@ class Permission(ObjectType):
     description = String()
     resource_server_name = String()
     resource_server_identifier = String()
-    sources = List()
+    sources = String()
 
 
 class Query(ObjectType):

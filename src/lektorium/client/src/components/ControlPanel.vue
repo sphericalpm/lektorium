@@ -227,15 +227,30 @@
       </b-form>
     </b-modal>
     <b-modal id="user-modal" title="Max Jekov (mj@spherical.pm)" hide-footer>
-      <b-form-group>
-        <b-checkbox-group>
-          <b-form-checkbox value="write:projects">write:projects</b-form-checkbox>
-          <b-form-checkbox value="read:projects">read:projects</b-form-checkbox>
-        </b-checkbox-group>
-        <div class="text-center">
-          <b-button class="rounded mt-5" type="submit" variant="primary" centered>Save</b-button>
-        </div>
-      </b-form-group>
+      <b-form class="mb-3" inline>
+        <b-form-select>
+          <option :value="null">Please select an option</option>
+        </b-form-select>
+        <b-button>Add permission</b-button>
+      </b-form>
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th scope="col">Permission Name</th>
+            <th scope="col">Description</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>read:projects</td>
+            <td>Bla bla bla</td>
+            <td>
+              <b-button>Delete</b-button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </b-modal>
     <b-alert
       :show="message_visible"
