@@ -2,8 +2,9 @@ import aiohttp
 
 
 class Auth0Client:
-    def __init__(self, domain, client_id, client_secret):
+    def __init__(self, domain, client_id, client_secret, api_id):
         self.url = f'https://{domain}/oauth/token'
+        self.api_id = api_id
         self.data = {
             'client_id': client_id,
             'client_secret': client_secret,
@@ -44,12 +45,12 @@ class Auth0Client:
                 else:
                     raise Auth0Error(f'Error {resp.status}')
 
-    async def set_user_permissions(self, user_id, api_id, permissions):
+    async def set_user_permissions(self, user_id, permissions):
         auth_token = await self.auth_token
         headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
         data = {'permissions': []}
         for permission in permissions:
-            data['permissions'].append({'resource_server_identifier': api_id, 'permission_name': permission})
+            data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
         async with aiohttp.ClientSession(headers=headers) as client:
             url = self.data['audience'] + f'users/{user_id}/permissions'
             async with client.post(url, json=data) as resp:
@@ -58,12 +59,12 @@ class Auth0Client:
                 else:
                     raise Auth0Error(f'Error {resp.status}')
 
-    async def delete_user_permissions(self, user_id, api_id, permissions):
+    async def delete_user_permissions(self, user_id, permissions):
         auth_token = await self.auth_token
         headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
         data = {'permissions': []}
         for permission in permissions:
-            data['permissions'].append({'resource_server_identifier': api_id, 'permission_name': permission})
+            data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
         async with aiohttp.ClientSession(headers=headers) as client:
             url = self.data['audience'] + f'users/{user_id}/permissions'
             async with client.delete(url, json=data) as resp:
@@ -72,7 +73,7 @@ class Auth0Client:
                 else:
                     raise Auth0Error(f'Error {resp.status}')
 
-    async def get_api_permissions(self, api_identifier):
+    async def get_api_permissions(self):
         auth_token = await self.auth_token
         headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
         async with aiohttp.ClientSession(headers=headers) as client:
@@ -80,12 +81,12 @@ class Auth0Client:
             async with client.get(url) as resp:
                 if resp.status == 200:
                     data = await resp.json()
-                    data = list(filter(lambda x: x.get('identifier') == api_identifier, data))
+                    data = list(filter(lambda x: x.get('identifier') == self.api_id, data))
                     if data:
                         result = data[0]['scopes']
                         return result
                     else:
-                        raise Auth0Error(f"'{api_identifier}' api was not found")
+                        raise Auth0Error(f"'{self.api_id}' api was not found")
                 else:
                     raise Auth0Error(f'Error {resp.status}')
 
