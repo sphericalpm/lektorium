@@ -160,7 +160,7 @@
             </table>
           </b-card-text>
         </b-tab>
-        <b-tab @click="getPanelData(); is_message_visible = false;" title="Releasing">
+        <b-tab @click="refreshPanelData">
           <template slot="title">
             Releasing <b-badge pill> {{releasing.length}} </b-badge>
           </template>
@@ -169,7 +169,7 @@
               <thead>
                 <tr>
                   <th scope="col">Session ID</th>
-                  <th>Site Name</th>
+                  <th scope="col">Site Name</th>
                   <th scope="col">Merge Request</th>
                   <th scope="col">State</th>
                   <th></th>
@@ -182,8 +182,9 @@
                   <td>
                     <a v-if="release.webUrl.startsWith('http')"
                       :href="release.webUrl"
-                      target="_blank"
-                    >{{ release.title }}</a>
+                      target="_blank">
+                      {{ release.title }}
+                    </a>
                   </td>
                   <td>{{ release.state }}</td>
                 </tr>
