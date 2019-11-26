@@ -30,7 +30,7 @@ def deploy(path):
         return cache / 'build'
     elif cache.exists():
         shutil.rmtree(cache)
-    logging.warn('Building client could tak a while')
+    logging.warn('Building client could take a while')
     try:
         shutil.copytree(path, cache)
         env_dir = cache / 'env'
