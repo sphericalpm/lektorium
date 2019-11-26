@@ -166,32 +166,29 @@
           </template>
           <b-card-text>
             <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">Session ID</th>
-              <th>Site Name</th>
-              <th scope="col">Merge Request</th>
-              <th scope="col">State</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(release, index) in releasing" :key="index">
-              <td>{{ release.sourceBranch }}</td>
-              <td>{{ release.siteName }}</td>
-              <td>
-                <a v-if="release.webUrl.startsWith('http')"
-                  :href="release.webUrl"
-                  target="_blank">
-                  {{ release.title }}
-                </a>
-              </td>
-              <td>
-                {{ release.state }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <thead>
+                <tr>
+                  <th scope="col">Session ID</th>
+                  <th>Site Name</th>
+                  <th scope="col">Merge Request</th>
+                  <th scope="col">State</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(release, index) in releasing" :key="index">
+                  <td>{{ release.sourceBranch }}</td>
+                  <td>{{ release.siteName }}</td>
+                  <td>
+                    <a v-if="release.webUrl.startsWith('http')"
+                      :href="release.webUrl"
+                      target="_blank"
+                    >{{ release.title }}</a>
+                  </td>
+                  <td>{{ release.state }}</td>
+                </tr>
+              </tbody>
+            </table>
           </b-card-text>
         </b-tab>
       </b-tabs>
