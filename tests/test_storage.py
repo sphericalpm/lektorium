@@ -70,7 +70,7 @@ def test_request_release(tmpdir):
         storage.request_release(site_id, session_id, session_dir)
 
 
-def test_get_merge_requests(tmpdir):
+def test_get_merge_requests(tmpdir, merge_requests):
     site_id, storage = 'site-id', git_prepare(GitStorage)(tmpdir)
     path, options = storage.create_site(LocalLektor, 's', 'o', site_id)
     storage.config[site_id] = Site(site_id, None, **options)
@@ -83,20 +83,8 @@ def test_get_merge_requests(tmpdir):
         token='token',
     )
     storage.config[site_id] = site
-    with requests_mock.Mocker() as m:
-        projects = [{'id': 122, 'path_with_namespace': 'user/project'}]
-        merge_requests = [{
-            'id': 123,
-            'title': 'Request from "MJ" <mj@spherical.pm>',
-            'target_branch': 'master',
-            'source_branch': 'test1'
-        },
-            {'id': 124, 'title': 'test2', 'target_branch': 'master', 'source_branch': 'test2'},
-        ]
-        m.get('https://server/api/v4/projects', json=projects)
-        m.get('https://server/api/v4/projects/122/merge_requests', json=merge_requests)
-        result = storage.get_merge_requests(site_id)
-        assert result == merge_requests
+    result = storage.get_merge_requests(site_id)
+    assert result == merge_requests
 
 
 CONFIG = '''
