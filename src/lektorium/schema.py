@@ -54,9 +54,16 @@ class Session(ObjectType):
         return not bool(self.edit_url)
 
 
+class User(ObjectType):
+    user_id = String()
+    email = String()
+    name = String()
+
+
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
+    users = List(User)
 
     @staticmethod
     def sessions_list(repo):
@@ -73,6 +80,10 @@ class Query(ObjectType):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
+
+    async def resolve_users(self, info):
+        auth0_client = info.context['auth0_client']
+        return [User(**x) for x in await auth0_client.get_users()]
 
 
 class MutationResult(ObjectType):

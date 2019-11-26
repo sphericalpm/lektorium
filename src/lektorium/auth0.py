@@ -28,7 +28,8 @@ class Auth0Client:
         headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
         async with aiohttp.ClientSession(headers=headers) as client:
             url = self.data["audience"] + 'users'
-            async with client.get(url) as resp:
+            params = {'fields': 'name,nickname,email,user_id'}
+            async with client.get(url, params=params) as resp:
                 if resp.status == 200:
                     return await resp.json()
                 else:

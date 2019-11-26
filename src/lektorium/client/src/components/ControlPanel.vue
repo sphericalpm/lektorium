@@ -168,7 +168,7 @@
             <table class="table table-hover">
           <thead>
             <tr>
-              <th scope="col">Nick</th>
+              <th scope="col">User ID</th>
               <th scope="col">Name</th>
               <th scope="col">Email</th>
               <th scope="col"></th>
