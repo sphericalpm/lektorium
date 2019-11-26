@@ -2,13 +2,13 @@ import aiohttp
 
 
 class Auth0Client:
-    def __init__(self, domain, client_id, client_secret, api_id):
-        self.url = f'https://{domain}/oauth/token'
-        self.api_id = api_id
+    def __init__(self, auth):
+        self.url = 'https://{0}/oauth/token'.format(auth['data-auth0-domain'])
+        self.api_id = auth['data-auth0-api']
         self.data = {
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'audience': f'https://{domain}/api/v2/',
+            'client_id': auth['data-auth0-management-id'],
+            'client_secret': auth['data-auth0-management-secret'],
+            'audience': 'https://{0}/api/v2/'.format(auth['data-auth0-domain']),
             'grant_type': 'client_credentials',
         }
 

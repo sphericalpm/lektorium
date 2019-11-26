@@ -101,7 +101,7 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
 
     auth0_options = None
     if auth:
-        auth_attributes = ('domain', 'id', 'api')
+        auth_attributes = ('domain', 'id', 'api', 'management-id', 'management-secret')
         auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
         auth0_options = dict(zip(auth_attributes, auth.split(',')))
 
