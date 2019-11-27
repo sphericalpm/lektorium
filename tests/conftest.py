@@ -10,6 +10,7 @@ from lektorium.repo.local import (
     FakeServer,
     FakeLektor,
 )
+from lektorium.repo.memory import VALID_MERGE_REQUEST
 
 
 @wrapt.decorator
@@ -50,14 +51,8 @@ def merge_requests():
             'id': 122,
             'path_with_namespace': 'user/project',
         }
-        merge_requests = [{
-            'id': 123,
-            'title': 'Request from "MJ" <mj@spherical.pm>',
-            'target_branch': 'master',
-            'source_branch': 'session-fghtyty',
-            'state': '1',
-            'web_url': 'url123',
-        }, {
+        merge_requests = [
+            VALID_MERGE_REQUEST, {
             'id': 124,
             'title': 'test2',
             'target_branch': 'master',

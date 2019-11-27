@@ -9,6 +9,7 @@ from lektorium.repo import (
 )
 from lektorium.repo.local import FileStorage
 from conftest import local_repo, git_repo
+from lektorium.repo.memory import VALID_MERGE_REQUEST
 
 
 def memory_repo(_):
@@ -136,13 +137,8 @@ def test_create_site(repo):
 def test_releasing(repo, merge_requests):
     result = list(repo.releasing)
     request = {
-        'id': 123,
         'site_name': 'Buy Our Widgets',
-        'source_branch': 'session-fghtyty',
-        'state': '1',
-        'target_branch': 'master',
-        'title': 'Request from "MJ" <mj@spherical.pm>',
-        'web_url': 'url123'
+        **VALID_MERGE_REQUEST,
     }
     if isinstance(getattr(repo, 'storage', None), FileStorage):
         return

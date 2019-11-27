@@ -22,6 +22,16 @@ class Session(dict):
         return self.get('edit_url', None)
 
 
+VALID_MERGE_REQUEST = {
+    'id': 123,
+    'source_branch': 'session-fghtyty',
+    'state': '1',
+    'target_branch': 'master',
+    'title': 'Request from "MJ" <mj@spherical.pm>',
+    'web_url': 'http://example.com/some/merge/request',
+}
+
+
 SITES = [{
     'site_id': 'bow',
     'site_name': 'Buy Our Widgets',
@@ -38,13 +48,8 @@ SITES = [{
         'custodian_email': 'mj@acme.com',
     }]],
     'releasing': [{
-        'id': 123,
         'site_name': 'Buy Our Widgets',
-        'source_branch': 'session-fghtyty',
-        'state': '1',
-        'target_branch': 'master',
-        'title': 'Request from "MJ" <mj@spherical.pm>',
-        'web_url': 'url123'
+        **VALID_MERGE_REQUEST
     }],
 }, {
     'site_id': 'uci',
