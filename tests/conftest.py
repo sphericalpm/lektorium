@@ -52,14 +52,16 @@ def merge_requests():
             'path_with_namespace': 'user/project',
         }
         merge_requests = [
-            VALID_MERGE_REQUEST, {
-            'id': 124,
-            'title': 'test2',
-            'target_branch': 'master',
-            'source_branch': 'test2',
-            'state': '2',
-            'web_url': 'url124',
-        }]
+            VALID_MERGE_REQUEST,
+            {
+                'id': 124,
+                'title': 'test2',
+                'target_branch': 'master',
+                'source_branch': 'test2',
+                'state': '2',
+                'web_url': 'url124',
+            }
+        ]
         m.get(
             'https://server/api/v4/projects',
             json=[
