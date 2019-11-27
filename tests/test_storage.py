@@ -66,8 +66,18 @@ def test_request_release(tmpdir):
     with requests_mock.Mocker() as m:
         projects = [{'id': 123, 'path_with_namespace': 'user/project'}]
         m.get('https://server/api/v4/projects', json=projects)
-        m.post('https://server/api/v4/projects/123/merge_requests')
+        POST_URL = 'https://server/api/v4/projects/123/merge_requests'
+        m.post(POST_URL)
         storage.request_release(site_id, session_id, session_dir)
+        assert m.call_count == 2
+        last_request = m.request_history[-1]
+        assert last_request.url == POST_URL
+        assert last_request.method == 'POST'
+        assert last_request.body == (
+            'source_branch=session-session-id&'
+            'target_branch=master&'
+            'title=Request+from%3A+%22user%22+%3Cemail%3E'
+        )
 
 
 def test_get_merge_requests(tmpdir, merge_requests):
