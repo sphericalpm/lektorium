@@ -1,3 +1,4 @@
+import collections.abc
 import datetime
 import functools
 import pathlib
@@ -14,6 +15,41 @@ from ..interface import (
     SessionNotFound,
 )
 from .objects import Session, Site
+
+
+class FilteredDict(collections.abc.Mapping):
+    def __init__(self, keys, dct):
+        self.__keys = keys
+        self.__dct = dct
+
+    def __getitem__(self, key):
+        if key not in self.__keys:
+            raise KeyError(key)
+        return self.__dct[key]
+
+    @property
+    def __common_keys(self):
+        return set(self.__keys).intersection(self.__dct)
+
+    def __iter__(self):
+        return iter(self.__common_keys)
+
+    def __len__(self):
+        return len(self.__common_keys)
+
+
+class FilteredMergeRequestData(FilteredDict):
+    MERGE_REQUEST_KEYS = [
+        'id',
+        'source_branch',
+        'state',
+        'target_branch',
+        'title',
+        'web_url',
+    ]
+
+    def __init__(self, dct):
+        super().__init__(self.MERGE_REQUEST_KEYS, dct)
 
 
 class Repo(BaseRepo):
@@ -55,6 +91,16 @@ class Repo(BaseRepo):
             for session in site.sessions.values():
                 if session.parked:
                     yield session
+
+    @property
+    def releasing(self):
+        for site_id, site in self.config.items():
+            for merge_request_data in self.storage.get_merge_requests(site_id):
+                if merge_request_data['source_branch'].startswith('session-'):
+                    yield {
+                        'site_name': site['name'],
+                        **FilteredMergeRequestData(merge_request_data)
+                    }
 
     def create_session(self, site_id, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER

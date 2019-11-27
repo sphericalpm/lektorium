@@ -54,9 +54,21 @@ class Session(ObjectType):
         return not bool(self.edit_url)
 
 
+class Releasing(ObjectType):
+    site_id = String()
+    site_name = String()
+    title = String()
+    id = String()
+    target_branch = String()
+    source_branch = String()
+    state = String()
+    web_url = String()
+
+
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
+    releasing = List(Releasing)
 
     @staticmethod
     def sessions_list(repo):
@@ -73,6 +85,10 @@ class Query(ObjectType):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
+
+    def resolve_releasing(self, info):
+        repo = info.context['repo']
+        return [Releasing(**x) for x in repo.releasing]
 
 
 class MutationResult(ObjectType):

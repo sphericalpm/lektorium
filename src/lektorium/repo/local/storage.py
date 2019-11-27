@@ -2,6 +2,7 @@ import abc
 import collections
 import functools
 import inifile
+import logging
 import pathlib
 import requests
 import shutil
@@ -139,6 +140,10 @@ class FileStorage(FileStorageMixin, Storage):
             return inifile.IniFile(config[0])
         return collections.defaultdict(type(None))
 
+    def get_merge_requests(self, site_id):
+        logging.warn('get_merge_requests: site has no gitlab option')
+        return []
+
     def _site_dir(self, site_id):
         return self.root / site_id / 'master'
 
@@ -167,6 +172,59 @@ class GitConfig(FileConfig):
             repo = 'git@{host}:{namespace}/{project}.git'.format(**gitlab)
         site_config.data['repo'] = repo
         return site_config
+
+
+class GitLab:
+    DEFAULT_API_VERSION = 'v4'
+
+    def __init__(self, options):
+        self.options = options
+        self.options.setdefault('api_version', self.DEFAULT_API_VERSION)
+
+    @cached_property
+    def projects(self):
+        response = requests.get(
+            '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
+            headers=self.headers,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    @cached_property
+    def headers(self):
+        return {'Authorization': 'Bearer {token}'.format(**self.options)}
+
+    @cached_property
+    def merge_requests(self):
+        response = requests.get(
+            '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
+                **self.options,
+                pid=self.project_id
+            ),
+            headers=self.headers,
+        )
+        response.raise_for_status()
+        return response.json()
+
+    @cached_property
+    def project_id(self):
+        path = '{namespace}/{project}'.format(**self.options)
+        return one(x for x in self.projects if x['path_with_namespace'] == path)['id']
+
+    def create_merge_request(self, source_branch, target_branch, title):
+        response = requests.post(
+            '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
+                **self.options,
+                pid=self.project_id,
+            ),
+            data=dict(
+                source_branch=source_branch,
+                target_branch=target_branch,
+                title=title,
+            ),
+            headers=self.headers,
+        )
+        response.raise_for_status()
 
 
 class GitStorage(FileStorageMixin, Storage):
@@ -237,31 +295,21 @@ class GitStorage(FileStorageMixin, Storage):
         run_local('git commit -m autosave')
         run_local('git push')
         site = self.config[site_id]
-        gitlab = site['gitlab']
-        headers = {'Authorization': 'Bearer {token}'.format(**gitlab)}
-        response = requests.get(
-            '{scheme}://{host}/api/v4/projects'.format(**gitlab),
-            headers=headers,
-        )
-        response.raise_for_status()
-        projects = response.json()
-        path = '{namespace}/{project}'.format(**gitlab)
-        project = one(x for x in projects if x['path_with_namespace'] == path)
         session = site.sessions[session_id]
         title_template = 'Request from: "{custodian}" <{custodian_email}>'
-        response = requests.post(
-            '{scheme}://{host}/api/v4/projects/{pid}/merge_requests'.format(
-                **gitlab,
-                pid=project['id']
-            ),
-            data=dict(
-                source_branch=f'session-{session_id}',
-                target_branch=site.get('branch', 'master'),
-                title=title_template.format(**session),
-            ),
-            headers=headers,
+        return GitLab(site['gitlab']).create_merge_request(
+            source_branch=f'session-{session_id}',
+            target_branch=site.get('branch', 'master'),
+            title=title_template.format(**session),
         )
-        response.raise_for_status()
+
+    def get_merge_requests(self, site_id):
+        site = self.config[site_id]
+        gitlab_options = site.get('gitlab', None)
+        if not gitlab_options:
+            logging.warn('get_merge_requests: empty gitlab options')
+            return []
+        return GitLab(gitlab_options).merge_requests
 
     def site_config(self, site_id):
         return collections.defaultdict(type(None))

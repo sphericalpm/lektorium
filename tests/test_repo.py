@@ -7,7 +7,9 @@ from lektorium.repo import (
     SessionNotFound,
     SITES,
 )
+from lektorium.repo.local import FileStorage
 from conftest import local_repo, git_repo
+from lektorium.repo.memory import VALID_MERGE_REQUEST
 
 
 def memory_repo(_):
@@ -130,6 +132,17 @@ def test_create_site(repo):
     site_count_before = len(list(repo.sites))
     repo.create_site('cri', 'Common Redundant Idioms')
     assert len(list(repo.sites)) == site_count_before + 1
+
+
+def test_releasing(repo, merge_requests):
+    result = list(repo.releasing)
+    request = {
+        'site_name': 'Buy Our Widgets',
+        **VALID_MERGE_REQUEST,
+    }
+    if isinstance(getattr(repo, 'storage', None), FileStorage):
+        return
+    assert result == [request]
 
 
 @pytest.mark.xfail
