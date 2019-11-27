@@ -52,7 +52,6 @@ class FilteredMergeRequestData(FilteredDict):
         super().__init__(self.MERGE_REQUEST_KEYS, dct)
 
 
-
 class Repo(BaseRepo):
     def __init__(self, storage, server, lektor, sessions_root=None):
         self.storage = storage
