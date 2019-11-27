@@ -175,13 +175,16 @@ class GitConfig(FileConfig):
 
 
 class GitLab:
+    DEFAULT_API_VERSION = 'v4'
+
     def __init__(self, options):
         self.options = options
+        self.options.setdefault('api_version', self.DEFAULT_API_VERSION)
 
     @cached_property
     def projects(self):
         response = requests.get(
-            '{scheme}://{host}/api/v4/projects'.format(**self.options),
+            '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
             headers=self.headers,
         )
         response.raise_for_status()
@@ -194,7 +197,7 @@ class GitLab:
     @cached_property
     def merge_requests(self):
         response = requests.get(
-            '{scheme}://{host}/api/v4/projects/{pid}/merge_requests'.format(
+            '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
                 **self.options,
                 pid=self.project_id
             ),
@@ -210,7 +213,7 @@ class GitLab:
 
     def create_merge_request(self, source_branch, target_branch, title):
         response = requests.post(
-            '{scheme}://{host}/api/v4/projects/{pid}/merge_requests'.format(
+            '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
                 **self.options,
                 pid=self.project_id,
             ),

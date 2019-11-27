@@ -1,3 +1,4 @@
+import collections.abc
 import datetime
 import functools
 import pathlib
@@ -14,7 +15,6 @@ from ..interface import (
     SessionNotFound,
 )
 from .objects import Session, Site
-import collections.abc
 
 
 class FilteredDict(collections.abc.Mapping):
