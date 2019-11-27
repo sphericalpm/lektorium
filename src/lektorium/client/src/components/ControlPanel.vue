@@ -226,7 +226,7 @@
         </b-button-group>
       </b-form>
     </b-modal>
-    <b-modal id="user-modal" title="Max Jekov (mj@spherical.pm)" hide-footer>
+    <b-modal id="user-modal" :title="userModalData['userId']" hide-footer>
       <b-form class="mb-3" inline>
         <b-form-select>
           <option :value="null">Please select an option</option>
@@ -242,11 +242,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(permission, index) in user_permissions" :key="index">
+          <tr v-for="(permission, index) in userModalData['permissions']" :key="index">
               <td>{{ permission.permissionName }}</td>
               <td>{{ permission.description}}</td>
               <td>
-                <b-button v-b-modal.user-modal variant="danger">Delete</b-button>
+                <b-button @click="deleteUserPermissions(userModalData['userId'], [permission.permissionName,])" variant="danger">Delete</b-button>
               </td>
             </tr>
         </tbody>
@@ -274,8 +274,10 @@ export default {
       edit_sessions: [],
       parked_sessions: [],
       users: [],
-      user_permissions: [],
-
+      userModalData: {
+        'user':'',
+        'permissions': {},
+        },
       add_site_form: {
         title: '',
         site_id: '',
@@ -540,7 +542,24 @@ export default {
         }
       `;
       let result = await this.makeRequest(query);
-      this.user_permissions = result.data.data.permissions;
+      this.userModalData['permissions'] = result.data.data.permissions;
+    },
+
+    async deleteUserPermissions(userId, permissions) {
+      let query = `
+                mutation {
+                deleteUserPermissions(userId: "${userId}", permissions: "${permissions}") {
+                  ok
+                }
+              }
+          `;
+      let result = await this.makeRequest(query);
+      if(result.data.data.deleteUserPermissions.ok) {
+        this.getUserPermissions(userId);
+      }
+      else {
+        this.showMessage(`Unable to remove permisson`, `danger`);
+      }
     },
 
     showMessage(text, type) {
@@ -550,8 +569,8 @@ export default {
     },
 
     showUserModal(userId) {
-      this.user_permissions = [];
-      this.user_permissions = this.getUserPermissions(userId);
+      this.userModalData['userId'] = userId;
+      this.userModalData['permissions'] = this.getUserPermissions(userId);
       this.$bvModal.show(`user-modal`);
     },
 
