@@ -135,8 +135,18 @@ def test_create_site(repo):
 
 def test_releasing(repo, merge_requests):
     result = list(repo.releasing)
-    assert len(result) == 1 or isinstance(repo.storage, FileStorage)
-    assert not len(result) or result[0]['site_name'] == 'Buy Our Widgets'
+    request = {
+        'id': 123,
+        'site_name': 'Buy Our Widgets',
+        'source_branch': 'session-fghtyty',
+        'state': '1',
+        'target_branch': 'master',
+        'title': 'Request from "MJ" <mj@spherical.pm>',
+        'web_url': 'url123'
+    }
+    if isinstance(getattr(repo, 'storage', None), FileStorage):
+        return
+    assert result == [request]
 
 
 @pytest.mark.xfail
