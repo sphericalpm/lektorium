@@ -569,9 +569,15 @@ export default {
     },
 
     showUserModal(userId) {
+      this.initUserModal();
       this.userModalData['userId'] = userId;
       this.userModalData['permissions'] = this.getUserPermissions(userId);
       this.$bvModal.show(`user-modal`);
+    },
+
+    initUserModal() {
+      this.userModalData['userId'] = '';
+      this.userModalData['permissions'] = [];
     },
 
     initForm() {
