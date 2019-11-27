@@ -63,16 +63,17 @@ class Repo(BaseRepo):
                 if mr and mr['source_branch'].startswith('session-'):
                     mr['site_id'] = site_id
                     mr['site_name'] = self.config[site_id]['name']
-                    lektorium_mr = {k: mr[k] for k in [
-                        'site_name',
-                        'title',
-                        'id',
-                        'target_branch',
-                        'source_branch',
-                        'state',
-                        'web_url'
-                    ]}
-                    yield lektorium_mr
+                    yield {
+                        k: mr[k] for k in [
+                            'site_name',
+                            'title',
+                            'id',
+                            'target_branch',
+                            'source_branch',
+                            'state',
+                            'web_url',
+                        ]
+                    }
 
     def create_session(self, site_id, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER

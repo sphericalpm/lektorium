@@ -37,6 +37,9 @@ SITES = [{
         'custodian': 'Max Jekov',
         'custodian_email': 'mj@acme.com',
     }]],
+    'releasing': [{
+        'site_name': 'Buy Our Widgets',
+    }],
 }, {
     'site_id': 'uci',
     'site_name': 'Underpants Collectors International',
@@ -91,6 +94,11 @@ class Repo(BaseRepo):
             lambda s: not bool(s[0].get('edit_url', None)),
             self.sessions.values()
         )
+
+    @property
+    def releasing(self):
+        for site in self.data:
+            yield from site.get('releasing', [])
 
     def create_session(
         self,

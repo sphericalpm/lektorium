@@ -2,6 +2,7 @@ import abc
 import collections
 import functools
 import inifile
+import logging
 import pathlib
 import requests
 import shutil
@@ -138,6 +139,10 @@ class FileStorage(FileStorageMixin, Storage):
         if config:
             return inifile.IniFile(config[0])
         return collections.defaultdict(type(None))
+    
+    def get_merge_requests(self, site_id):
+        logging.warn('get_merge_requests: site has no gitlab option')
+        return []
 
     def _site_dir(self, site_id):
         return self.root / site_id / 'master'
@@ -265,25 +270,28 @@ class GitStorage(FileStorageMixin, Storage):
 
     def get_merge_requests(self, site_id):
         site = self.config[site_id]
-        gitlab = site['gitlab']
-        headers = {'Authorization': 'Bearer {token}'.format(**gitlab)}
-        response = requests.get(
-            '{scheme}://{host}/api/v4/projects'.format(**gitlab),
-            headers=headers,
-        )
-        response.raise_for_status()
-        projects = response.json()
-        path = '{namespace}/{project}'.format(**gitlab)
-        project = one(x for x in projects if x['path_with_namespace'] == path)
-        response = requests.get(
-            '{scheme}://{host}/api/v4/projects/{pid}/merge_requests'.format(
-                **gitlab,
-                pid=project['id']
-            ),
-            headers=headers,
-        )
-        response.raise_for_status()
-        return response.json()
+        gitlab = site.get('gitlab', None)
+        if gitlab:
+            headers = {'Authorization': 'Bearer {token}'.format(**gitlab)}
+            response = requests.get(
+                '{scheme}://{host}/api/v4/projects'.format(**gitlab),
+                headers=headers,
+            )
+            response.raise_for_status()
+            projects = response.json()
+            path = '{namespace}/{project}'.format(**gitlab)
+            project = one(x for x in projects if x['path_with_namespace'] == path)
+            response = requests.get(
+                '{scheme}://{host}/api/v4/projects/{pid}/merge_requests'.format(
+                    **gitlab,
+                    pid=project['id']
+                ),
+                headers=headers,
+            )
+            response.raise_for_status()
+            return response.json()
+        logging.warn('get_merge_requests: site has no gitlab option')
+        return []
 
     def site_config(self, site_id):
         return collections.defaultdict(type(None))
