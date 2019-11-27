@@ -242,7 +242,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(permission, index) in userModalData['userPermissions']" :key="index">
+          <tr v-for="(permission, index) in userModalData['permissions']" :key="index">
               <td>{{ permission.permissionName }}</td>
               <td>{{ permission.description}}</td>
               <td>
@@ -276,8 +276,7 @@ export default {
       users: [],
       userModalData: {
         'user':'',
-        'userPermissions': [],
-        'availablePermissions': [],
+        'permissions': {},
         },
       add_site_form: {
         title: '',
@@ -533,28 +532,6 @@ export default {
       }
     },
 
-    async getAvailablePermissions() {
-      let query = `
-        {
-          availablePermissions {
-            value
-            description
-          }
-        }
-      `;
-      let result = await this.makeRequest(query);
-      let permissions= result.data.data.availablePermissions;
-      let userPermissions = [];
-      this.userModalData['userPermissions'].forEach(element => userPermissions.push(element.permissionName));
-      let permission_list = [];
-      permissions.forEach(element => {
-        if(!userPermissions.includes(element.value)){
-          permission_list.push(element.value);
-        }
-      });
-      this.userModalData['availablePermissions'] = permission_list;
-    },
-
     async getUserPermissions(userId) {
       let query = `
         {
@@ -565,7 +542,7 @@ export default {
         }
       `;
       let result = await this.makeRequest(query);
-      this.userModalData['userPermissions'] = result.data.data.permissions;
+      this.userModalData['permissions'] = result.data.data.permissions;
     },
 
     async deleteUserPermissions(userId, permissions) {
@@ -594,15 +571,13 @@ export default {
     showUserModal(userId) {
       this.initUserModal();
       this.userModalData['userId'] = userId;
-      this.getUserPermissions(userId);
-      this.getAvailablePermissions();
+      this.userModalData['permissions'] = this.getUserPermissions(userId);
       this.$bvModal.show(`user-modal`);
     },
 
     initUserModal() {
       this.userModalData['userId'] = '';
-      this.userModalData['userPermissions'] = [];
-      this.userModalData['availablePermissions'] = [];
+      this.userModalData['permissions'] = [];
     },
 
     initForm() {
