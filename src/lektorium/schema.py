@@ -9,6 +9,7 @@ from graphene import (
     String,
 )
 import lektorium.repo
+from lektorium.auth0 import Auth0Error
 
 
 class Site(ObjectType):
@@ -115,6 +116,44 @@ class MutationBase(Mutation):
             if isinstance(result, Future) or iscoroutine(result):
                 await result
         except lektorium.repo.ExceptionBase:
+            return MutationResult(ok=False)
+        return MutationResult(ok=True)
+
+
+class AddPermissions(MutationBase):
+    REPO_METHOD = 'set_user_permissions'
+
+    class Arguments:
+        user_id = String()
+        permissions = List(String)
+
+    @classmethod
+    async def mutate(cls, root, info, **kwargs):
+        try:
+            method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
+            result = method(**kwargs)
+            if isinstance(result, Future) or iscoroutine(result):
+                await result
+        except Auth0Error:
+            return MutationResult(ok=False)
+        return MutationResult(ok=True)
+
+
+class DeletePermissions(MutationBase):
+    REPO_METHOD = 'delete_user_permissions'
+
+    class Arguments:
+        user_id = String()
+        permissions = List(String)
+
+    @classmethod
+    async def mutate(cls, root, info, **kwargs):
+        try:
+            method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
+            result = method(**kwargs)
+            if isinstance(result, Future) or iscoroutine(result):
+                await result
+        except Auth0Error:
             return MutationResult(ok=False)
         return MutationResult(ok=True)
 
