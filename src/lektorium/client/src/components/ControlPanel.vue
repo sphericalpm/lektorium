@@ -182,7 +182,7 @@
               <td>{{ user.name }}</td>
               <td> {{ user.email }} </td>
               <td>
-                <b-button v-b-modal.user-modal>Permissions</b-button>
+                <b-button v-b-modal.user-modal @click="showUserModal(user.userId)">Permissions</b-button>
               </td>
             </tr>
           </tbody>
@@ -242,13 +242,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>read:projects</td>
-            <td>Bla bla bla</td>
-            <td>
-              <b-button>Delete</b-button>
-            </td>
-          </tr>
+          <tr v-for="(permission, index) in user_permissions" :key="index">
+              <td>{{ permission.permissionName }}</td>
+              <td>{{ permission.description}}</td>
+              <td>
+                <b-button v-b-modal.user-modal variant="danger">Delete</b-button>
+              </td>
+            </tr>
         </tbody>
       </table>
     </b-modal>
@@ -274,6 +274,7 @@ export default {
       edit_sessions: [],
       parked_sessions: [],
       users: [],
+      user_permissions: [],
 
       add_site_form: {
         title: '',
@@ -529,10 +530,29 @@ export default {
       }
     },
 
+    async getUserPermissions(userId) {
+      let query = `
+        {
+          permissions(userId: "${userId}") {
+            permissionName
+            description
+          }
+        }
+      `;
+      let result = await this.makeRequest(query);
+      this.user_permissions = result.data.data.permissions;
+    },
+
     showMessage(text, type) {
       this.message = text;
       this.message_type = type;
       this.message_visible = true;
+    },
+
+    showUserModal(userId) {
+      this.user_permissions = [];
+      this.user_permissions = this.getUserPermissions(userId);
+      this.$bvModal.show(`user-modal`);
     },
 
     initForm() {
