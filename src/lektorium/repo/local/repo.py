@@ -14,6 +14,43 @@ from ..interface import (
     SessionNotFound,
 )
 from .objects import Session, Site
+import collections.abc
+
+
+class FilteredDict(collections.abc.Mapping):
+    def __init__(self, keys, dct):
+        self.__keys = keys
+        self.__dct = dct
+
+    def __getitem__(self, key):
+        if key not in self.__keys:
+            raise KeyError(key)
+        return self.__dct[key]
+
+    @property
+    def __common_keys(self):
+        return set(self.__keys).intersection(self.__dct)
+
+    def __iter__(self):
+        return iter(self.__common_keys)
+
+    def __len__(self):
+        return len(self.__common_keys)
+
+
+class FilteredMergeRequestData(FilteredDict):
+    MERGE_REQUEST_KEYS = [
+        'id',
+        'source_branch',
+        'state',
+        'target_branch',
+        'title',
+        'web_url',
+    ]
+
+    def __init__(self, dct):
+        super().__init__(self.MERGE_REQUEST_KEYS, dct)
+
 
 
 class Repo(BaseRepo):
@@ -58,21 +95,12 @@ class Repo(BaseRepo):
 
     @property
     def releasing(self):
-        for site_id in self.config.keys():
-            for mr in self.storage.get_merge_requests(site_id):
-                if mr and mr['source_branch'].startswith('session-'):
-                    mr['site_id'] = site_id
-                    mr['site_name'] = self.config[site_id]['name']
+        for site_id, site in self.config.items():
+            for merge_request_data in self.storage.get_merge_requests(site_id):
+                if merge_request_data['source_branch'].startswith('session-'):
                     yield {
-                        k: mr[k] for k in [
-                            'site_name',
-                            'title',
-                            'id',
-                            'target_branch',
-                            'source_branch',
-                            'state',
-                            'web_url',
-                        ]
+                        'site_name': site['name'],
+                        **FilteredMergeRequestData(merge_request_data)
                     }
 
     def create_session(self, site_id, custodian=None):

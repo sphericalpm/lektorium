@@ -139,7 +139,7 @@ class FileStorage(FileStorageMixin, Storage):
         if config:
             return inifile.IniFile(config[0])
         return collections.defaultdict(type(None))
-    
+
     def get_merge_requests(self, site_id):
         logging.warn('get_merge_requests: site has no gitlab option')
         return []
