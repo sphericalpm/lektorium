@@ -75,12 +75,24 @@ class ApiPermission(ObjectType):
     description = String()
 
 
+class Releasing(ObjectType):
+    site_id = String()
+    site_name = String()
+    title = String()
+    id = String()
+    target_branch = String()
+    source_branch = String()
+    state = String()
+    web_url = String()
+
+
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
     users = List(User)
     permissions = List(Permission, user_id=String())
     available_permissions = List(ApiPermission)
+    releasing = List(Releasing)
 
     @staticmethod
     def sessions_list(repo):
@@ -109,6 +121,10 @@ class Query(ObjectType):
     async def resolve_available_permissions(self, info):
         auth0_client = info.context['auth0_client']
         return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
+
+    def resolve_releasing(self, info):
+        repo = info.context['repo']
+        return [Releasing(**x) for x in repo.releasing]
 
 
 class MutationResult(ObjectType):

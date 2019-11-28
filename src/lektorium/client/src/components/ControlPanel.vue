@@ -160,7 +160,7 @@
             </table>
           </b-card-text>
         </b-tab>
-        <b-tab @click="getPanelData(); is_message_visible = false;" title="Users">
+        <b-tab @click="refreshPanelData" title="Users">
           <template slot="title">
             Users <b-badge pill>{{users.length}}</b-badge>
           </template>
@@ -187,6 +187,35 @@
             </tr>
           </tbody>
         </table>
+        <b-tab @click="refreshPanelData">
+          <template slot="title">
+            Releasing <b-badge pill> {{releasing.length}} </b-badge>
+          </template>
+          <b-card-text>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th scope="col">Session ID</th>
+                  <th scope="col">Site Name</th>
+                  <th scope="col">Merge Request</th>
+                  <th scope="col">State</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(release, index) in releasing" :key="index">
+                  <td>{{ release.sourceBranch }}</td>
+                  <td>{{ release.siteName }}</td>
+                  <td>
+                    <a v-if="release.webUrl.startsWith('http')"
+                      :href="release.webUrl"
+                      target="_blank"
+                    >{{ release.title }}</a>
+                  </td>
+                  <td>{{ release.state }}</td>
+                </tr>
+              </tbody>
+            </table>
           </b-card-text>
         </b-tab>
       </b-tabs>
@@ -278,6 +307,8 @@ export default {
         'user':'',
         'permissions': {},
         },
+      releasing: [],
+
       add_site_form: {
         title: '',
         site_id: '',
@@ -376,6 +407,14 @@ export default {
                   email
                   userId
                 }
+                releasing {
+                  id
+                  title
+                  state
+                  siteName
+                  sourceBranch
+                  webUrl
+                }
               }
           `;
       let result = await this.makeRequest(query);
@@ -383,6 +422,7 @@ export default {
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
       this.users = result.data.data.users;
+      this.releasing = result.data.data.releasing;
       this.checkStarting();
     },
 
