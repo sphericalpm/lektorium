@@ -60,3 +60,29 @@ async def test_get_user_permissions(auth0_client):
         mocked.get(url, status=400)
         with pytest.raises(Auth0Error):
             resp = await auth0_client.get_user_permissions('user_id')
+
+
+async def test_set_user_permissions(auth0_client):
+    with aioresponses() as mocked:
+        url = auth0_client.data["audience"] + 'users/user_id/permissions'
+        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
+        mocked.post(url, status=201)
+        resp = await auth0_client.set_user_permissions('user_id', ['permission'])
+        assert resp
+        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
+        mocked.post(url, status=400)
+        with pytest.raises(Auth0Error):
+            resp = await auth0_client.set_user_permissions('user_id', ['permission'])
+
+
+async def test_delete_user_permissions(auth0_client):
+    with aioresponses() as mocked:
+        url = auth0_client.data["audience"] + 'users/user_id/permissions'
+        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
+        mocked.delete(url, status=204)
+        resp = await auth0_client.delete_user_permissions('user_id', ['permission'])
+        assert resp
+        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
+        mocked.delete(url, status=400)
+        with pytest.raises(Auth0Error):
+            resp = await auth0_client.delete_user_permissions('user_id', ['permission'])
