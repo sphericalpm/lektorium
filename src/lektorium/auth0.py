@@ -21,7 +21,7 @@ class Auth0Client:
                     return result['access_token']
                 else:
                     result = await resp.json()
-                    raise Auth0Error('{0}, {1}'.format(result['error'], result['error_description']))
+                    raise Auth0Error(f'Error {resp.status}')
 
     async def get_users(self):
         auth_token = await self.auth_token

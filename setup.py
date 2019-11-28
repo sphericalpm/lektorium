@@ -60,6 +60,7 @@ setuptools.setup(
         'dev': [
             'aiohttp-devtools',
             'aresponses',
+            'aioresponses',
             'async-timeout',
 
             'mypy',
