@@ -259,16 +259,21 @@
     </b-modal>
     <b-modal
     id="user-modal"
-    :title="userModalData['userId']"
+    :title="userModalData.userId"
     hide-footer
     @hidden="initUserModal">
       <b-form class="mb-3" inline>
-        <b-form-select v-model="selectedPermission">
+        <b-form-select class="mr-1" v-model="selectedPermission">
           <option v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
             {{permission.value}}
           </option>
         </b-form-select>
-        <b-button @click="setUserPermissions(userModalData['userId'], [selectedPermission,])">Add permission</b-button>
+        <b-button
+        @click="setUserPermissions(userModalData.userId, [selectedPermission,])"
+        :disabled="selectedPermission.length == 0"
+        variant="success">
+          Add permission
+        </b-button>
       </b-form>
       <table class="table table-hover">
         <thead>
@@ -283,7 +288,7 @@
               <td>{{ permission.permissionName }}</td>
               <td>{{ permission.description}}</td>
               <td>
-                <b-button @click="deleteUserPermissions(userModalData['userId'], [permission.permissionName,])" variant="danger">Delete</b-button>
+                <b-button @click="deleteUserPermissions(userModalData.userId, [permission.permissionName,])" variant="danger">Delete</b-button>
               </td>
             </tr>
         </tbody>
@@ -312,8 +317,8 @@ export default {
       parked_sessions: [],
       users: [],
       userModalData: {
-        'user':'',
-        'permissions': {},
+        userId:'',
+        permissions: {},
         },
       availablePermissions: [],
       selectedPermission: '',
@@ -605,8 +610,7 @@ export default {
           `;
       let result = await this.makeRequest(query);
       if(result.data.data.setUserPermissions.ok) {
-        this.getUserPermissions(userId);
-        this.getAvailablePermissions();
+        this.refreshUserModal(userId);
       }
       else {
         this.showMessage(`Unable to add permisson`, `danger`);
@@ -623,7 +627,7 @@ export default {
           `;
       let result = await this.makeRequest(query);
       if(result.data.data.deleteUserPermissions.ok) {
-        this.getUserPermissions(userId);
+        this.refreshUserModal(userId);
       }
       else {
         this.showMessage(`Unable to remove permisson`, `danger`);
@@ -640,6 +644,17 @@ export default {
       `;
       let result = await this.makeRequest(query);
       this.availablePermissions = result.data.data.availablePermissions;
+      let userPermissions = [];
+      this.userModalData.permissions.forEach(element =>{
+        userPermissions.push(element.permissionName)
+      });
+      let newPermissions = [];
+      this.availablePermissions.forEach(element => {
+        if(!userPermissions.includes(element.value)){
+          newPermissions.push(element);
+        }
+      });
+      this.availablePermissions = newPermissions;
     },
 
     showMessage(text, type) {
@@ -650,17 +665,26 @@ export default {
 
     showUserModal(userId) {
       this.initUserModal();
-      this.userModalData['userId'] = userId;
+      this.userModalData.userId = userId;
       this.getUserPermissions(userId);
       this.getAvailablePermissions();
       this.$bvModal.show(`user-modal`);
     },
 
     initUserModal() {
+      this.selectedPermission = '';
       this.userModalData.userId = '';
       this.userModalData.permissions = [];
       this.availablePermissions = [];
 
+    },
+
+    refreshUserModal(userId) {
+      this.userModalData.permissions = [];
+      this.availablePermissions = [];
+      this.selectedPermission = '';
+      this.getUserPermissions(userId);
+      this.getAvailablePermissions();
     },
 
     initForm() {
