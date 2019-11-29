@@ -455,3 +455,18 @@ def test_get_user_permissions(client):
             ]
         }
     }
+
+
+def test_get_api_permissions(client):
+    result = client.execute(r''' {
+        availablePermissions {
+            value
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'availablePermissions': [
+                {'value': 'TestPermissions'}
+            ]
+        }
+    }
