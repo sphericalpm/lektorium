@@ -440,3 +440,18 @@ def test_get_users(client):
             ]
         }
     }
+
+
+def test_get_user_permissions(client):
+    result = client.execute(r''' {
+        permissions(userId: "test_id") {
+            permissionName
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'permissions': [
+                {'permissionsName': 'Test Permission'}
+            ]
+        }
+    }
