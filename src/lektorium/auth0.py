@@ -1,6 +1,57 @@
 import aiohttp
 
 
+class FakeAuth0Client:
+    def __init__(self):
+        self.token = 'test_token'
+        self.users = [
+            {'user_id': 'test_id', 'name': 'Max Jekov', 'nickname': 'mj', 'email': 'mj@mail.m'}
+        ]
+        self.users_permissions = {
+            'test_id': [{'permission_name': 'Test Permission1', 'description': ''}]
+        }
+        self.api_permissions = [
+            {'value': 'Test Permission1', 'description': ''},
+            {'value': 'Test Permission2', 'description': ''},
+        ]
+
+    @property
+    async def auth_token(self):
+        return self.token
+
+    async def get_users(self):
+        return self.users
+
+    async def get_user_permissions(self, user_id):
+        result = self.users_permissions.get(user_id)
+        if result is None:
+            raise Auth0Error()
+        return result
+
+    async def set_user_permissions(self, user_id, permissions):
+        if user_id in self.users_permissions:
+            new_permissions = [
+                {'permission_name': name, 'description': ''} for name in permissions
+            ]
+            self.users_permissions[user_id].extend(new_permissions)
+            return True
+        raise Auth0Error
+
+    async def delete_user_permissions(self, user_id, permissions):
+        if user_id in self.users_permissions:
+            permissions_to_delete = [
+                {'permission_name': name, 'description': ''} for name in permissions
+            ]
+            for index, permission in enumerate(self.users_permissions[user_id]):
+                if permission in permissions_to_delete:
+                    del self.users_permissions[user_id][index]
+            return True
+        raise Auth0Error
+
+    async def get_api_permissions(self):
+        return self.api_permissions
+
+
 class Auth0Client:
     def __init__(self, auth):
         self.url = 'https://{0}/oauth/token'.format(auth['data-auth0-domain'])
