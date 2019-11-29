@@ -160,33 +160,6 @@
             </table>
           </b-card-text>
         </b-tab>
-        <b-tab @click="refreshPanelData" title="Users">
-          <template slot="title">
-            Users <b-badge pill>{{users.length}}</b-badge>
-          </template>
-          <b-card-text>
-            <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">User ID</th>
-              <th scope="col">Nickname</th>
-              <th scope="col">Name</th>
-              <th scope="col">Email</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(user, index) in users" :key="index">
-              <td>{{ user.userId }}</td>
-              <td>{{ user.nickname }}</td>
-              <td>{{ user.name }}</td>
-              <td> {{ user.email }} </td>
-              <td>
-                <b-button v-b-modal.user-modal @click="showUserModal(user.userId)">Permissions</b-button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
         <b-tab @click="refreshPanelData">
           <template slot="title">
             Releasing <b-badge pill> {{releasing.length}} </b-badge>
@@ -213,6 +186,35 @@
                     >{{ release.title }}</a>
                   </td>
                   <td>{{ release.state }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </b-card-text>
+        </b-tab>
+        <b-tab @click="refreshPanelData" title="Users">
+          <template slot="title">
+            Users <b-badge pill>{{users.length}}</b-badge>
+          </template>
+          <b-card-text>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th scope="col">User ID</th>
+                  <th scope="col">Nickname</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(user, index) in users" :key="index">
+                  <td>{{ user.userId }}</td>
+                  <td>{{ user.nickname }}</td>
+                  <td>{{ user.name }}</td>
+                  <td> {{ user.email }} </td>
+                  <td>
+                    <b-button v-b-modal.user-modal @click="showUserModal(user.userId)">Permissions</b-button>
+                  </td>
                 </tr>
               </tbody>
             </table>
