@@ -104,7 +104,8 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
             LocalLektor,
             sessions_root=sessions_root
         )
-        auth0_client = Auth0Client(auth0_options)
+        if auth0_options:
+            auth0_client = Auth0Client(auth0_options)
     else:
         raise ValueError(f'repo_type not supported {repo_type}')
 

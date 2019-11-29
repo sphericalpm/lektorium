@@ -5,6 +5,7 @@ import graphene.test
 from graphql.execution.executors.asyncio import AsyncioExecutor
 import lektorium.schema
 import lektorium.repo
+from lektorium.auth0 import FakeAuth0Client
 
 
 def deorder(obj):
@@ -26,7 +27,8 @@ def client():
         context={
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
-            )
+            ),
+            'auth0_client': FakeAuth0Client(),
         },
         executor=AsyncioExecutor(),
     )
@@ -451,7 +453,7 @@ def test_get_user_permissions(client):
     assert deorder(result) == {
         'data': {
             'permissions': [
-                {'permissionsName': 'Test Permission'}
+                {'permissionName': 'Test Permission1'}
             ]
         }
     }
@@ -466,7 +468,8 @@ def test_get_api_permissions(client):
     assert deorder(result) == {
         'data': {
             'availablePermissions': [
-                {'value': 'TestPermissions'}
+                {'value': 'Test Permission1'},
+                {'value': 'Test Permission2'}
             ]
         }
     }
@@ -474,7 +477,7 @@ def test_get_api_permissions(client):
 
 def test_set_permissions(client):
     result = client.execute(r'''mutation {
-        setUserPermissions(userId:"test", permissions:["Test Permission"]) {
+        setUserPermissions(userId:"test_id", permissions:["Test Permission2"]) {
             ok
          }
     }''')
@@ -485,17 +488,30 @@ def test_set_permissions(client):
             },
         }
     }
+    result = client.execute(r''' {
+        permissions(userId: "test_id") {
+            permissionName
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'permissions': [
+                {'permissionName': 'Test Permission1'},
+                {'permissionName': 'Test Permission2'},
+            ]
+        }
+    }
 
 
 def test_delete_permissions(client):
     client.execute(r'''mutation {
-        setUserPermissions(userId:"test", permissions:["Test Permission"]) {
+        setUserPermissions(userId:"test_id", permissions:["Test Permission2"]) {
             ok
          }
     }''')
 
     result = client.execute(r'''mutation {
-        deleteUserPermissions(userId:"test", permissions:["Test Permission"]) {
+        deleteUserPermissions(userId:"test_id", permissions:["Test Permission1"]) {
             ok
          }
     }''')
@@ -504,5 +520,17 @@ def test_delete_permissions(client):
             'deleteUserPermissions': {
                 'ok': True,
             },
+        }
+    }
+    result = client.execute(r''' {
+        permissions(userId: "test_id") {
+            permissionName
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'permissions': [
+                {'permissionName': 'Test Permission2'},
+            ]
         }
     }
