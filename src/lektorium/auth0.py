@@ -33,7 +33,9 @@ class FakeAuth0Client:
             new_permissions = [
                 {'permission_name': name, 'description': ''} for name in permissions
             ]
-            self.users_permissions[user_id].extend(new_permissions)
+            for permission in new_permissions:
+                if permission not in self.users_permissions[user_id]:
+                    self.users_permissions[user_id].append(permission)
             return True
         raise Auth0Error
 

@@ -257,12 +257,18 @@
         </b-button-group>
       </b-form>
     </b-modal>
-    <b-modal id="user-modal" :title="userModalData['userId']" hide-footer>
+    <b-modal
+    id="user-modal"
+    :title="userModalData['userId']"
+    hide-footer
+    @hidden="initUserModal">
       <b-form class="mb-3" inline>
-        <b-form-select>
-          <option :value="null">Please select an option</option>
+        <b-form-select v-model="selectedPermission">
+          <option v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
+            {{permission.value}}
+          </option>
         </b-form-select>
-        <b-button>Add permission</b-button>
+        <b-button @click="setUserPermissions(userModalData['userId'], [selectedPermission,])">Add permission</b-button>
       </b-form>
       <table class="table table-hover">
         <thead>
@@ -309,6 +315,8 @@ export default {
         'user':'',
         'permissions': {},
         },
+      availablePermissions: [],
+      selectedPermission: '',
       releasing: [],
 
       add_site_form: {
@@ -587,6 +595,24 @@ export default {
       this.userModalData['permissions'] = result.data.data.permissions;
     },
 
+    async setUserPermissions(userId, permissions) {
+      let query = `
+                mutation {
+                setUserPermissions(userId: "${userId}", permissions: "${permissions}") {
+                  ok
+                }
+              }
+          `;
+      let result = await this.makeRequest(query);
+      if(result.data.data.setUserPermissions.ok) {
+        this.getUserPermissions(userId);
+        this.getAvailablePermissions();
+      }
+      else {
+        this.showMessage(`Unable to add permisson`, `danger`);
+      }
+    },
+
     async deleteUserPermissions(userId, permissions) {
       let query = `
                 mutation {
@@ -604,6 +630,18 @@ export default {
       }
     },
 
+    async getAvailablePermissions() {
+      let query = `
+        {
+          availablePermissions {
+            value
+          }
+        }
+      `;
+      let result = await this.makeRequest(query);
+      this.availablePermissions = result.data.data.availablePermissions;
+    },
+
     showMessage(text, type) {
       this.message = text;
       this.message_type = type;
@@ -613,13 +651,16 @@ export default {
     showUserModal(userId) {
       this.initUserModal();
       this.userModalData['userId'] = userId;
-      this.userModalData['permissions'] = this.getUserPermissions(userId);
+      this.getUserPermissions(userId);
+      this.getAvailablePermissions();
       this.$bvModal.show(`user-modal`);
     },
 
     initUserModal() {
-      this.userModalData['userId'] = '';
-      this.userModalData['permissions'] = [];
+      this.userModalData.userId = '';
+      this.userModalData.permissions = [];
+      this.availablePermissions = [];
+
     },
 
     initForm() {
