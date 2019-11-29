@@ -470,3 +470,18 @@ def test_get_api_permissions(client):
             ]
         }
     }
+
+
+def test_set_permissions(client):
+    result = client.execute(r'''mutation {
+        setUserPermissions(userId:"test", permissions:["Test Permissions"]) {
+            ok
+         }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'setUserPermissions': {
+                'ok': True,
+            },
+        }
+    }
