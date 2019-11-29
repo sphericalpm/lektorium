@@ -425,3 +425,18 @@ def test_parked_resolve(client):
             ]
         }
     }
+
+
+def test_get_users(client):
+    result = client.execute(r''' {
+        users {
+            userId
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'users': [
+                {'userId': 'test_id'}
+            ]
+        }
+    }
