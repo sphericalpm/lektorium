@@ -259,7 +259,7 @@
     </b-modal>
     <b-modal
     id="user-modal"
-    :title="userModalData.userId"
+    :title="selectedUserId"
     hide-footer
     @hidden="initUserModal">
       <b-form class="mb-3" inline>
@@ -299,9 +299,7 @@ export default {
       edit_sessions: [],
       parked_sessions: [],
       users: [],
-      userModalData: {
-        userId:'',
-        },
+      selectedUserId: '',
       userPermissions: [],
       selectedUserPermissions: [],
       availablePermissions: [],
@@ -641,7 +639,7 @@ export default {
 
     showUserModal(userId) {
       this.initUserModal();
-      this.userModalData.userId = userId;
+      this.selectedUserId = userId;
       this.getUserPermissions(userId);
       this.getAvailablePermissions();
       this.$bvModal.show(`user-modal`);
@@ -649,7 +647,7 @@ export default {
 
     initUserModal() {
       this.selectedPermissions = [];
-      this.userModalData.userId = '';
+      this.selectedUserId = '';
       this.userPermissions = [];
       this.availablePermissions = [];
 
