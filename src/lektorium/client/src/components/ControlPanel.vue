@@ -272,7 +272,7 @@
         </b-form-group>
       </b-form>
       <div class="text-center">
-        <b-button variant="success">
+        <b-button variant="success" @click="updateUserPermissions">
           Save
         </b-button>
       </div>
@@ -303,7 +303,6 @@ export default {
       userPermissions: [],
       selectedUserPermissions: [],
       availablePermissions: [],
-      selectedPermissions: [],
       releasing: [],
 
       add_site_form: {
@@ -580,15 +579,17 @@ export default {
       `;
       let result = await this.makeRequest(query);
       this.userPermissions = result.data.data.permissions;
+      this.selectedUserPermissions = [];
       this.userPermissions.forEach(element => {
         this.selectedUserPermissions.push(element.permissionName)
       });
     },
 
     async setUserPermissions(userId, permissions) {
+      let permissionsString = permissions.join('","');
       let query = `
                 mutation {
-                setUserPermissions(userId: "${userId}", permissions: "${permissions}") {
+                setUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
                   ok
                 }
               }
@@ -603,9 +604,10 @@ export default {
     },
 
     async deleteUserPermissions(userId, permissions) {
+      let permissionsString = permissions.join('","');
       let query = `
                 mutation {
-                deleteUserPermissions(userId: "${userId}", permissions: "${permissions}") {
+                deleteUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
                   ok
                 }
               }
@@ -617,6 +619,20 @@ export default {
       else {
         this.showMessage(`Unable to remove permisson`, `danger`);
       }
+    },
+
+    async updateUserPermissions() {
+      let permissionsToDelete = this.userPermissions.map(function(perm){return perm.permissionName});
+      permissionsToDelete = permissionsToDelete.filter(element => !(this.selectedUserPermissions.includes(element)));
+      let userPermissionsPlate = this.userPermissions.map(function(perm){return perm.permissionName});
+      let permissionsToSet = this.selectedUserPermissions.filter(element => !(userPermissionsPlate.includes(element)));
+      if (permissionsToDelete.length>0) {
+        this.deleteUserPermissions(this.selectedUserId, permissionsToDelete);
+      }
+      if (permissionsToSet.length>0){
+        this.setUserPermissions(this.selectedUserId, permissionsToSet);
+      }
+      this.$bvModal.hide(`user-modal`);
     },
 
     async getAvailablePermissions() {
@@ -646,15 +662,15 @@ export default {
     },
 
     initUserModal() {
-      this.selectedPermissions = [];
       this.selectedUserId = '';
+      this.selectedUserPermissions = [];
       this.userPermissions = [];
       this.availablePermissions = [];
 
     },
 
     refreshUserModal(userId) {
-      this.selectedPermissions = [];
+      this.selectedUserPermissions = [];
       this.userPermissions = [];
       this.availablePermissions = [];
       this.getUserPermissions(userId);
