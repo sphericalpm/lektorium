@@ -1,4 +1,6 @@
 import os
+import pathlib
+import webbrowser
 from invoke import task
 from invoke.tasks import call
 
@@ -35,6 +37,13 @@ def dev(ctx):
 @task
 def test(ctx):
     ctx.run('pytest -rxXs')
+
+
+@task
+def cov(ctx):
+    ctx.run('pytest --cov=lektorium --cov-report=html')
+    path = (pathlib.Path('.') / 'htmlcov' / 'index.html').resolve()
+    webbrowser.open(f"file://{path}")
 
 
 @task
