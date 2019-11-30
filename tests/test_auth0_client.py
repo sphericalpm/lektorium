@@ -1,6 +1,6 @@
 import pytest
 from aioresponses import aioresponses
-from lektorium.auth0 import Auth0Client, Auth0Error
+from lektorium.auth0 import Auth0Client, Auth0Error, FakeAuth0Client
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,6 +22,21 @@ def auth0_client():
         'data-auth0-management-secret': 'testsecret',
     }
     return Auth0Client(test_auth_data)
+
+
+@pytest.fixture
+def fake_auth0_client():
+    return FakeAuth0Client()
+
+
+async def test_fake_auth_token(fake_auth0_client):
+    token = await fake_auth0_client.auth_token
+    assert token == 'test_token'
+
+
+async def test_fake_get_user_permissions(fake_auth0_client):
+    with pytest.raises(Auth0Error):
+        await fake_auth0_client.get_user_permissions('wrong_id')
 
 
 async def test_auth_token(auth0_client):
