@@ -501,6 +501,18 @@ def test_set_permissions(client):
             ]
         }
     }
+    result = client.execute(r'''mutation {
+        setUserPermissions(userId:"wrong_id", permissions:["Test Permission2"]) {
+            ok
+         }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'setUserPermissions': {
+                'ok': False,
+            },
+        }
+    }
 
 
 def test_delete_permissions(client):
@@ -532,5 +544,18 @@ def test_delete_permissions(client):
             'permissions': [
                 {'permissionName': 'Test Permission2'},
             ]
+        }
+    }
+
+    result = client.execute(r'''mutation {
+        deleteUserPermissions(userId:"wrong_id", permissions:["Test Permission1"]) {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'deleteUserPermissions': {
+                'ok': False,
+            },
         }
     }
