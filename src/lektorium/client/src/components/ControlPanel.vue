@@ -264,7 +264,7 @@
     @hidden="initUserModal">
       <b-form class="mb-3" inline>
         <b-form-group label="Permissions:">
-          <b-form-checkbox-group id="checkbox-group-permissions" v-model="selected" name="permissions-2">
+          <b-form-checkbox-group id="checkbox-group-permissions" v-model="selectedUserPermissions" name="permissions-2">
             <b-form-checkbox v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
               {{permission.value}}
             </b-form-checkbox>
@@ -301,8 +301,9 @@ export default {
       users: [],
       userModalData: {
         userId:'',
-        permissions: {},
         },
+      userPermissions: [],
+      selectedUserPermissions: [],
       availablePermissions: [],
       selectedPermissions: [],
       releasing: [],
@@ -580,7 +581,10 @@ export default {
         }
       `;
       let result = await this.makeRequest(query);
-      this.userModalData['permissions'] = result.data.data.permissions;
+      this.userPermissions = result.data.data.permissions;
+      this.userPermissions.forEach(element => {
+        this.selectedUserPermissions.push(element.permissionName)
+      });
     },
 
     async setUserPermissions(userId, permissions) {
@@ -646,14 +650,14 @@ export default {
     initUserModal() {
       this.selectedPermissions = [];
       this.userModalData.userId = '';
-      this.userModalData.permissions = [];
+      this.userPermissions = [];
       this.availablePermissions = [];
 
     },
 
     refreshUserModal(userId) {
       this.selectedPermissions = [];
-      this.userModalData.permissions = [];
+      this.userPermissions = [];
       this.availablePermissions = [];
       this.getUserPermissions(userId);
       this.getAvailablePermissions();
