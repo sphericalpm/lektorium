@@ -60,6 +60,7 @@ class User(ObjectType):
     email = String()
     name = String()
     nickname = String()
+    permissions = List(String)
 
 
 class Permission(ObjectType):

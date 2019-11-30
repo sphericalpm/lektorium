@@ -20,6 +20,9 @@ class FakeAuth0Client:
         return self.token
 
     async def get_users(self):
+        for user in self.users:
+            permissions = self.users_permissions.get(user['user_id'])
+            user['permissions'] = [permission['permission_name'] for permission in permissions]
         return self.users
 
     async def get_user_permissions(self, user_id):
@@ -84,7 +87,12 @@ class Auth0Client:
             params = {'fields': 'name,nickname,email,user_id'}
             async with client.get(url, params=params) as resp:
                 if resp.status == 200:
-                    return await resp.json()
+                    users = await resp.json()
+                    for user in users:
+                        if user.get('user_id'):
+                            permissions = await self.get_user_permissions(user['user_id'])
+                            user['permissions'] = [permission['permission_name'] for permission in permissions]
+                    return users
                 else:
                     raise Auth0Error(f'Error {resp.status}')
 

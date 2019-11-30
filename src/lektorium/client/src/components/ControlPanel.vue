@@ -203,6 +203,7 @@
                   <th scope="col">Nickname</th>
                   <th scope="col">Name</th>
                   <th scope="col">Email</th>
+                  <th scope="col">Permissions</th>
                   <th scope="col"></th>
                 </tr>
               </thead>
@@ -213,7 +214,14 @@
                   <td>{{ user.name }}</td>
                   <td> {{ user.email }} </td>
                   <td>
-                    <b-button v-b-modal.user-modal @click="showUserModal(user.userId)">Permissions</b-button>
+                    <ul>
+                      <li v-for="(permission, index) in user.permissions" :key="index">
+                        {{permission}}
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <b-button v-b-modal.user-modal @click="showUserModal(user.userId)">Edit Permissions</b-button>
                   </td>
                 </tr>
               </tbody>
@@ -402,6 +410,7 @@ export default {
                   name
                   email
                   userId
+                  permissions
                 }
                 releasing {
                   id
@@ -633,6 +642,7 @@ export default {
         this.setUserPermissions(this.selectedUserId, permissionsToSet);
       }
       this.$bvModal.hide(`user-modal`);
+      this.refreshPanelData();
     },
 
     async getAvailablePermissions() {
