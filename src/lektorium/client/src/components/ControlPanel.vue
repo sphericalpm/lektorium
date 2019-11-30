@@ -263,36 +263,19 @@
     hide-footer
     @hidden="initUserModal">
       <b-form class="mb-3" inline>
-        <b-form-select class="mr-1" v-model="selectedPermission">
-          <option v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
-            {{permission.value}}
-          </option>
-        </b-form-select>
-        <b-button
-        @click="setUserPermissions(userModalData.userId, [selectedPermission,])"
-        :disabled="selectedPermission.length == 0"
-        variant="success">
-          Add permission
-        </b-button>
+        <b-form-group label="Permissions:">
+          <b-form-checkbox-group id="checkbox-group-permissions" v-model="selected" name="permissions-2">
+            <b-form-checkbox v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
+              {{permission.value}}
+            </b-form-checkbox>
+          </b-form-checkbox-group>
+        </b-form-group>
       </b-form>
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th scope="col">Permission Name</th>
-            <th scope="col">Description</th>
-            <th scope="col"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(permission, index) in userModalData['permissions']" :key="index">
-              <td>{{ permission.permissionName }}</td>
-              <td>{{ permission.description}}</td>
-              <td>
-                <b-button @click="deleteUserPermissions(userModalData.userId, [permission.permissionName,])" variant="danger">Delete</b-button>
-              </td>
-            </tr>
-        </tbody>
-      </table>
+      <div class="text-center">
+        <b-button variant="success">
+          Save
+        </b-button>
+      </div>
     </b-modal>
     <b-alert
       :show="message_visible"
@@ -321,7 +304,7 @@ export default {
         permissions: {},
         },
       availablePermissions: [],
-      selectedPermission: '',
+      selectedPermissions: [],
       releasing: [],
 
       add_site_form: {
@@ -644,17 +627,6 @@ export default {
       `;
       let result = await this.makeRequest(query);
       this.availablePermissions = result.data.data.availablePermissions;
-      let userPermissions = [];
-      this.userModalData.permissions.forEach(element =>{
-        userPermissions.push(element.permissionName)
-      });
-      let newPermissions = [];
-      this.availablePermissions.forEach(element => {
-        if(!userPermissions.includes(element.value)){
-          newPermissions.push(element);
-        }
-      });
-      this.availablePermissions = newPermissions;
     },
 
     showMessage(text, type) {
@@ -672,7 +644,7 @@ export default {
     },
 
     initUserModal() {
-      this.selectedPermission = '';
+      this.selectedPermissions = [];
       this.userModalData.userId = '';
       this.userModalData.permissions = [];
       this.availablePermissions = [];
@@ -680,9 +652,9 @@ export default {
     },
 
     refreshUserModal(userId) {
+      this.selectedPermissions = [];
       this.userModalData.permissions = [];
       this.availablePermissions = [];
-      this.selectedPermission = '';
       this.getUserPermissions(userId);
       this.getAvailablePermissions();
     },
