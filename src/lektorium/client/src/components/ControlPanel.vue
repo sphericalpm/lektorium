@@ -440,6 +440,7 @@ export default {
       else if(data.requestRelease.ok)
       {
         this.showMessage(`Release request was sent.`, `success`);
+        this.current_tab = 3;
         this.getPanelData();
       }
       else {
