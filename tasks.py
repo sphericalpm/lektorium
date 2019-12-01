@@ -1,5 +1,6 @@
 import os
 import pathlib
+import subprocess
 import webbrowser
 from invoke import task
 from invoke.tasks import call
@@ -154,3 +155,26 @@ def debug(ctx, env=None, cfg=None, auth=None, network=None):
         auth=auth,
         network=network,
     )
+
+
+@task
+def list(ctx):
+    proc = subprocess.Popen(
+        'python -u -m lektorium LIST',
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        shell=True,
+    )
+    target = None
+    for line in proc.stdout:
+        print(line.decode().rstrip())
+        if b'Running on' in line:
+            target = line[20:-10].decode()
+            break
+    if target is not None:
+        webbrowser.open(target)
+    try:
+        proc.communicate()
+    except:
+        proc.kill()
+        proc.wait()
