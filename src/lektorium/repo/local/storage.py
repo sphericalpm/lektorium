@@ -13,6 +13,11 @@ from more_itertools import one
 import yaml
 
 from .objects import Site
+from .templates import (
+    AWS_SHARED_CREDENTIALS_FILE_TEMPLATE,
+    LECTOR_S3_SERVER_TEMPLATE,
+    GITLAB_CI_TEMPLATE,
+)
 from ...utils import closer
 
 
@@ -180,6 +185,69 @@ class GitLab:
     def __init__(self, options):
         self.options = options
         self.options.setdefault('api_version', self.DEFAULT_API_VERSION)
+
+    @cached_property
+    def repo_url(self):
+        return '{scheme}://{host}/api/{api_version}'.format(**self.options)
+
+    @cached_property
+    def path(self):
+        return '{namespace}/{project}'.format(**self.options)
+
+    @cached_property
+    def namespace_id(self):
+        namespace_name = self.options['namespace']
+        response = requests.get(
+            '{repo_url}/namespaces'.format(repo_url=self.repo_url),
+            params={'search': namespace_name},
+            headers=self.headers,
+        )
+        response.raise_for_status()
+        namespaces = response.json()
+        return one(x for x in namespaces if x['name'] == namespace_name)['id']
+
+    def init_project(self):
+        if self.path in (x['path_with_namespace'] for x in self.projects):
+            raise Exception(f'Project {self.path} already exists')
+
+        for item in ('projects', 'project_id'):
+            if item in self.__dict__:
+                del self.__dict__[item]
+
+        response = requests.post(
+            '{repo_url}/projects'.format(repo_url=self.repo_url),
+            params={
+                'name': self.options['project'],
+                'namespace_id': self.namespace_id,
+                'visibility': 'private',
+                'default_branch': self.options['branch'],
+                'tag_list': 'lectorium',
+                'shared_runners_enabled': 'true',
+            },
+            headers=self.headers,
+        )
+        response.raise_for_status()
+        ssh_repo_url = response.json()['ssh_url_to_repo']
+
+        response = requests.post(
+            '{repo_url}/projects/{pid}/variables'.format(
+                repo_url=self.repo_url,
+                pid=self.project_id,
+            ),
+            params={
+                'id': self.project_id,
+                'variable_type': 'file',
+                'key': 'AWS_SHARED_CREDENTIALS_FILE',
+                'value': AWS_SHARED_CREDENTIALS_FILE_TEMPLATE.format(
+                    aws_key_id=environ['AWS_ACCESS_KEY_ID'],
+                    aws_secret_key=environ['AWS_SECRET_ACCESS_KEY'],
+                ),
+            },
+            headers=self.headers,
+        )
+        response.raise_for_status()
+
+        return ssh_repo_url
 
     @cached_property
     def projects(self):
