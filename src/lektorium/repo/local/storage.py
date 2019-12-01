@@ -8,9 +8,12 @@ import requests
 import shutil
 import subprocess
 import tempfile
+from os import environ
+
 from cached_property import cached_property
 from more_itertools import one
 import yaml
+import boto3
 
 from .objects import Site
 from .templates import (
@@ -385,3 +388,87 @@ class GitStorage(FileStorageMixin, Storage):
     def __repr__(self):
         name = self.__class__.__name__
         return f'{name}("{str(self.git)}"@"{str(self.root)}")'
+
+
+class GitlabStorage(GitStorage):
+    S3_PREFIX = 'spherical-lectorium-'
+    S3_SUFFIX = '.s3.amazonaws.com'
+
+    def __init__(self, git, token):
+        super().__init__(git)
+        self.token = token
+        head, _, tail = git.partition('@')
+        git = tail or head
+        self.repo, _, path = tail.partition(':')
+        self.namespace, _, _ = path.partition('/')
+
+    def create_site(self, lektor, name, owner, site_id):
+        site_workdir, repo = super().create_site(lektor, name, owner, site_id)
+
+        bucket_name = self.create_s3_bucket(site_id)
+        distribution_id = self.create_cloudfront_distribution(bucket_name)
+
+        with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
+            fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
+                s3_bucket_name=bucket_name,
+                cloudfront_id=distribution_id,
+            ))
+        with open(str(site_workdir / '.gitlab-ci.yml'), 'w') as fo:
+            fo.write(GITLAB_CI_TEMPLATE)
+
+        run_local = functools.partial(run, cwd=site_workdir)
+        run_local('git add .')
+        run_local('git commit -m "Add AWS deploy integration"')
+        run_local('git push --set-upstream origin master')
+
+        return site_workdir, repo
+
+    def create_site_repo(self, site_id):
+        site_repo = GitLab(dict(
+            scheme='https',
+            host=self.repo,
+            namespace=self.namespace,
+            project=site_id,
+            branch='master',
+            token=self.token,
+        )).init_project()
+        return site_repo
+
+    def create_s3_bucket(self, site_id):
+        bucket_name = self.S3_PREFIX + site_id
+        response = boto3.client('s3').create_bucket(Bucket=bucket_name)
+        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
+            raise Exception('Failed to create S3 bucket')
+        return bucket_name
+
+    def create_cloudfront_distribution(self, bucket_name):
+        bucket_origin_name = bucket_name + self.S3_SUFFIX
+        response = boto3.client('cloudfront').create_distribution(
+            DistributionConfig=dict(
+                CallerReference='lectorium',
+                Comment='Lectorium',
+                Enabled=True,
+                Origins=dict(
+                    Quantity=1,
+                    Items=[dict(
+                        Id='1',
+                        DomainName=bucket_origin_name,
+                        S3OriginConfig=dict(OriginAccessIdentity=''),
+                    )]
+                ),
+                DefaultCacheBehavior=dict(
+                    TargetOriginId='1',
+                    ViewerProtocolPolicy='redirect-to-https',
+                    TrustedSigners=dict(Quantity=0, Enabled=False),
+                    ForwardedValues=dict(
+                        Cookies={'Forward': 'all'},
+                        Headers=dict(Quantity=0),
+                        QueryString=False,
+                        QueryStringCacheKeys=dict(Quantity=0),
+                    ),
+                    MinTTL=1000
+                ),
+            ))
+        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 201:
+            raise Exception('Failed to create CloudFront distribution')
+        return response['Distribution']['Id']
