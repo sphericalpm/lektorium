@@ -20,6 +20,7 @@ from .repo.local import (
     FakeServer,
     FileStorage,
     GitStorage,
+    GitlabStorage,
     LocalLektor,
 )
 
@@ -56,6 +57,7 @@ class RepoType(BaseEnum):
 class StorageType(BaseEnum):
     FILE = FileStorage
     GIT = GitStorage
+    GITLAB = GitlabStorage
 
 
 class ServerType(BaseEnum):
@@ -73,6 +75,7 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
         lektorium_repo = repo.ListRepo(repo.SITES)
     elif repo_type == RepoType.LOCAL:
         server_type, _, storage_config = repo_args.partition(',')
+        storage_config, _, token = storage_config.partition(',')
         server_type = ServerType.get(server_type or 'FAKE')
         server = server_type.value()
 
@@ -82,7 +85,10 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
         if not storage_path:
             storage_path = pathlib.Path(closer(tempfile.TemporaryDirectory()))
             storage_path = storage_class.init(storage_path)
-        storage = storage_class(storage_path)
+        if type(storage_class) is type(GitlabStorage):
+            storage = storage_class(storage_path, token)
+        else:
+            storage = storage_class(storage_path)
 
         sessions_root = None
         if server_type == ServerType.DOCKER:
