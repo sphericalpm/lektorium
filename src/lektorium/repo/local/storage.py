@@ -315,6 +315,7 @@ class GitLab:
 
 class GitStorage(FileStorageMixin, Storage):
     CONFIG_CLASS = GitConfig
+    GITLAB_SECTION_NAME = 'giblab'
 
     def __init__(self, git):
         self.git = git
@@ -383,7 +384,7 @@ class GitStorage(FileStorageMixin, Storage):
         site = self.config[site_id]
         session = site.sessions[session_id]
         title_template = 'Request from: "{custodian}" <{custodian_email}>'
-        return GitLab(site['gitlab']).create_merge_request(
+        return GitLab(site[self.GITLAB_SECTION_NAME]).create_merge_request(
             source_branch=f'session-{session_id}',
             target_branch=site.get('branch', 'master'),
             title=title_template.format(**session),
@@ -437,7 +438,18 @@ class GitlabStorage(GitStorage):
         run_local('git commit -m "Add AWS deploy integration"')
         run_local('git push --set-upstream origin master')
 
-        options.update({'cloudfront_domain_name': domain_name})
+
+        options.update({
+            'cloudfront_domain_name': domain_name,
+            self.GITLAB_SECTION_NAME: {
+                'scheme': self.protocol,
+                'host': self.repo,
+                'namespace': self.namespace,
+                'project': site_id,
+                'token': self.token,
+            },
+        })
+
         return site_workdir, options
 
     def create_site_repo(self, site_id):
