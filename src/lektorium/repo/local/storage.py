@@ -23,6 +23,7 @@ from .templates import (
     LECTOR_S3_SERVER_TEMPLATE,
     GITLAB_CI_TEMPLATE,
     EMPTY_COMMIT_PAYLOAD,
+    BUCKET_POLICY_TEMPLATE,
 )
 from ...utils import closer
 
@@ -425,7 +426,7 @@ class GitlabStorage(GitStorage):
 
         bucket_name = self.create_s3_bucket(site_id)
         distribution_id, domain_name = self.create_cloudfront_distribution(bucket_name)
-        self.remove_bucket_block(bucket_name)
+        self.open_bucket_access(bucket_name)
 
         with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
             fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
@@ -472,7 +473,7 @@ class GitlabStorage(GitStorage):
             raise Exception('Failed to create S3 bucket')
         return bucket_name
 
-    def remove_bucket_block(self, bucket_name):
+    def open_bucket_access(self, bucket_name):
         client = boto3.client('s3')
         # Bucket may fail to be created and registered at this moment
         # Retry a few times and wait a bit in case bucket is not found
@@ -480,11 +481,18 @@ class GitlabStorage(GitStorage):
             response = client.delete_public_access_block(Bucket=bucket_name)
             response_code = response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1)
             if response_code == 404:
-                sleep(3)
+                sleep(2)
             elif response_code == 204:
                 break
             else:
                 raise Exception('Failed to remove bucket public access block')
+
+        response = client.put_bucket_policy(
+            Bucket=bucket_name,
+            Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
+        )
+        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 204:
+            raise Exception('Failed to set bucket access policy')
 
     def create_cloudfront_distribution(self, bucket_name):
         bucket_origin_name = bucket_name + self.S3_SUFFIX
