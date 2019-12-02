@@ -90,7 +90,7 @@ class FileConfig(dict):
             sk: sv
             for sk, sv in site_config.data.items()
             if sk not in ('site_id', 'staging_url') and (
-                sk != 'repo' or 'gitlab' not in site_config.data
+                sk != 'repo' or GitStorage.GITLAB_SECTION_NAME not in site_config.data
             ) and (sk != 'name' or sv != site_config['site_id'])
         }
 
@@ -177,7 +177,7 @@ class GitConfig(FileConfig):
     @classmethod
     def prepare(cls, site_config):
         repo = site_config.get('repo', None)
-        gitlab = site_config.get('gitlab', None)
+        gitlab = site_config.get(GitStorage.GITLAB_SECTION_NAME, None)
         if repo is None:
             if gitlab is None:
                 raise ValueError('repo/gitlab site config values not found')
@@ -401,7 +401,7 @@ class GitLab:
 
 class GitStorage(FileStorageMixin, Storage):
     CONFIG_CLASS = GitConfig
-    GITLAB_SECTION_NAME = 'giblab'
+    GITLAB_SECTION_NAME = 'gitlab'
 
     def __init__(self, git):
         self.git = git
@@ -478,7 +478,7 @@ class GitStorage(FileStorageMixin, Storage):
 
     def get_merge_requests(self, site_id):
         site = self.config[site_id]
-        gitlab_options = site.get('gitlab', None)
+        gitlab_options = site.get(self.GITLAB_SECTION_NAME, None)
         if not gitlab_options:
             logging.warn('get_merge_requests: empty gitlab options')
             return []

@@ -34,7 +34,7 @@ def local_repo(root_dir, storage_factory=FileStorage):
 
 def git_repo(root_dir):
     repo = local_repo(root_dir, git_prepare(GitStorage))
-    repo.config['bow'].data['gitlab'] = {
+    repo.config['bow'].data[GitStorage.GITLAB_SECTION_NAME] = {
         'scheme': 'https',
         'host': 'server',
         'token': '123token456',
