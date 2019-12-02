@@ -405,10 +405,10 @@ class GitlabStorage(GitStorage):
         self.namespace, _, _ = path.partition('/')
 
     def create_site(self, lektor, name, owner, site_id):
-        site_workdir, repo = super().create_site(lektor, name, owner, site_id)
+        site_workdir, options = super().create_site(lektor, name, owner, site_id)
 
         bucket_name = self.create_s3_bucket(site_id)
-        distribution_id = self.create_cloudfront_distribution(bucket_name)
+        distribution_id, domain_name = self.create_cloudfront_distribution(bucket_name)
 
         with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
             fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
@@ -423,7 +423,8 @@ class GitlabStorage(GitStorage):
         run_local('git commit -m "Add AWS deploy integration"')
         run_local('git push --set-upstream origin master')
 
-        return site_workdir, repo
+        options.update({'cloudfront_domain_name': domain_name})
+        return site_workdir, options
 
     def create_site_repo(self, site_id):
         site_repo = GitLab(dict(
@@ -473,4 +474,5 @@ class GitlabStorage(GitStorage):
             ))
         if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 201:
             raise Exception('Failed to create CloudFront distribution')
-        return response['Distribution']['Id']
+        distribution_data = response['Distribution']
+        return distribution_data['Id'], distribution_data['DomainName']
