@@ -1,4 +1,3 @@
-import aiohttp
 import asyncio
 import time
 from aiohttp import ClientSession
@@ -68,7 +67,7 @@ class ThrottledClientSession(ClientSession):
 
     async def _request(self, *args, **kwargs):
         lock = asyncio.Lock()
-        with lock:
+        async with lock:
             await asyncio.sleep(self.last_request_time + self.delay - time.time())
             self.last_request_time = time.time()
             return await super()._request(*args, **kwargs)
@@ -88,87 +87,77 @@ class Auth0Client:
 
     @property
     async def auth_token(self):
-        async with ClientSession() as client:
-            async with client.post(self.url, json=self.data) as resp:
-                if resp.status == 200:
-                    result = await resp.json()
-                    return result['access_token']
-                else:
-                    result = await resp.json()
-                    raise Auth0Error(f'Error {resp.status}')
+        async with self.throttled_session.request('POST', self.url, json=self.data) as resp:
+            if resp.status == 200:
+                result = await resp.json()
+                return result['access_token']
+            else:
+                result = await resp.json()
+                raise Auth0Error(f'Error {resp.status}')
+
+    @property
+    async def auth_headers(self):
+        token = await self.auth_token
+        headers = {'Authorization': 'Bearer {0}'.format(token)}
+        return headers
 
     async def get_users(self):
-        auth_token = await self.auth_token
-        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
-        async with aiohttp.ClientSession(headers=headers) as client:
-            url = self.data["audience"] + 'users'
-            params = {'fields': 'name,nickname,email,user_id'}
-            async with client.get(url, params=params) as resp:
-                if resp.status == 200:
-                    users = await resp.json()
-                    for user in users:
-                        if user.get('user_id'):
-                            permissions = await self.get_user_permissions(user['user_id'])
-                            user['permissions'] = [permission['permission_name'] for permission in permissions]
-                    return users
-                else:
-                    raise Auth0Error(f'Error {resp.status}')
+        url = self.data["audience"] + 'users'
+        params = {'fields': 'name,nickname,email,user_id'}
+        async with self.throttled_session.request('GET', url, params=params, headers=await self.auth_headers) as resp:
+            if resp.status == 200:
+                users = await resp.json()
+                for user in users:
+                    if user.get('user_id'):
+                        permissions = await self.get_user_permissions(user['user_id'])
+                        user['permissions'] = [permission['permission_name'] for permission in permissions]
+                return users
+            else:
+                raise Auth0Error(f'Error {resp.status}')
 
     async def get_user_permissions(self, user_id):
-        auth_token = await self.auth_token
-        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
-        async with aiohttp.ClientSession(headers=headers) as client:
-            url = self.data['audience'] + f'users/{user_id}/permissions'
-            async with client.get(url) as resp:
-                if resp.status == 200:
-                    return await resp.json()
-                else:
-                    raise Auth0Error(f'Error {resp.status}')
+        url = self.data['audience'] + f'users/{user_id}/permissions'
+        async with self.throttled_session.request('GET', url, headers=await self.auth_headers) as resp:
+            if resp.status == 200:
+                return await resp.json()
+            else:
+                raise Auth0Error(f'Error {resp.status}')
 
     async def set_user_permissions(self, user_id, permissions):
-        auth_token = await self.auth_token
-        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
         data = {'permissions': []}
         for permission in permissions:
             data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
-        async with aiohttp.ClientSession(headers=headers) as client:
-            url = self.data['audience'] + f'users/{user_id}/permissions'
-            async with client.post(url, json=data) as resp:
-                if resp.status == 201:
-                    return True
-                else:
-                    raise Auth0Error(f'Error {resp.status}')
+        url = self.data['audience'] + f'users/{user_id}/permissions'
+        async with self.throttled_session.request('POST', url, json=data, headers=await self.auth_headers) as resp:
+            if resp.status == 201:
+                return True
+            else:
+                raise Auth0Error(f'Error {resp.status}')
 
     async def delete_user_permissions(self, user_id, permissions):
-        auth_token = await self.auth_token
-        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
         data = {'permissions': []}
         for permission in permissions:
             data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
-        async with aiohttp.ClientSession(headers=headers) as client:
-            url = self.data['audience'] + f'users/{user_id}/permissions'
-            async with client.delete(url, json=data) as resp:
-                if resp.status == 204:
-                    return True
-                else:
-                    raise Auth0Error(f'Error {resp.status}')
+        url = self.data['audience'] + f'users/{user_id}/permissions'
+        async with self.throttled_session.request('DELETE', url, json=data, headers=await self.auth_headers) as resp:
+            if resp.status == 204:
+                return True
+            else:
+                raise Auth0Error(f'Error {resp.status}')
 
     async def get_api_permissions(self):
-        auth_token = await self.auth_token
-        headers = {'Authorization': 'Bearer {0}'.format(auth_token)}
-        async with aiohttp.ClientSession(headers=headers) as client:
-            url = self.data['audience'] + 'resource-servers'
-            async with client.get(url) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    data = list(filter(lambda x: x.get('identifier') == self.api_id, data))
-                    if data:
-                        result = data[0]['scopes']
-                        return result
-                    else:
-                        raise Auth0Error(f"'{self.api_id}' api was not found")
+        url = self.data['audience'] + 'resource-servers'
+        async with self.throttled_session.request('GET', url, headers=await self.auth_headers) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                data = list(filter(lambda x: x.get('identifier') == self.api_id, data))
+                if data:
+                    result = data[0]['scopes']
+                    return result
                 else:
-                    raise Auth0Error(f'Error {resp.status}')
+                    raise Auth0Error(f"'{self.api_id}' api was not found")
+            else:
+                raise Auth0Error(f'Error {resp.status}')
 
 
 class Auth0Error(Exception):
