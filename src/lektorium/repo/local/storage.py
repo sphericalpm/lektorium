@@ -186,6 +186,76 @@ class GitConfig(FileConfig):
         return site_config
 
 
+class AWS:
+    S3_PREFIX = 'spherical-lectorium-'
+    S3_SUFFIX = '.s3.amazonaws.com'
+
+    def create_s3_bucket(self, site_id, prefix=''):
+        prefix = prefix or self.S3_PREFIX
+        bucket_name = prefix + site_id
+        response = boto3.client('s3').create_bucket(Bucket=bucket_name)
+        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
+            raise Exception('Failed to create S3 bucket')
+        return bucket_name
+
+    @staticmethod
+    def open_bucket_access(bucket_name):
+        client = boto3.client('s3')
+        # Bucket may fail to be created and registered at this moment
+        # Retry a few times and wait a bit in case bucket is not found
+        for _ in range(3):
+            response = client.delete_public_access_block(Bucket=bucket_name)
+            response_code = response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1)
+            if response_code == 404:
+                sleep(2)
+            elif response_code == 204:
+                break
+            else:
+                raise Exception('Failed to remove bucket public access block')
+
+        response = client.put_bucket_policy(
+            Bucket=bucket_name,
+            Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
+        )
+        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 204:
+            raise Exception('Failed to set bucket access policy')
+
+    def create_cloudfront_distribution(self, bucket_name, suffix=''):
+        suffix = suffix or self.S3_SUFFIX
+        bucket_origin_name = bucket_name + suffix
+        response = boto3.client('cloudfront').create_distribution(
+            DistributionConfig=dict(
+                CallerReference=str(uuid4()),
+                Comment='Lectorium',
+                Enabled=True,
+                DefaultRootObject='index.html',
+                Origins=dict(
+                    Quantity=1,
+                    Items=[dict(
+                        Id='1',
+                        DomainName=bucket_origin_name,
+                        S3OriginConfig=dict(OriginAccessIdentity=''),
+                    )]
+                ),
+                DefaultCacheBehavior=dict(
+                    TargetOriginId='1',
+                    ViewerProtocolPolicy='redirect-to-https',
+                    TrustedSigners=dict(Quantity=0, Enabled=False),
+                    ForwardedValues=dict(
+                        Cookies={'Forward': 'all'},
+                        Headers=dict(Quantity=0),
+                        QueryString=False,
+                        QueryStringCacheKeys=dict(Quantity=0),
+                    ),
+                    MinTTL=1000
+                ),
+            ))
+        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 201:
+            raise Exception('Failed to create CloudFront distribution')
+        distribution_data = response['Distribution']
+        return distribution_data['Id'], distribution_data['DomainName']
+
+
 class GitLab:
     DEFAULT_API_VERSION = 'v4'
 
@@ -409,9 +479,6 @@ class GitStorage(FileStorageMixin, Storage):
 
 
 class GitlabStorage(GitStorage):
-    S3_PREFIX = 'spherical-lectorium-'
-    S3_SUFFIX = '.s3.amazonaws.com'
-
     def __init__(self, git, token, protocol):
         super().__init__(git)
         self.token = token
@@ -424,9 +491,9 @@ class GitlabStorage(GitStorage):
     def create_site(self, lektor, name, owner, site_id):
         site_workdir, options = super().create_site(lektor, name, owner, site_id)
 
-        bucket_name = self.create_s3_bucket(site_id)
-        distribution_id, domain_name = self.create_cloudfront_distribution(bucket_name)
-        self.open_bucket_access(bucket_name)
+        bucket_name = AWS.create_s3_bucket(site_id)
+        distribution_id, domain_name = AWS.create_cloudfront_distribution(bucket_name)
+        AWS.open_bucket_access(bucket_name)
 
         with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
             fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
@@ -465,65 +532,3 @@ class GitlabStorage(GitStorage):
             token=self.token,
         )).init_project()
         return site_repo
-
-    def create_s3_bucket(self, site_id):
-        bucket_name = self.S3_PREFIX + site_id
-        response = boto3.client('s3').create_bucket(Bucket=bucket_name)
-        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
-            raise Exception('Failed to create S3 bucket')
-        return bucket_name
-
-    def open_bucket_access(self, bucket_name):
-        client = boto3.client('s3')
-        # Bucket may fail to be created and registered at this moment
-        # Retry a few times and wait a bit in case bucket is not found
-        for _ in range(3):
-            response = client.delete_public_access_block(Bucket=bucket_name)
-            response_code = response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1)
-            if response_code == 404:
-                sleep(2)
-            elif response_code == 204:
-                break
-            else:
-                raise Exception('Failed to remove bucket public access block')
-
-        response = client.put_bucket_policy(
-            Bucket=bucket_name,
-            Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
-        )
-        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 204:
-            raise Exception('Failed to set bucket access policy')
-
-    def create_cloudfront_distribution(self, bucket_name):
-        bucket_origin_name = bucket_name + self.S3_SUFFIX
-        response = boto3.client('cloudfront').create_distribution(
-            DistributionConfig=dict(
-                CallerReference=str(uuid4()),
-                Comment='Lectorium',
-                Enabled=True,
-                DefaultRootObject='index.html',
-                Origins=dict(
-                    Quantity=1,
-                    Items=[dict(
-                        Id='1',
-                        DomainName=bucket_origin_name,
-                        S3OriginConfig=dict(OriginAccessIdentity=''),
-                    )]
-                ),
-                DefaultCacheBehavior=dict(
-                    TargetOriginId='1',
-                    ViewerProtocolPolicy='redirect-to-https',
-                    TrustedSigners=dict(Quantity=0, Enabled=False),
-                    ForwardedValues=dict(
-                        Cookies={'Forward': 'all'},
-                        Headers=dict(Quantity=0),
-                        QueryString=False,
-                        QueryStringCacheKeys=dict(Quantity=0),
-                    ),
-                    MinTTL=1000
-                ),
-            ))
-        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 201:
-            raise Exception('Failed to create CloudFront distribution')
-        distribution_data = response['Distribution']
-        return distribution_data['Id'], distribution_data['DomainName']
