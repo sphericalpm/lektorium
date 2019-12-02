@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 from os import environ
 from uuid import uuid4
+from time import sleep
 
 from cached_property import cached_property
 from more_itertools import one
@@ -424,6 +425,7 @@ class GitlabStorage(GitStorage):
 
         bucket_name = self.create_s3_bucket(site_id)
         distribution_id, domain_name = self.create_cloudfront_distribution(bucket_name)
+        self.remove_bucket_block(bucket_name)
 
         with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
             fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
@@ -465,14 +467,24 @@ class GitlabStorage(GitStorage):
 
     def create_s3_bucket(self, site_id):
         bucket_name = self.S3_PREFIX + site_id
-        client = boto3.client('s3')
-        response = client.create_bucket(Bucket=bucket_name)
+        response = boto3.client('s3').create_bucket(Bucket=bucket_name)
         if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
             raise Exception('Failed to create S3 bucket')
-        response = client.delete_public_access_block(Bucket=bucket_name)
-        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 204:
-            raise Exception('Failed to remove bucket public access block')
         return bucket_name
+
+    def remove_bucket_block(self, bucket_name):
+        client = boto3.client('s3')
+        # Bucket may fail to be created and registered at this moment
+        # Retry a few times and wait a bit in case bucket is not found
+        for _ in range(3):
+            response = client.delete_public_access_block(Bucket=bucket_name)
+            response_code = response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1)
+            if response_code == 404:
+                sleep(3)
+            elif response_code == 204:
+                break
+            else:
+                raise Exception('Failed to remove bucket public access block')
 
     def create_cloudfront_distribution(self, bucket_name):
         bucket_origin_name = bucket_name + self.S3_SUFFIX
