@@ -453,9 +453,13 @@ class GitlabStorage(GitStorage):
 
     def create_s3_bucket(self, site_id):
         bucket_name = self.S3_PREFIX + site_id
-        response = boto3.client('s3').create_bucket(Bucket=bucket_name)
+        client = boto3.client('s3')
+        response = client.create_bucket(Bucket=bucket_name)
         if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
             raise Exception('Failed to create S3 bucket')
+        response = client.delete_public_access_block(Bucket=bucket_name)
+        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
+            raise Exception('Failed to remove bucket public access block')
         return bucket_name
 
     def create_cloudfront_distribution(self, bucket_name):
