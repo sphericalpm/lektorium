@@ -63,19 +63,20 @@ class ThrottledClientSession(ClientSession):
     def __init__(self, *args, **kwargs):
         self.last_request_time = time.time()
         self.delay = 1
+        self.lock = asyncio.Lock()
         super().__init__(*args, **kwargs)
 
     async def _request(self, *args, **kwargs):
-        lock = asyncio.Lock()
-        async with lock:
-            await asyncio.sleep(self.last_request_time + self.delay - time.time())
+        async with self.lock:
+            sleep_time = self.last_request_time + self.delay - time.time()
+            await asyncio.sleep(0 if sleep_time < 0 else sleep_time)
             self.last_request_time = time.time()
             return await super()._request(*args, **kwargs)
 
 
 class Auth0Client:
     def __init__(self, auth):
-        self.throttled_session = ThrottledClientSession()
+        self.session = ThrottledClientSession()
         self.url = 'https://{0}/oauth/token'.format(auth['data-auth0-domain'])
         self.api_id = auth['data-auth0-api']
         self.data = {
@@ -87,7 +88,7 @@ class Auth0Client:
 
     @property
     async def auth_token(self):
-        async with self.throttled_session.request('POST', self.url, json=self.data) as resp:
+        async with self.session.post(self.url, json=self.data) as resp:
             if resp.status == 200:
                 result = await resp.json()
                 return result['access_token']
@@ -104,7 +105,7 @@ class Auth0Client:
     async def get_users(self):
         url = self.data["audience"] + 'users'
         params = {'fields': 'name,nickname,email,user_id'}
-        async with self.throttled_session.request('GET', url, params=params, headers=await self.auth_headers) as resp:
+        async with self.session.request('GET', url, params=params, headers=await self.auth_headers) as resp:
             if resp.status == 200:
                 users = await resp.json()
                 for user in users:
@@ -117,7 +118,7 @@ class Auth0Client:
 
     async def get_user_permissions(self, user_id):
         url = self.data['audience'] + f'users/{user_id}/permissions'
-        async with self.throttled_session.request('GET', url, headers=await self.auth_headers) as resp:
+        async with self.session.request('GET', url, headers=await self.auth_headers) as resp:
             if resp.status == 200:
                 return await resp.json()
             else:
@@ -128,7 +129,7 @@ class Auth0Client:
         for permission in permissions:
             data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
         url = self.data['audience'] + f'users/{user_id}/permissions'
-        async with self.throttled_session.request('POST', url, json=data, headers=await self.auth_headers) as resp:
+        async with self.session.request('POST', url, json=data, headers=await self.auth_headers) as resp:
             if resp.status == 201:
                 return True
             else:
@@ -139,7 +140,7 @@ class Auth0Client:
         for permission in permissions:
             data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
         url = self.data['audience'] + f'users/{user_id}/permissions'
-        async with self.throttled_session.request('DELETE', url, json=data, headers=await self.auth_headers) as resp:
+        async with self.session.request('DELETE', url, json=data, headers=await self.auth_headers) as resp:
             if resp.status == 204:
                 return True
             else:
@@ -147,7 +148,7 @@ class Auth0Client:
 
     async def get_api_permissions(self):
         url = self.data['audience'] + 'resource-servers'
-        async with self.throttled_session.request('GET', url, headers=await self.auth_headers) as resp:
+        async with self.session.request('GET', url, headers=await self.auth_headers) as resp:
             if resp.status == 200:
                 data = await resp.json()
                 data = list(filter(lambda x: x.get('identifier') == self.api_id, data))
