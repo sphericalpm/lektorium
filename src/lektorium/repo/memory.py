@@ -24,7 +24,7 @@ class Session(dict):
 
 VALID_MERGE_REQUEST = {
     'id': 123,
-    'source_branch': 'session-fghtyty',
+    'source_branch': 'test_branch',
     'state': '1',
     'target_branch': 'master',
     'title': 'Request from "MJ" <mj@spherical.pm>',
@@ -175,8 +175,19 @@ class Repo(BaseRepo):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, _ = self.sessions[session_id]
-        if session.pop('edit_url', None) is None:
+        if session.get('edit_url', None) is None:
             raise InvalidSessionState()
+        for site in self.data:
+            if session['session_id'] in [session['session_id'] for session in site.get('sessions', ())]:
+                if site.get('releasing') is None:
+                    site['releasing'] = []
+                release = {
+                    'site_name': site['site_name'],
+                    **VALID_MERGE_REQUEST
+                }
+                release['source_branch'] = session_id
+                site['releasing'].append(release)
+                site['sessions'] = [i for i in site['sessions'] if i['session_id'] != session_id]
 
     def __repr__(self):
         qname = f'{self.__class__.__module__}.{self.__class__.__name__}'
