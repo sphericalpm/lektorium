@@ -67,13 +67,16 @@ class ThrottledClientSession(ClientSession):
         super().__init__(*args, **kwargs)
 
     async def _request(self, *args, **kwargs):
-        await asyncio.sleep(self.last_request_time + self.delay - time.time())
-        self.last_request_time = time.time()
-        return await super()._request(*args, **kwargs)
+        lock = asyncio.Lock()
+        with lock:
+            await asyncio.sleep(self.last_request_time + self.delay - time.time())
+            self.last_request_time = time.time()
+            return await super()._request(*args, **kwargs)
 
 
 class Auth0Client:
     def __init__(self, auth):
+        self.throttled_session = ThrottledClientSession()
         self.url = 'https://{0}/oauth/token'.format(auth['data-auth0-domain'])
         self.api_id = auth['data-auth0-api']
         self.data = {
