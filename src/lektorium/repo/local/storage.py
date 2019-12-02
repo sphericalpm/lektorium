@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 from os import environ
+from uuid import uuid4
 
 from cached_property import cached_property
 from more_itertools import one
@@ -446,7 +447,7 @@ class GitlabStorage(GitStorage):
         bucket_origin_name = bucket_name + self.S3_SUFFIX
         response = boto3.client('cloudfront').create_distribution(
             DistributionConfig=dict(
-                CallerReference='lectorium',
+                CallerReference=str(uuid4()),
                 Comment='Lectorium',
                 Enabled=True,
                 Origins=dict(
