@@ -110,6 +110,35 @@ def run_nginx(ctx, network=None):
 
 
 @task
+def run_traefik(ctx, image='traefik', ip=None, network=None):
+    *_, network = get_config(ctx, None, None, None, network)
+    ctx.run(f'docker kill {PROXY_CONTAINER}', warn=True)
+    ctx.run(f'docker rm {PROXY_CONTAINER}', warn=True)
+    ctx.run((
+        'docker create '
+        '--restart unless-stopped '
+        f'--name {PROXY_CONTAINER} '
+        '-v /var/run/docker.sock:/var/run/docker.sock '
+        '-v traefik-letsencrypt:/letsencrypt '
+        f'-p {ip or ""}{":" if ip else ""}80:80 '
+        f'-p {ip or ""}{":" if ip else ""}443:443 '
+        f'{image} '
+        '--accessLog '
+        '--api.dashboard '
+        f'--certificatesresolvers.le.acme.email=ctx["le-email"] '
+        '--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json '
+        '--certificatesresolvers.le.acme.tlschallenge '
+        '--entrypoints.web.address=:80 '
+        '--entrypoints.websecure.address=:443 '
+        '--log.level=DEBUG '
+        '--log '
+        '--providers.docker.exposedbydefault=false '
+    ))
+    ctx.run(f'docker network connect {network} {PROXY_CONTAINER}')
+    ctx.run(f'docker start {PROXY_CONTAINER}')
+
+
+@task
 def build_server_image(ctx):
     server_dir = f'{CONTAINERS_BASE}/server'
     ctx.run(f'rm {server_dir}/lektorium*.whl', warn=True)
