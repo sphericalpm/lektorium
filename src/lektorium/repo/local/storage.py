@@ -523,9 +523,9 @@ class GitlabStorage(GitStorage):
         run_local('git commit -m "Add AWS deploy integration"')
         run_local('git push --set-upstream origin master')
 
-
         options.update({
             'cloudfront_domain_name': domain_name,
+            'production_url': f'https://{domain_name}',
             self.GITLAB_SECTION_NAME: {
                 'scheme': self.protocol,
                 'host': self.repo,
