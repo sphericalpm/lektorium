@@ -85,7 +85,7 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
         if not storage_path:
             storage_path = pathlib.Path(closer(tempfile.TemporaryDirectory()))
             storage_path = storage_class.init(storage_path)
-        if type(storage_class) is type(GitlabStorage):
+        if storage_class is GitlabStorage:
             storage = storage_class(storage_path, token)
         else:
             storage = storage_class(storage_path)
