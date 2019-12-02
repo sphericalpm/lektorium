@@ -252,13 +252,16 @@ class GitLab:
         )
         response.raise_for_status()
 
+        headers = dict(self.headers)
+        headers.update({'Content-Type': "application/json"})
+        # Make initial empty commit in repository
         response = requests.post(
             '{repo_url}/projects/{pid}/repository/commits'.format(
                 repo_url=self.repo_url,
                 pid=self.project_id,
             ),
             data=EMPTY_COMMIT_PAYLOAD,
-            headers=self.headers,
+            headers=headers,
         )
         response.raise_for_status()
 
