@@ -470,7 +470,7 @@ class GitlabStorage(GitStorage):
         if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
             raise Exception('Failed to create S3 bucket')
         response = client.delete_public_access_block(Bucket=bucket_name)
-        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
+        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 204:
             raise Exception('Failed to remove bucket public access block')
         return bucket_name
 
