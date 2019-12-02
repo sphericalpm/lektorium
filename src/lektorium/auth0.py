@@ -1,4 +1,7 @@
 import aiohttp
+import asyncio
+import time
+from aiohttp import ClientSession
 
 
 class FakeAuth0Client:
@@ -57,6 +60,18 @@ class FakeAuth0Client:
         return self.api_permissions
 
 
+class TrottledClientSession(ClientSession):
+    def __init__(self, *args, **kwargs):
+        self.last_request_time = time.time()
+        self.delay = 1
+        super().__init__(*args, **kwargs)
+
+    async def _request(self, *args, **kwargs):
+        await asyncio.sleep(self.last_request_time + self.delay - time.time())
+        self.last_request_time = time.time()
+        return await super()._request(*args, **kwargs)
+
+
 class Auth0Client:
     def __init__(self, auth):
         self.url = 'https://{0}/oauth/token'.format(auth['data-auth0-domain'])
@@ -70,7 +85,7 @@ class Auth0Client:
 
     @property
     async def auth_token(self):
-        async with aiohttp.ClientSession() as client:
+        async with ClientSession() as client:
             async with client.post(self.url, json=self.data) as resp:
                 if resp.status == 200:
                     result = await resp.json()
