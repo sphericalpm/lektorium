@@ -138,6 +138,8 @@ class AsyncLocalServer(AsyncServer):
 
 
 class AsyncDockerServer(AsyncServer):
+    LEKTOR_PORT = 5000
+
     def __init__(
         self,
         *,
@@ -227,25 +229,26 @@ class AsyncDockerServer(AsyncServer):
 
     def session_address(self, session_id, container_name):
         if self.sessions_domain is None:
-            return f'http://{container_name}:5000/'
+            return f'http://{container_name}:{self.LEKTOR_PORT}/'
         return f'http://{session_id}.{self.sessions_domain}'
 
     def lektor_labels(self, session_id):
         if self.sessions_domain is None:
             return {}
+        route_name = f'lektorium-lektor-{session_id}'
         return {
             'enable': 'true',
             f'http.routers': {
-                f'lektorium-lektor-{session_id}': {
+                route_name: {
                     'entrypoints': 'websecure',
                     'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
                     'tls.certresolver': 'le',
                 },
-                f'lektorium-lektor-{session_id}-redir': {
+                f'{route_name}-redir': {
                     'entrypoints': 'web',
                     'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
                     'middlewares': 'lektorium-redir',
                 },
             },
-            f'http.services.lektorium-lektor-{session_id}.loadbalancer.server.port': '5000',
+            f'http.services.{route_name}.loadbalancer.server.port': f'{self.LEKTOR_PORT}',
         }

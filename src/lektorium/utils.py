@@ -21,8 +21,8 @@ def flatten_options(labels, prefix=''):
     return dict(flatten(labels, prefix))
 
 
-def named_args(name, dct):
-    """This function converts dict of named args to string for
+def named_args(flag, dct):
+    """This function converts dict of named args to string of options for
     use in command line (f.e. env or label docker params).
 
     This structure:
@@ -30,7 +30,7 @@ def named_args(name, dct):
     will be converted to:
     "--label traefik.aaa='b(`f`)' --label traefik.ccc.rrr.ddd=eee"
     """
-    return ' '.join(f'{name} {k}={shlex.quote(v)}' for k, v in dct.items())
+    return ' '.join(f'{flag} {k}={shlex.quote(v)}' for k, v in dct.items())
 
 
 def closer(manager):
