@@ -1,6 +1,7 @@
 import asyncio
 import time
 from aiohttp import ClientSession
+from cached_property import cached_property
 
 
 class FakeAuth0Client:
@@ -86,8 +87,10 @@ class Auth0Client:
             'audience': 'https://{0}/api/v2/'.format(auth['data-auth0-domain']),
             'grant_type': 'client_credentials',
         }
+        self.token_cached_time = 0
+        self.cache_valid_period = 60
 
-    @property
+    @cached_property
     async def auth_token(self):
         async with self.session.post(self.url, json=self.data) as resp:
             if resp.status == 200:
@@ -99,6 +102,9 @@ class Auth0Client:
 
     @property
     async def auth_headers(self):
+        if self.token_cached_time + self.cache_valid_period < time.time():
+            del self.__dict__['auth_token']
+            self.token_cached_time = time.time()
         token = await self.auth_token
         headers = {'Authorization': 'Bearer {0}'.format(token)}
         return headers
