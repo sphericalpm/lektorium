@@ -178,16 +178,17 @@ class Repo(BaseRepo):
         if session.get('edit_url', None) is None:
             raise InvalidSessionState()
         for site in self.data:
-            if session['session_id'] in [session['session_id'] for session in site.get('sessions', ())]:
-                if site.get('releasing') is None:
-                    site['releasing'] = []
+            site_sessions = [session['session_id'] for session in site.get('sessions', ())]
+            if session['session_id'] in site_sessions:
                 release = {
                     'site_name': site['site_name'],
                     **VALID_MERGE_REQUEST
                 }
                 release['source_branch'] = session_id
-                site['releasing'].append(release)
-                site['sessions'] = [i for i in site['sessions'] if i['session_id'] != session_id]
+                site.setdefault('releasing', []).append(release)
+                site['sessions'] = [
+                    session for session in site['sessions'] if session['session_id'] != session_id
+                ]
 
     def __repr__(self):
         qname = f'{self.__class__.__module__}.{self.__class__.__name__}'
