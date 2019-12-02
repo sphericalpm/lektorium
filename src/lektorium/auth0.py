@@ -60,7 +60,7 @@ class FakeAuth0Client:
         return self.api_permissions
 
 
-class TrottledClientSession(ClientSession):
+class ThrottledClientSession(ClientSession):
     def __init__(self, *args, **kwargs):
         self.last_request_time = time.time()
         self.delay = 1
