@@ -30,3 +30,7 @@ enabled = yes
 target = s3://{{s3_bucket_name}}
 cloudfront = {{cloudfront_id}}
 '''
+
+EMPTY_COMMIT_PAYLOAD = '''
+{"branch": "master", "commit_message": "Initial commit", "actions": []}
+'''

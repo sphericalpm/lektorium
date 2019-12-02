@@ -21,6 +21,7 @@ from .templates import (
     AWS_SHARED_CREDENTIALS_FILE_TEMPLATE,
     LECTOR_S3_SERVER_TEMPLATE,
     GITLAB_CI_TEMPLATE,
+    EMPTY_COMMIT_PAYLOAD,
 )
 from ...utils import closer
 
@@ -247,6 +248,16 @@ class GitLab:
                     aws_secret_key=environ['AWS_SECRET_ACCESS_KEY'],
                 ),
             },
+            headers=self.headers,
+        )
+        response.raise_for_status()
+
+        response = requests.post(
+            '{repo_url}/projects/{pid}/repository/commits'.format(
+                repo_url=self.repo_url,
+                pid=self.project_id,
+            ),
+            data=EMPTY_COMMIT_PAYLOAD,
             headers=self.headers,
         )
         response.raise_for_status()
