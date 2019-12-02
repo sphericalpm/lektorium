@@ -190,22 +190,32 @@ class AWS:
     S3_PREFIX = 'spherical-lectorium-'
     S3_SUFFIX = '.s3.amazonaws.com'
 
+    @staticmethod
+    def _get_status(response):
+        return response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1)
+
+    @staticmethod
+    def _raise_if_not_status(response, response_code, error_text):
+        if AWS._get_status(response) != response_code:
+            raise Exception(error_text)
+
     def create_s3_bucket(self, site_id, prefix=''):
         prefix = prefix or self.S3_PREFIX
         bucket_name = prefix + site_id
         response = boto3.client('s3').create_bucket(Bucket=bucket_name)
-        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 200:
-            raise Exception('Failed to create S3 bucket')
+        self._raise_if_not_status(
+            response, 200,
+            'Failed to create S3 bucket',
+        )
         return bucket_name
 
-    @staticmethod
-    def open_bucket_access(bucket_name):
+    def open_bucket_access(self, bucket_name):
         client = boto3.client('s3')
         # Bucket may fail to be created and registered at this moment
         # Retry a few times and wait a bit in case bucket is not found
         for _ in range(3):
             response = client.delete_public_access_block(Bucket=bucket_name)
-            response_code = response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1)
+            response_code = self._get_status(response)
             if response_code == 404:
                 sleep(2)
             elif response_code == 204:
@@ -217,8 +227,10 @@ class AWS:
             Bucket=bucket_name,
             Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
         )
-        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 204:
-            raise Exception('Failed to set bucket access policy')
+        self._raise_if_not_status(
+            response, 204,
+            'Failed to set bucket access policy',
+        )
 
     def create_cloudfront_distribution(self, bucket_name, suffix=''):
         suffix = suffix or self.S3_SUFFIX
@@ -250,8 +262,10 @@ class AWS:
                     MinTTL=1000
                 ),
             ))
-        if response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1) != 201:
-            raise Exception('Failed to create CloudFront distribution')
+        self._raise_if_not_status(
+            response, 201,
+            'Failed to create CloudFront distribution',
+        )
         distribution_data = response['Distribution']
         return distribution_data['Id'], distribution_data['DomainName']
 
