@@ -223,7 +223,7 @@ class AsyncDockerServer(AsyncServer):
                     )
         finally:
             log.info('start ended')
-    
+
     def session_address(self, session_id, container_name):
         if self.sessions_domain is None:
             return f'http://{container_name}:5000/'

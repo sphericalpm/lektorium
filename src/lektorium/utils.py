@@ -28,7 +28,7 @@ def named_args(name, dct):
     This structure:
     {'traefik.aaa': 'b(`f`)', 'traefik.ccc.rrr.ddd': 'eee'}
     will be converted to:
-    '--label "traefik.aaa=b(\`f\`)" --label "traefik.ccc.rrr.ddd=eee"'
+    "--label traefik.aaa='b(`f`)' --label traefik.ccc.rrr.ddd=eee"
     """
     return ' '.join(f'{name} {k}={shlex.quote(v)}' for k, v in dct.items())
 
