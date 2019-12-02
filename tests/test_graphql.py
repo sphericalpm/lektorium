@@ -64,6 +64,21 @@ def test_query_edit_session(client):
     }
 
 
+def test_session_edit_url(client):
+    result = client.execute(r'''{
+        sessions {
+            editUrl
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sessions': [
+                {'editUrl': 'https://cmsdciks.cms.acme.com'},
+            ]
+        }
+    }
+
+
 def test_query_parked_session(client):
     result = client.execute(r'''{
         sessions(parked: true) {
