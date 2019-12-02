@@ -465,6 +465,7 @@ class GitlabStorage(GitStorage):
                 CallerReference=str(uuid4()),
                 Comment='Lectorium',
                 Enabled=True,
+                DefaultRootObject='index.html',
                 Origins=dict(
                     Quantity=1,
                     Items=[dict(
