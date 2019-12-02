@@ -270,7 +270,7 @@
     :title="selectedUserId"
     hide-footer
     @hidden="initUserModal">
-      <b-form class="mb-3" inline>
+      <b-form class="mb-3">
         <b-form-group label="Permissions:">
           <b-form-checkbox-group id="checkbox-group-permissions" v-model="selectedUserPermissions" name="permissions-2">
             <b-form-checkbox v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
