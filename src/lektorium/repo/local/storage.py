@@ -394,9 +394,10 @@ class GitlabStorage(GitStorage):
     S3_PREFIX = 'spherical-lectorium-'
     S3_SUFFIX = '.s3.amazonaws.com'
 
-    def __init__(self, git, token):
+    def __init__(self, git, token, protocol):
         super().__init__(git)
         self.token = token
+        self.protocol = protocol
         head, _, tail = git.partition('@')
         git = tail or head
         self.repo, _, path = tail.partition(':')
@@ -425,7 +426,7 @@ class GitlabStorage(GitStorage):
 
     def create_site_repo(self, site_id):
         site_repo = GitLab(dict(
-            scheme='https',
+            scheme=self.protocol,
             host=self.repo,
             namespace=self.namespace,
             project=site_id,
