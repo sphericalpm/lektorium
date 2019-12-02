@@ -43,6 +43,7 @@ setuptools.setup(
         'authlib',
         'beautifulsoup4',
         'bidict',
+        'boto3',
         'cached-property',
         'graphene',
         'graphql-core<3',
@@ -50,7 +51,7 @@ setuptools.setup(
         'lektor',
         'more-itertools',
         'nodeenv',
-        'python-dateutil',
+        'python-dateutil<2.8.1',
         'pyyaml',
     ],
     extras_require={
