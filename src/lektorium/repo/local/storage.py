@@ -208,7 +208,7 @@ class GitLab:
         )
         response.raise_for_status()
         namespaces = response.json()
-        return one(x for x in namespaces if x['name'] == namespace_name)['id']
+        return one(x for x in namespaces if x['path'] == namespace_name)['id']
 
     def init_project(self):
         if self.path in (x['path_with_namespace'] for x in self.projects):
