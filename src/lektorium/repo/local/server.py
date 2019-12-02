@@ -2,11 +2,14 @@ import abc
 import asyncio
 import functools
 import logging
+import os
 import pathlib
 import random
 import subprocess
 import aiodocker
 from more_itertools import one
+
+from ...utils import flatten_options
 
 
 class Server(metaclass=abc.ABCMeta):
@@ -135,6 +138,8 @@ class AsyncLocalServer(AsyncServer):
 
 
 class AsyncDockerServer(AsyncServer):
+    LEKTOR_PORT = 5000
+
     def __init__(
         self,
         *,
@@ -148,6 +153,7 @@ class AsyncDockerServer(AsyncServer):
         self.auto_remove = auto_remove
         self.image = image
         self.network = network
+        self.sessions_domain = os.environ.get('LEKTORIUM_SESSIONS_DOMAIN', None)
 
     @property
     async def network_mode(self):
@@ -171,10 +177,12 @@ class AsyncDockerServer(AsyncServer):
         container, stream = None, None
         try:
             try:
-                name = f'lektorium-lektor-{pathlib.Path(path).name}'
+                session_id = pathlib.Path(path).name
+                container_name = f'lektorium-lektor-{session_id}'
+                labels = flatten_options(self.lektor_labels(session_id), "traefik")
                 docker = aiodocker.Docker()
                 container = await docker.containers.run(
-                    name=name,
+                    name=container_name,
                     config=dict(
                         HostConfig=dict(
                             AutoRemove=self.auto_remove,
@@ -184,12 +192,11 @@ class AsyncDockerServer(AsyncServer):
                             ],
                         ),
                         Cmd=[
-                            '--project',
-                            f'{path}',
+                            '--project', f'{path}',
                             'server',
-                            '--host',
-                            '0.0.0.0',
+                            '--host', '0.0.0.0',
                         ],
+                        Labels=labels,
                         Image='lektorium-lektor',
                     ),
                 )
@@ -209,7 +216,7 @@ class AsyncDockerServer(AsyncServer):
                     )
             else:
                 log.info('started')
-                started.set_result(f'http://{name}:5000/')
+                started.set_result(self.session_address(session_id, container_name))
                 self.serves[path][0] = container.kill
             finally:
                 if stream is not None:
@@ -219,3 +226,29 @@ class AsyncDockerServer(AsyncServer):
                     )
         finally:
             log.info('start ended')
+
+    def session_address(self, session_id, container_name):
+        if self.sessions_domain is None:
+            return f'http://{container_name}:{self.LEKTOR_PORT}/'
+        return f'http://{session_id}.{self.sessions_domain}'
+
+    def lektor_labels(self, session_id):
+        if self.sessions_domain is None:
+            return {}
+        route_name = f'lektorium-lektor-{session_id}'
+        return {
+            'enable': 'true',
+            f'http.routers': {
+                route_name: {
+                    'entrypoints': 'websecure',
+                    'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
+                    'tls.certresolver': 'le',
+                },
+                f'{route_name}-redir': {
+                    'entrypoints': 'web',
+                    'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
+                    'middlewares': 'lektorium-redir',
+                },
+            },
+            f'http.services.{route_name}.loadbalancer.server.port': f'{self.LEKTOR_PORT}',
+        }
