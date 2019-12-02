@@ -1,8 +1,11 @@
 import os
 import pathlib
+import shlex
+import subprocess
 import webbrowser
 from invoke import task
 from invoke.tasks import call
+from lektorium.utils import flatten_options, named_args
 
 
 CONTAINERS_BASE = 'containers'
@@ -16,11 +19,7 @@ PROXY_CONTAINER = PROXY_IMAGE
 
 def get_config(ctx, env, cfg, auth, network):
     if env is None:
-        env = ' '.join(
-            f'-e {k}={v}'
-            for k, v in
-            ctx.get('env', {}).items()
-        )
+        env = named_args('-e', ctx.get('env', {}))
     if cfg is None:
         cfg = ctx['cfg']
     if auth is None:
@@ -67,10 +66,10 @@ def build_lektor_image(ctx):
 
 
 @task
-def build_proxy_image(ctx, server_name=None):
+def build_nginx_image(ctx, server_name=None):
     if server_name is None:
         server_name = ctx['server-name']
-    proxy_dir = f'{CONTAINERS_BASE}/proxy'
+    proxy_dir = f'{CONTAINERS_BASE}/nginx-proxy'
     ctx.run((
         'docker build '
         f'--build-arg BASE_IMAGE={PROXY_BASE} '
@@ -79,8 +78,24 @@ def build_proxy_image(ctx, server_name=None):
     ))
 
 
+def lektorium_labels(server_name, port=80):
+    labels = {
+        'enable': 'true',
+        'http.services.lektorium.loadbalancer.server.port': f'{port}',
+        'http.middlewares.lektorium-redir.redirectscheme.scheme': 'https',
+        'http.routers': {
+            'lektorium' : {
+                'entrypoints': 'websecure',
+                'rule': f"Host(`{server_name}`)",
+                'tls.certresolver': 'le',
+            },
+        },
+    }
+    return named_args("--label", flatten_options(labels, "traefik"))
+
+
 @task
-def run_proxy(ctx, network=None):
+def run_nginx(ctx, network=None):
     *_, network = get_config(ctx, None, None, None, network)
     ctx.run(f'docker kill {PROXY_CONTAINER}', warn=True)
     ctx.run(f'docker rm {PROXY_CONTAINER}', warn=True)
@@ -89,8 +104,38 @@ def run_proxy(ctx, network=None):
         f'-d --restart unless-stopped '
         f'--net {network} '
         f'--name {PROXY_CONTAINER} '
+        f'{lektorium_labels(ctx["server-name"])} '
         f'{PROXY_IMAGE} '
     ))
+
+
+@task
+def run_traefik(ctx, image='traefik', ip=None, network=None):
+    *_, network = get_config(ctx, None, None, None, network)
+    ctx.run(f'docker kill {PROXY_CONTAINER}', warn=True)
+    ctx.run(f'docker rm {PROXY_CONTAINER}', warn=True)
+    ctx.run((
+        'docker create '
+        '--restart unless-stopped '
+        f'--name {PROXY_CONTAINER} '
+        '-v /var/run/docker.sock:/var/run/docker.sock '
+        '-v traefik-letsencrypt:/letsencrypt '
+        f'-p {ip or ""}{":" if ip else ""}80:80 '
+        f'-p {ip or ""}{":" if ip else ""}443:443 '
+        f'{image} '
+        '--accessLog '
+        '--api.dashboard '
+        f'--certificatesresolvers.le.acme.email=ctx["le-email"] '
+        '--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json '
+        '--certificatesresolvers.le.acme.tlschallenge '
+        '--entrypoints.web.address=:80 '
+        '--entrypoints.websecure.address=:443 '
+        '--log.level=DEBUG '
+        '--log '
+        '--providers.docker.exposedbydefault=false '
+    ))
+    ctx.run(f'docker network connect {network} {PROXY_CONTAINER}')
+    ctx.run(f'docker start {PROXY_CONTAINER}')
 
 
 @task
@@ -133,13 +178,14 @@ def run(
         f'docker create {create_options} {env} '
         f'--name {CONTAINER} '
         f'--net {network} '
-        f'-v /sessions '
+        f'-v lektorium-sessions:/sessions '
         f'-v /var/run/docker.sock:/var/run/docker.sock '
+        f'{lektorium_labels(ctx["server-name"], 8000)} '
         f'{IMAGE} '
         f'{cfg} {auth}'
     ))
     ctx.run(f'docker network connect bridge {CONTAINER}')
-    ctx.run(f'docker start {start_options} {CONTAINER}')
+    ctx.run(f'docker start {start_options or ""} {CONTAINER}')
 
 
 @task
@@ -154,3 +200,26 @@ def debug(ctx, env=None, cfg=None, auth=None, network=None):
         auth=auth,
         network=network,
     )
+
+
+@task
+def list(ctx):
+    proc = subprocess.Popen(
+        'python -u -m lektorium LIST',
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        shell=True,
+    )
+    target = None
+    for line in proc.stdout:
+        print(line.decode().rstrip())
+        if b'Running on' in line:
+            target = line[20:-10].decode()
+            break
+    if target is not None:
+        webbrowser.open(target)
+    try:
+        proc.communicate()
+    except:
+        proc.kill()
+        proc.wait()
