@@ -5,27 +5,14 @@ import wrapt
 from aiohttp import ClientSession
 
 
-def timeout(param_name):
-    @wrapt.decorator
-    async def wrapper(wrapped, instance, args, kwargs):
-        if not hasattr(instance, '_param_cache'):
-            instance._param_cache = dict()
-        if param_name not in instance._param_cache:
-            instance._param_cache[param_name] = dict()
-
-        param = instance._param_cache[param_name]
-        if param:
-            if time.time() - param['time'] < getattr(instance, 'CACHE_VALID_PERIOD', 60.):
-                return param['value']
-            param.clear()
-        try:
-            param_value = await wrapped(*args, **kwargs)
-        except Auth0Error:
-            param.clear()
-            raise
-        param.update(time=time.time(), value=param_value)
-        return param_value
-    return wrapper
+@wrapt.decorator
+async def cacher(wrapped, instance, args, kwargs):
+    if kwargs:
+        raise Exception('Cannot use keyword args')
+    key = (wrapped.__name__, *args)
+    if key not in instance._cache:
+        instance._cache.update({key: await wrapped(*args)})
+    return instance._cache[key]
 
 
 class FakeAuth0Client:
@@ -105,6 +92,7 @@ class Auth0Client:
     CACHE_VALID_PERIOD = 60
 
     def __init__(self, auth):
+        self._cache = dict()
         self.session = ThrottledClientSession()
         self.url = 'https://{0}/oauth/token'.format(auth['data-auth0-domain'])
         self.api_id = auth['data-auth0-api']
@@ -114,21 +102,30 @@ class Auth0Client:
             'audience': 'https://{0}/api/v2/'.format(auth['data-auth0-domain']),
             'grant_type': 'client_credentials',
         }
+        self.token = None
+        self.token_time = time.time() + self.CACHE_VALID_PERIOD
 
-    @timeout('token')
+    @property
     async def auth_token(self):
+        if self.token is not None:
+            if time.time() - self.token_time < self.CACHE_VALID_PERIOD:
+                return self.token
         async with self.session.post(self.url, json=self.data) as resp:
-            if resp.status != 200:
-                raise Auth0Error(f'Error {resp.status}')
+            resp_status = resp.status
+            if resp_status != 200:
+                self.token = None
+                raise Auth0Error(f'Error {resp_status}')
             result = await resp.json()
-            return result['access_token']
+            self.token = result['access_token']
+        self.token_time = time.time()
+        return self.token
 
     @property
     async def auth_headers(self):
-        headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token())}
+        headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token)}
         return headers
 
-    @timeout('users')
+    @cacher
     async def get_users(self):
         url = self.data["audience"] + 'users'
         params = {'fields': 'name,nickname,email,user_id'}
@@ -143,6 +140,7 @@ class Auth0Client:
             else:
                 raise Auth0Error(f'Error {resp.status}')
 
+    @cacher
     async def get_user_permissions(self, user_id):
         url = self.data['audience'] + f'users/{user_id}/permissions'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
@@ -152,7 +150,7 @@ class Auth0Client:
                 raise Auth0Error(f'Error {resp.status}')
 
     async def set_user_permissions(self, user_id, permissions):
-        self._param_cache.clear()
+        self._cache.clear()
         data = {'permissions': []}
         for permission in permissions:
             data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
@@ -164,7 +162,7 @@ class Auth0Client:
                 raise Auth0Error(f'Error {resp.status}')
 
     async def delete_user_permissions(self, user_id, permissions):
-        self._param_cache.clear()
+        self._cache.clear()
         data = {'permissions': []}
         for permission in permissions:
             data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
@@ -175,7 +173,7 @@ class Auth0Client:
             else:
                 raise Auth0Error(f'Error {resp.status}')
 
-    @timeout('api_permissions')
+    @cacher
     async def get_api_permissions(self):
         url = self.data['audience'] + 'resource-servers'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
