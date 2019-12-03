@@ -114,16 +114,16 @@ class Auth0Client:
         )
 
     @timeout('token')
-    @property
     async def auth_token(self):
         async with self.session.post(self.url, json=self.data) as resp:
             if resp.status != 200:
                 raise Auth0Error(f'Error {resp.status}')
-            return await resp.json()
+            result = await resp.json()
+            return result['access_token']
 
     @property
     async def auth_headers(self):
-        headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token)}
+        headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token())}
         return headers
 
     async def get_users(self):
