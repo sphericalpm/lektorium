@@ -5,14 +5,21 @@ import wrapt
 from aiohttp import ClientSession
 
 
-@wrapt.decorator
-async def cacher(wrapped, instance, args, kwargs):
-    if kwargs:
-        raise Exception('Cannot use keyword args')
-    key = (wrapped.__name__, *args)
-    if key not in instance._cache:
-        instance._cache.update({key: await wrapped(*args)})
-    return instance._cache[key]
+def cacher(method_alias):
+    @wrapt.decorator
+    async def wrapper(wrapped, instance, args, kwargs):
+        if kwargs:
+            raise Exception('Cannot use keyword args')
+        key = (method_alias, *args)
+        print(key)
+        print(len(instance._cache.keys()))
+        if key not in instance._cache:
+            print('new')
+            instance._cache.update({key: await wrapped(*args)})
+        else:
+            print('cached')
+        return instance._cache[key]
+    return wrapper
 
 
 class FakeAuth0Client:
@@ -125,7 +132,7 @@ class Auth0Client:
         headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token)}
         return headers
 
-    @cacher
+    @cacher('users')
     async def get_users(self):
         url = self.data["audience"] + 'users'
         params = {'fields': 'name,nickname,email,user_id'}
@@ -140,7 +147,7 @@ class Auth0Client:
             else:
                 raise Auth0Error(f'Error {resp.status}')
 
-    @cacher
+    @cacher('user_permissions')
     async def get_user_permissions(self, user_id):
         url = self.data['audience'] + f'users/{user_id}/permissions'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
@@ -173,7 +180,7 @@ class Auth0Client:
             else:
                 raise Auth0Error(f'Error {resp.status}')
 
-    @cacher
+    @cacher('api_permissions')
     async def get_api_permissions(self):
         url = self.data['audience'] + 'resource-servers'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
