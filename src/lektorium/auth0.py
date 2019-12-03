@@ -60,15 +60,16 @@ class FakeAuth0Client:
 
 
 class ThrottledClientSession(ClientSession):
+    DELAY = 0.6
+
     def __init__(self, *args, **kwargs):
         self.last_request_time = time.time()
-        self.delay = 1
         self.lock = asyncio.Lock()
         super().__init__(*args, **kwargs)
 
     async def _request(self, *args, **kwargs):
         async with self.lock:
-            sleep_time = self.last_request_time + self.delay - time.time()
+            sleep_time = self.last_request_time + self.DELAY - time.time()
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
             self.last_request_time = time.time()
@@ -76,6 +77,8 @@ class ThrottledClientSession(ClientSession):
 
 
 class Auth0Client:
+    CACHE_VALID_PERIOD = 60
+
     def __init__(self, auth):
         self.session = ThrottledClientSession()
         self.url = 'https://{0}/oauth/token'.format(auth['data-auth0-domain'])
@@ -86,27 +89,27 @@ class Auth0Client:
             'audience': 'https://{0}/api/v2/'.format(auth['data-auth0-domain']),
             'grant_type': 'client_credentials',
         }
-        self.token_cached_time = 0
-        self.token = ""
-        self.cache_valid_period = 60
+        self.token_time = 0
+        self.token = None
 
     @property
     async def auth_token(self):
+        if self.token is not None:
+            if time.time() - self.token_time < self.CACHE_VALID_PERIOD:
+                return self.token
         async with self.session.post(self.url, json=self.data) as resp:
-            if resp.status == 200:
-                result = await resp.json()
-                return result['access_token']
-            else:
+            if resp.status != 200:
+                self.token = None
                 result = await resp.json()
                 raise Auth0Error(f'Error {resp.status}')
+            result = await resp.json()
+            self.token = result['access_token']
+        self.token_time = time.time()
+        return self.token
 
     @property
     async def auth_headers(self):
-        if self.token_cached_time + self.cache_valid_period < time.time():
-            self.token_cached_time = time.time()
-            self.token = await self.auth_token
-        token = self.token
-        headers = {'Authorization': 'Bearer {0}'.format(token)}
+        headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token)}
         return headers
 
     async def get_users(self):
