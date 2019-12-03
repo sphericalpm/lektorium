@@ -1,6 +1,26 @@
 import asyncio
 import time
+
+import wrapt
 from aiohttp import ClientSession
+
+
+def timeout(param_name):
+    @wrapt.decorator
+    def wrapper(wrapped, instance, args, kwargs):
+        param = instance.cache[param_name]
+        if param:
+            if time.time() - param['time'] < instance.CACHE_VALID_PERIOD:
+                return param['value']
+            param.clear()
+        try:
+            param_value = wrapped(*args, **kwargs)
+        except Auth0Error:
+            param.clear()
+            raise
+        param.update(time=time.time(), value=param_value)
+        return param_value
+    return wrapper
 
 
 class FakeAuth0Client:
