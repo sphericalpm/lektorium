@@ -1,7 +1,6 @@
 import asyncio
 import time
 from aiohttp import ClientSession
-from cached_property import cached_property
 
 
 class FakeAuth0Client:
