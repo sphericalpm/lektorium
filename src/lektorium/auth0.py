@@ -152,6 +152,7 @@ class Auth0Client:
                 raise Auth0Error(f'Error {resp.status}')
 
     async def set_user_permissions(self, user_id, permissions):
+        self._param_cache.clear()
         data = {'permissions': []}
         for permission in permissions:
             data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
@@ -163,6 +164,7 @@ class Auth0Client:
                 raise Auth0Error(f'Error {resp.status}')
 
     async def delete_user_permissions(self, user_id, permissions):
+        self._param_cache.clear()
         data = {'permissions': []}
         for permission in permissions:
             data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
