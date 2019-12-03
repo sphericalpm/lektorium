@@ -8,9 +8,14 @@ from aiohttp import ClientSession
 def timeout(param_name):
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
-        param = instance.cache[param_name]
+        if not hasattr(instance, '_param_cache'):
+            instance._param_cache = dict()
+        if param_name not in instance._param_cache:
+            instance._param_cache[param_name] = dict()
+
+        param = instance._param_cache[param_name]
         if param:
-            if time.time() - param['time'] < instance.CACHE_VALID_PERIOD:
+            if time.time() - param['time'] < getattr(instance, 'CACHE_VALID_PERIOD', 60.):
                 return param['value']
             param.clear()
         try:
@@ -109,9 +114,6 @@ class Auth0Client:
             'audience': 'https://{0}/api/v2/'.format(auth['data-auth0-domain']),
             'grant_type': 'client_credentials',
         }
-        self.cache = dict(
-            token={},
-        )
 
     @timeout('token')
     async def auth_token(self):
