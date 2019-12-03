@@ -109,23 +109,17 @@ class Auth0Client:
             'audience': 'https://{0}/api/v2/'.format(auth['data-auth0-domain']),
             'grant_type': 'client_credentials',
         }
-        self.token_time = 0
-        self.token = None
+        self.cache = dict(
+            token={},
+        )
 
+    @timeout('token')
     @property
     async def auth_token(self):
-        if self.token is not None:
-            if time.time() - self.token_time < self.CACHE_VALID_PERIOD:
-                return self.token
         async with self.session.post(self.url, json=self.data) as resp:
             if resp.status != 200:
-                self.token = None
-                result = await resp.json()
                 raise Auth0Error(f'Error {resp.status}')
-            result = await resp.json()
-            self.token = result['access_token']
-        self.token_time = time.time()
-        return self.token
+            return await resp.json()
 
     @property
     async def auth_headers(self):
