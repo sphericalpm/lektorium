@@ -11,13 +11,8 @@ def cacher(method_alias):
         if kwargs:
             raise Exception('Cannot use keyword args')
         key = (method_alias, *args)
-        print(key)
-        print(len(instance._cache.keys()))
         if key not in instance._cache:
-            print('new')
             instance._cache.update({key: await wrapped(*args)})
-        else:
-            print('cached')
         return instance._cache[key]
     return wrapper
 
