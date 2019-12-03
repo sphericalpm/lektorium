@@ -128,6 +128,7 @@ class Auth0Client:
         headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token())}
         return headers
 
+    @timeout('users')
     async def get_users(self):
         url = self.data["audience"] + 'users'
         params = {'fields': 'name,nickname,email,user_id'}
@@ -172,6 +173,7 @@ class Auth0Client:
             else:
                 raise Auth0Error(f'Error {resp.status}')
 
+    @timeout('api_permissions')
     async def get_api_permissions(self):
         url = self.data['audience'] + 'resource-servers'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
