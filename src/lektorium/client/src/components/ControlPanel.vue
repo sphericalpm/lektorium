@@ -606,6 +606,7 @@ export default {
       let result = await this.makeRequest(query);
       if(result.data.data.setUserPermissions.ok) {
         this.refreshUserModal(userId);
+        this.refreshPanelData();
       }
       else {
         this.showMessage(`Unable to add permisson`, `danger`);
@@ -624,6 +625,7 @@ export default {
       let result = await this.makeRequest(query);
       if(result.data.data.deleteUserPermissions.ok) {
         this.refreshUserModal(userId);
+        this.refreshPanelData();
       }
       else {
         this.showMessage(`Unable to remove permisson`, `danger`);
@@ -642,7 +644,6 @@ export default {
         this.setUserPermissions(this.selectedUserId, permissionsToSet);
       }
       this.$bvModal.hide(`user-modal`);
-      this.refreshPanelData();
     },
 
     async getAvailablePermissions() {

@@ -159,8 +159,8 @@ class Auth0Client:
         async with self.session.post(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 201:
                 raise Auth0Error(f'Error {resp.status}')
-            self._cache.pop(('users',), None)
             self._cache.pop(('user_permissions', user_id), None)
+            self._cache.pop(('users',), None)
             return True
 
     async def delete_user_permissions(self, user_id, permissions):
@@ -172,8 +172,8 @@ class Auth0Client:
         async with self.session.delete(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 204:
                 raise Auth0Error(f'Error {resp.status}')
-            self._cache.pop(('users',), None)
             self._cache.pop(('user_permissions', user_id), None)
+            self._cache.pop(('users',), None)
             return True
 
     @cacher('api_permissions')
