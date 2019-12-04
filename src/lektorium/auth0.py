@@ -159,6 +159,7 @@ class Auth0Client:
         async with self.session.post(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 201:
                 raise Auth0Error(f'Error {resp.status}')
+            self._cache.pop(('users',), None)
             self._cache.pop(('user_permissions', user_id), None)
             return True
 
@@ -171,6 +172,7 @@ class Auth0Client:
         async with self.session.delete(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 204:
                 raise Auth0Error(f'Error {resp.status}')
+            self._cache.pop(('users',), None)
             self._cache.pop(('user_permissions', user_id), None)
             return True
 
@@ -188,6 +190,18 @@ class Auth0Client:
                     raise Auth0Error(f"'{self.api_id}' api was not found")
             else:
                 raise Auth0Error(f'Error {resp.status}')
+
+    async def add_api_permission(self, permission_name, description):
+        data = await self.get_api_permissions()
+        data.append({'value': permission_name, 'description': description})
+        data = {'scopes': data}
+        url = self.data['audience'] + 'resource-servers/' + self.api_id
+        async with self.session.patch(url, headers=await self.auth_headers, json=data) as resp:
+            if resp.status != 200:
+                print(await resp.text())
+                raise Auth0Error(f'Error {resp.status}')
+            self._cache.pop(('api_permissions',), None)
+            return True
 
 
 class Auth0Error(Exception):
