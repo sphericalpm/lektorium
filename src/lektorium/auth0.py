@@ -92,6 +92,9 @@ class ThrottledClientSession(ClientSession):
 
 class Auth0Client:
     CACHE_VALID_PERIOD = 60
+    CACHE_USERS_ALIAS = 'users'
+    CACHE_USER_PERMISSIONS_ALIAS = 'user_permissions'
+    CACHE_API_PERMISSIONS_ALIAS = 'api_permissions'
 
     def __init__(self, auth):
         self._cache = dict()
@@ -127,7 +130,7 @@ class Auth0Client:
         headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token)}
         return headers
 
-    @cacher('users')
+    @cacher(CACHE_USERS_ALIAS)
     async def get_users(self):
         url = self.data["audience"] + 'users'
         params = {'fields': 'name,nickname,email,user_id'}
@@ -142,7 +145,7 @@ class Auth0Client:
             else:
                 raise Auth0Error(f'Error {resp.status}')
 
-    @cacher('user_permissions')
+    @cacher(CACHE_USER_PERMISSIONS_ALIAS)
     async def get_user_permissions(self, user_id):
         url = self.data['audience'] + f'users/{user_id}/permissions'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
@@ -159,8 +162,8 @@ class Auth0Client:
         async with self.session.post(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 201:
                 raise Auth0Error(f'Error {resp.status}')
-            self._cache.pop(('user_permissions', user_id), None)
-            self._cache.pop(('users',), None)
+            self._cache.pop((self.CACHE_USER_PERMISSIONS_ALIAS, user_id), None)
+            self._cache.pop((self.CACHE_USERS_ALIAS,), None)
             return True
 
     async def delete_user_permissions(self, user_id, permissions):
@@ -172,11 +175,11 @@ class Auth0Client:
         async with self.session.delete(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 204:
                 raise Auth0Error(f'Error {resp.status}')
-            self._cache.pop(('user_permissions', user_id), None)
-            self._cache.pop(('users',), None)
+            self._cache.pop((self.CACHE_USER_PERMISSIONS_ALIAS, user_id), None)
+            self._cache.pop((self.CACHE_USERS_ALIAS,), None)
             return True
 
-    @cacher('api_permissions')
+    @cacher(CACHE_API_PERMISSIONS_ALIAS)
     async def get_api_permissions(self):
         url = self.data['audience'] + 'resource-servers'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
@@ -200,7 +203,7 @@ class Auth0Client:
             if resp.status != 200:
                 print(await resp.text())
                 raise Auth0Error(f'Error {resp.status}')
-            self._cache.pop(('api_permissions',), None)
+            self._cache.pop((self.CACHE_API_PERMISSIONS_ALIAS,), None)
             return True
 
 
