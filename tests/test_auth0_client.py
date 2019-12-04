@@ -45,6 +45,7 @@ async def test_auth_token(auth0_client):
         resp = await auth0_client.auth_token
         assert resp == 'test_token'
         mocked.post(auth0_client.url, status=404)
+        auth0_client.token_time = 0
         with pytest.raises(Auth0Error):
             resp = await auth0_client.auth_token
 
@@ -59,6 +60,7 @@ async def test_get_users(auth0_client):
         assert resp == users_response
         mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
         mocked.get(url, status=400)
+        auth0_client._cache.pop(('users',), None)
         with pytest.raises(Auth0Error):
             resp = await auth0_client.get_users()
 
@@ -72,6 +74,7 @@ async def test_get_user_permissions(auth0_client):
         resp = await auth0_client.get_user_permissions('user_id')
         assert resp == permissions_response
         mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
+        auth0_client._cache.pop(('user_permissions', 'user_id'), None)
         mocked.get(url, status=400)
         with pytest.raises(Auth0Error):
             resp = await auth0_client.get_user_permissions('user_id')
@@ -113,6 +116,7 @@ async def test_get_api_permissions(auth0_client):
         assert resp == 'testdata'
         mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
         mocked.get(url, status=400)
+        auth0_client._cache.pop(('api_permissions',), None)
         with pytest.raises(Auth0Error):
             resp = await auth0_client.get_api_permissions()
         permissions_response = []
