@@ -27,7 +27,7 @@ def client():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             ),
-            'user_permissions': ['read:sites']
+            'user_permissions': ['read:sites', 'create:site']
         },
         executor=AsyncioExecutor(),
     )
