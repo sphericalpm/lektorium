@@ -175,7 +175,7 @@ class Repo(BaseRepo):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, _ = self.sessions[session_id]
-        if session.get('edit_url', None) is None:
+        if session.pop('edit_url', None) is None:
             raise InvalidSessionState()
         for site in self.data:
             site_sessions = [session['session_id'] for session in site.get('sessions', ())]
