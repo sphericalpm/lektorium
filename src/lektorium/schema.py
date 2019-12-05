@@ -116,7 +116,7 @@ class MutationBase(Mutation):
 
     @classmethod
     def has_permission(cls, root, info, **kwargs):
-        if cls.REQUIRES is None:
+        if not hasattr(cls, 'REQUIRES') or cls.REQUIRES is None:
             return True
         permissions = set(info.context.get('user_permissions', []))
         if not cls.REQUIRES.difference(permissions):
