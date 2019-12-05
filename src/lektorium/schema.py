@@ -116,7 +116,7 @@ class MutationBase(Mutation):
 
     @classmethod
     def has_permission(cls, root, info, **kwargs):
-        if not hasattr(cls, 'REQUIRES') or cls.REQUIRES is None:
+        if cls.REQUIRES is None:
             return True
         permissions = set(info.context.get('user_permissions', []))
         if not cls.REQUIRES.difference(permissions):
@@ -139,6 +139,7 @@ class MutationBase(Mutation):
 
 class DestroySession(MutationBase):
     REPO_METHOD = 'destroy_session'
+    REQUIRES = None
 
     class Arguments:
         session_id = String()
@@ -146,6 +147,7 @@ class DestroySession(MutationBase):
 
 class ParkSession(MutationBase):
     REPO_METHOD = 'park_session'
+    REQUIRES = None
 
     class Arguments:
         session_id = String()
@@ -153,6 +155,7 @@ class ParkSession(MutationBase):
 
 class RequestRelease(MutationBase):
     REPO_METHOD = 'request_release'
+    REQUIRES = None
 
     class Arguments:
         session_id = String()
@@ -160,6 +163,7 @@ class RequestRelease(MutationBase):
 
 class UnparkSession(MutationBase):
     REPO_METHOD = 'unpark_session'
+    REQUIRES = None
 
     class Arguments:
         session_id = String()
@@ -167,6 +171,7 @@ class UnparkSession(MutationBase):
 
 class CreateSession(MutationBase):
     REPO_METHOD = 'create_session'
+    REQUIRES = None
 
     class Arguments:
         site_id = String()
