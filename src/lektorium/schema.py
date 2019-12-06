@@ -152,18 +152,7 @@ class MutationBase(Mutation):
     Output = MutationResult
 
     @classmethod
-    def has_permission(cls, root, info, **kwargs):
-        if cls.REQUIRES is None:
-            return True
-        permissions = set(info.context.get('user_permissions', []))
-        if not cls.REQUIRES.difference(permissions):
-            return True
-        return False
-
-    @classmethod
     async def mutate(cls, root, info, **kwargs):
-        if not cls.has_permission(root, info, **kwargs):
-            return MutationResult(ok=False)
         try:
             method = getattr(info.context['repo'], cls.REPO_METHOD)
             result = method(**kwargs)
@@ -253,7 +242,6 @@ class CreateSession(MutationBase):
 
 
 class CreateSite(MutationBase):
-    REQUIRES = {'create:site'}
     REPO_METHOD = 'create_site'
 
     class Arguments:
