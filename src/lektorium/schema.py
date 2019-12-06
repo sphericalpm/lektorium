@@ -1,3 +1,4 @@
+from os import environ
 from asyncio import Future, iscoroutine
 
 import wrapt
@@ -68,9 +69,15 @@ class Releasing(ObjectType):
     web_url = String()
 
 
-def permissions_checker(required):
+def skip_permissions_check():
+    return environ.get('CHECKPERMISSIONS', '') == 'disable'
+
+
+def require_permissions(required):
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
+        if skip_permissions_check():
+            return await wrapped(*args, **kwargs)
         if required is not None and len(required):
             info = args[0]
             permissions = set(info.context.get('user_permissions', []))
@@ -92,7 +99,7 @@ class Query(ObjectType):
             for session in site.sessions or ():
                 yield dict(**session, site=site)
 
-    @permissions_checker({'read:sites'})
+    @require_permissions({'read:sites'})
     async def resolve_sites(self, info):
         repo = info.context['repo']
         return [Site(**x) for x in repo.sites]
@@ -116,6 +123,8 @@ class MutationBase(Mutation):
 
     @classmethod
     def has_permission(cls, root, info, **kwargs):
+        if skip_permissions_check():
+            return True
         if cls.REQUIRES is None:
             return True
         permissions = set(info.context.get('user_permissions', []))
