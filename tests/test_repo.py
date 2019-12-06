@@ -140,9 +140,7 @@ def test_releasing(repo, merge_requests):
         'site_name': 'Buy Our Widgets',
         **VALID_MERGE_REQUEST,
     }
-    if isinstance(getattr(repo, 'storage', None), FileStorage):
-        return
-    if isinstance(getattr(repo, 'storage', None), GitStorage):
+    if isinstance(getattr(repo, 'storage', None), (FileStorage, GitStorage)):
         return
     assert result == [request]
 
