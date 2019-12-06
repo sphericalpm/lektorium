@@ -191,6 +191,43 @@
             </table>
           </b-card-text>
         </b-tab>
+        <b-tab @click="refreshPanelData" title="Users">
+          <template slot="title">
+            Users <b-badge pill>{{users.length}}</b-badge>
+          </template>
+          <b-card-text>
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th scope="col">User ID</th>
+                  <th scope="col">Nickname</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Permissions</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(user, index) in users" :key="index">
+                  <td>{{ user.userId }}</td>
+                  <td>{{ user.nickname }}</td>
+                  <td>{{ user.name }}</td>
+                  <td> {{ user.email }} </td>
+                  <td>
+                    <ul>
+                      <li v-for="(permission, index) in user.permissions" :key="index">
+                        {{permission}}
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <b-button v-b-modal.user-modal @click="showUserModal(user.userId)">Edit Permissions</b-button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </b-card-text>
+        </b-tab>
       </b-tabs>
     </b-card>
     <b-modal
@@ -228,6 +265,26 @@
         </b-button-group>
       </b-form>
     </b-modal>
+    <b-modal
+    id="user-modal"
+    :title="selectedUserId"
+    hide-footer
+    @hidden="initUserModal">
+      <b-form class="mb-3">
+        <b-form-group label="Permissions:">
+          <b-form-checkbox-group id="checkbox-group-permissions" v-model="selectedUserPermissions" name="permissions-2">
+            <b-form-checkbox v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
+              {{permission.value}}
+            </b-form-checkbox>
+          </b-form-checkbox-group>
+        </b-form-group>
+      </b-form>
+      <div class="text-center">
+        <b-button variant="success" @click="updateUserPermissions">
+          Save
+        </b-button>
+      </div>
+    </b-modal>
     <b-alert
       :show="message_visible"
       :variant="message_type"
@@ -249,6 +306,11 @@ export default {
       available_sites: [],
       edit_sessions: [],
       parked_sessions: [],
+      users: [],
+      selectedUserId: '',
+      userPermissions: [],
+      selectedUserPermissions: [],
+      availablePermissions: [],
       releasing: [],
 
       add_site_form: {
@@ -343,6 +405,13 @@ export default {
                     siteId
                   }
                 }
+                users {
+                  nickname
+                  name
+                  email
+                  userId
+                  permissions
+                }
                 releasing {
                   id
                   title
@@ -357,6 +426,7 @@ export default {
       this.available_sites = result.data.data.sites;
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
+      this.users = result.data.data.users;
       this.releasing = result.data.data.releasing;
       this.checkStarting();
     },
@@ -508,10 +578,115 @@ export default {
       }
     },
 
+    async getUserPermissions(userId) {
+      let query = `
+        {
+          permissions(userId: "${userId}") {
+            permissionName
+            description
+          }
+        }
+      `;
+      let result = await this.makeRequest(query);
+      this.userPermissions = result.data.data.permissions;
+      this.selectedUserPermissions = [];
+      this.userPermissions.forEach(element => {
+        this.selectedUserPermissions.push(element.permissionName)
+      });
+    },
+
+    async setUserPermissions(userId, permissions) {
+      let permissionsString = permissions.join('","');
+      let query = `
+                mutation {
+                setUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
+                  ok
+                }
+              }
+          `;
+      let result = await this.makeRequest(query);
+      if(result.data.data.setUserPermissions.ok) {
+        this.refreshUserModal(userId);
+        this.refreshPanelData();
+      }
+      else {
+        this.showMessage(`Unable to add permisson`, `danger`);
+      }
+    },
+
+    async deleteUserPermissions(userId, permissions) {
+      let permissionsString = permissions.join('","');
+      let query = `
+                mutation {
+                deleteUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
+                  ok
+                }
+              }
+          `;
+      let result = await this.makeRequest(query);
+      if(result.data.data.deleteUserPermissions.ok) {
+        this.refreshUserModal(userId);
+        this.refreshPanelData();
+      }
+      else {
+        this.showMessage(`Unable to remove permisson`, `danger`);
+      }
+    },
+
+    async updateUserPermissions() {
+      let permissionsToDelete = this.userPermissions.map(function(perm){return perm.permissionName});
+      permissionsToDelete = permissionsToDelete.filter(element => !(this.selectedUserPermissions.includes(element)));
+      let userPermissionsPlate = this.userPermissions.map(function(perm){return perm.permissionName});
+      let permissionsToSet = this.selectedUserPermissions.filter(element => !(userPermissionsPlate.includes(element)));
+      if (permissionsToDelete.length>0) {
+        this.deleteUserPermissions(this.selectedUserId, permissionsToDelete);
+      }
+      if (permissionsToSet.length>0){
+        this.setUserPermissions(this.selectedUserId, permissionsToSet);
+      }
+      this.$bvModal.hide(`user-modal`);
+    },
+
+    async getAvailablePermissions() {
+      let query = `
+        {
+          availablePermissions {
+            value
+          }
+        }
+      `;
+      let result = await this.makeRequest(query);
+      this.availablePermissions = result.data.data.availablePermissions;
+    },
+
     showMessage(text, type) {
       this.message = text;
       this.message_type = type;
       this.message_visible = true;
+    },
+
+    showUserModal(userId) {
+      this.initUserModal();
+      this.selectedUserId = userId;
+      this.getUserPermissions(userId);
+      this.getAvailablePermissions();
+      this.$bvModal.show(`user-modal`);
+    },
+
+    initUserModal() {
+      this.selectedUserId = '';
+      this.selectedUserPermissions = [];
+      this.userPermissions = [];
+      this.availablePermissions = [];
+
+    },
+
+    refreshUserModal(userId) {
+      this.selectedUserPermissions = [];
+      this.userPermissions = [];
+      this.availablePermissions = [];
+      this.getUserPermissions(userId);
+      this.getAvailablePermissions();
     },
 
     initForm() {

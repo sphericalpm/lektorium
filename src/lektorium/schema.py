@@ -13,6 +13,7 @@ from graphene import (
 )
 
 import lektorium.repo
+from lektorium.auth0 import Auth0Error
 
 
 class Site(ObjectType):
@@ -58,6 +59,27 @@ class Session(ObjectType):
         return not bool(self.edit_url)
 
 
+class User(ObjectType):
+    user_id = String()
+    email = String()
+    name = String()
+    nickname = String()
+    permissions = List(String)
+
+
+class Permission(ObjectType):
+    permission_name = String()
+    description = String()
+    resource_server_name = String()
+    resource_server_identifier = String()
+    sources = String()
+
+
+class ApiPermission(ObjectType):
+    value = String()
+    description = String()
+
+
 class Releasing(ObjectType):
     site_id = String()
     site_name = String()
@@ -90,6 +112,9 @@ def require_permissions(required):
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
+    users = List(User)
+    permissions = List(Permission, user_id=String())
+    available_permissions = List(ApiPermission)
     releasing = List(Releasing)
 
     @staticmethod
@@ -108,6 +133,18 @@ class Query(ObjectType):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
+
+    async def resolve_users(self, info):
+        auth0_client = info.context['auth0_client']
+        return [User(**x) for x in await auth0_client.get_users()]
+
+    async def resolve_permissions(self, info, user_id):
+        auth0_client = info.context['auth0_client']
+        return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
+
+    async def resolve_available_permissions(self, info):
+        auth0_client = info.context['auth0_client']
+        return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
 
     async def resolve_releasing(self, info):
         repo = info.context['repo']
@@ -142,6 +179,44 @@ class MutationBase(Mutation):
             if isinstance(result, Future) or iscoroutine(result):
                 await result
         except lektorium.repo.ExceptionBase:
+            return MutationResult(ok=False)
+        return MutationResult(ok=True)
+
+
+class AddPermissions(MutationBase):
+    REPO_METHOD = 'set_user_permissions'
+
+    class Arguments:
+        user_id = String()
+        permissions = List(String)
+
+    @classmethod
+    async def mutate(cls, root, info, **kwargs):
+        try:
+            method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
+            result = method(**kwargs)
+            if isinstance(result, Future) or iscoroutine(result):
+                await result
+        except Auth0Error:
+            return MutationResult(ok=False)
+        return MutationResult(ok=True)
+
+
+class DeletePermissions(MutationBase):
+    REPO_METHOD = 'delete_user_permissions'
+
+    class Arguments:
+        user_id = String()
+        permissions = List(String)
+
+    @classmethod
+    async def mutate(cls, root, info, **kwargs):
+        try:
+            method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
+            result = method(**kwargs)
+            if isinstance(result, Future) or iscoroutine(result):
+                await result
+        except Auth0Error:
             return MutationResult(ok=False)
         return MutationResult(ok=True)
 
