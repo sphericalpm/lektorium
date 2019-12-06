@@ -43,7 +43,7 @@ def jwt_middleware():
 
 
 def test_get_token_auth(jwt_middleware):
-    assert jwt_middleware.get_token_auth(TEST_HEADERS) == TEST_TOKEN
+    assert jwt_middleware.get_token_auth(TEST_HEADERS) == (TEST_TOKEN, TEST_TOKEN)
 
     with pytest.raises(GraphExecutionError) as excinfo:
         jwt_middleware.get_token_auth({})

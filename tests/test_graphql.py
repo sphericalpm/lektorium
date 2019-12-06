@@ -28,6 +28,7 @@ def client():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             ),
+            'user_permissions': ['read:sites', 'create:site'],
             'auth0_client': FakeAuth0Client(),
         },
         executor=AsyncioExecutor(),

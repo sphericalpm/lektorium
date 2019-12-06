@@ -1,4 +1,7 @@
+from os import environ
 from asyncio import Future, iscoroutine
+
+import wrapt
 from graphene import (
     Boolean,
     DateTime,
@@ -8,6 +11,7 @@ from graphene import (
     ObjectType,
     String,
 )
+
 import lektorium.repo
 from lektorium.auth0 import Auth0Error
 
@@ -87,6 +91,24 @@ class Releasing(ObjectType):
     web_url = String()
 
 
+def skip_permissions_check():
+    return environ.get('CHECKPERMISSIONS', '') == 'disable'
+
+
+def require_permissions(required):
+    @wrapt.decorator
+    async def wrapper(wrapped, instance, args, kwargs):
+        if skip_permissions_check():
+            return await wrapped(*args, **kwargs)
+        if required is not None and len(required):
+            info = args[0]
+            permissions = set(info.context.get('user_permissions', []))
+            if not required.difference(permissions):
+                return await wrapped(*args, **kwargs)
+        return ()
+    return wrapper
+
+
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
@@ -102,11 +124,12 @@ class Query(ObjectType):
             for session in site.sessions or ():
                 yield dict(**session, site=site)
 
-    def resolve_sites(self, info):
+    @require_permissions({'read:sites'})
+    async def resolve_sites(self, info):
         repo = info.context['repo']
         return [Site(**x) for x in repo.sites]
 
-    def resolve_sessions(self, info, parked):
+    async def resolve_sessions(self, info, parked):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
@@ -123,7 +146,7 @@ class Query(ObjectType):
         auth0_client = info.context['auth0_client']
         return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
 
-    def resolve_releasing(self, info):
+    async def resolve_releasing(self, info):
         repo = info.context['repo']
         return [Releasing(**x) for x in repo.releasing]
 
@@ -136,7 +159,20 @@ class MutationBase(Mutation):
     Output = MutationResult
 
     @classmethod
+    def has_permission(cls, root, info, **kwargs):
+        if skip_permissions_check():
+            return True
+        if cls.REQUIRES is None:
+            return True
+        permissions = set(info.context.get('user_permissions', []))
+        if not cls.REQUIRES.difference(permissions):
+            return True
+        return False
+
+    @classmethod
     async def mutate(cls, root, info, **kwargs):
+        if not cls.has_permission(root, info, **kwargs):
+            return MutationResult(ok=False)
         try:
             method = getattr(info.context['repo'], cls.REPO_METHOD)
             result = method(**kwargs)
@@ -187,6 +223,7 @@ class DeletePermissions(MutationBase):
 
 class DestroySession(MutationBase):
     REPO_METHOD = 'destroy_session'
+    REQUIRES = None
 
     class Arguments:
         session_id = String()
@@ -194,6 +231,7 @@ class DestroySession(MutationBase):
 
 class ParkSession(MutationBase):
     REPO_METHOD = 'park_session'
+    REQUIRES = None
 
     class Arguments:
         session_id = String()
@@ -201,6 +239,7 @@ class ParkSession(MutationBase):
 
 class RequestRelease(MutationBase):
     REPO_METHOD = 'request_release'
+    REQUIRES = None
 
     class Arguments:
         session_id = String()
@@ -208,6 +247,7 @@ class RequestRelease(MutationBase):
 
 class UnparkSession(MutationBase):
     REPO_METHOD = 'unpark_session'
+    REQUIRES = None
 
     class Arguments:
         session_id = String()
@@ -215,6 +255,7 @@ class UnparkSession(MutationBase):
 
 class CreateSession(MutationBase):
     REPO_METHOD = 'create_session'
+    REQUIRES = None
 
     class Arguments:
         site_id = String()
@@ -226,6 +267,7 @@ class CreateSession(MutationBase):
 
 
 class CreateSite(MutationBase):
+    REQUIRES = {'create:site'}
     REPO_METHOD = 'create_site'
 
     class Arguments:
