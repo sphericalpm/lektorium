@@ -12,14 +12,12 @@ class JWTMiddleware:
         self.auth = auth
 
     async def resolve(self, next, root, info, **kwargs):
-        token, extra = self.get_token_auth(info.context['request'].headers)
+        token = self.get_token_auth(info.context['request'].headers)
         key = await self.public_key
         payload = self.decode_token(token, key)
-        permissions = self.decode_token(extra, key).get('permissions', [])
         if payload:
             userdata = (payload['nickname'], payload['email'])
             info.context['userdata'] = userdata
-        info.context['user_permissions'] = permissions
         return next(root, info, **kwargs)
 
     def get_token_auth(self, headers):
@@ -39,11 +37,9 @@ class JWTMiddleware:
                 code=401
             )
 
-        split = parts[1].split('.')
-        token = '.'.join(split[:3])
-        extra = '.'.join(split[3:])
+        token = '.'.join(parts[1].split('.')[:3])
 
-        return token, extra
+        return token
 
     @cached_property
     async def public_key(self):
