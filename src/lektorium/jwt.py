@@ -7,7 +7,7 @@ from cached_property import cached_property
 
 class JWTMiddleware:
     def __init__(self, auth):
-        if auth is None or len(auth.values()) != 3 or not all(auth.values()):
+        if auth is None or len(auth.values()) != 5 or not all(auth.values()):
             raise ValueError('check jwt auth param')
         self.auth = auth
 

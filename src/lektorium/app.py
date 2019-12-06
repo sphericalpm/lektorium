@@ -11,6 +11,7 @@ from graphql.execution.executors.asyncio import AsyncioExecutor
 import bs4
 import graphene
 
+from lektorium.auth0 import Auth0Client, FakeAuth0Client
 from lektorium.jwt import JWTMiddleware
 from . import install as client, schema, repo
 from .utils import closer
@@ -66,11 +67,18 @@ class ServerType(BaseEnum):
 
 def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
     init_logging()
+    auth0_client = None
+    auth0_options = None
+    if auth:
+        auth_attributes = ('domain', 'id', 'api', 'management-id', 'management-secret')
+        auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
+        auth0_options = dict(zip(auth_attributes, auth.split(',')))
 
     if repo_type == RepoType.LIST:
         if repo_args:
             raise ValueError('LIST repo does not support arguments')
         lektorium_repo = repo.ListRepo(repo.SITES)
+        auth0_client = FakeAuth0Client()
     elif repo_type == RepoType.LOCAL:
         server_type, _, storage_config = repo_args.partition(',')
         server_type = ServerType.get(server_type or 'FAKE')
@@ -96,17 +104,13 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
             LocalLektor,
             sessions_root=sessions_root
         )
+        if auth0_options:
+            auth0_client = Auth0Client(auth0_options)
     else:
         raise ValueError(f'repo_type not supported {repo_type}')
 
-    auth0_options = None
-    if auth:
-        auth_attributes = ('domain', 'id', 'api')
-        auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
-        auth0_options = dict(zip(auth_attributes, auth.split(',')))
-
     logging.getLogger('lektorium').info(f'Start with {lektorium_repo}')
-    return init_app(lektorium_repo, auth0_options)
+    return init_app(lektorium_repo, auth0_options, auth0_client)
 
 
 async def log_application_ready(app):
@@ -129,7 +133,7 @@ def init_logging(stream=sys.stderr, level=logging.DEBUG):
     )
 
 
-def init_app(repo, auth0_options=None):
+def init_app(repo, auth0_options=None, auth0_client=None):
     app = aiohttp.web.Application()
     app_path = client.install()
 
@@ -162,7 +166,10 @@ def init_app(repo, auth0_options=None):
         middleware=middleware,
         graphiql=True,
         executor=AsyncioExecutor(),
-        context=dict(repo=repo),
+        context=dict(
+            repo=repo,
+            auth0_client=auth0_client
+        ),
     )
 
     app.on_startup.append(log_application_ready)
