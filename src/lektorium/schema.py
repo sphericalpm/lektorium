@@ -1,6 +1,4 @@
 from asyncio import Future, iscoroutine
-
-import wrapt
 from graphene import (
     Boolean,
     DateTime,
@@ -10,7 +8,6 @@ from graphene import (
     ObjectType,
     String,
 )
-
 import lektorium.repo
 from lektorium.auth0 import Auth0Error
 
@@ -90,18 +87,6 @@ class Releasing(ObjectType):
     web_url = String()
 
 
-def permissions_checker(required):
-    @wrapt.decorator
-    async def wrapper(wrapped, instance, args, kwargs):
-        if required is not None and len(required):
-            info = args[0]
-            permissions = set(info.context.get('user_permissions', []))
-            if not required.difference(permissions):
-                return await wrapped(*args, **kwargs)
-        return ()
-    return wrapper
-
-
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
@@ -117,16 +102,15 @@ class Query(ObjectType):
             for session in site.sessions or ():
                 yield dict(**session, site=site)
 
-    async def resolve_sites(self, info):
+    def resolve_sites(self, info):
         repo = info.context['repo']
         return [Site(**x) for x in repo.sites]
 
-    async def resolve_sessions(self, info, parked):
+    def resolve_sessions(self, info, parked):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
 
-    @permissions_checker({'read:users'})
     async def resolve_users(self, info):
         auth0_client = info.context['auth0_client']
         return [User(**x) for x in await auth0_client.get_users()]
@@ -139,7 +123,7 @@ class Query(ObjectType):
         auth0_client = info.context['auth0_client']
         return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
 
-    async def resolve_releasing(self, info):
+    def resolve_releasing(self, info):
         repo = info.context['repo']
         return [Releasing(**x) for x in repo.releasing]
 
