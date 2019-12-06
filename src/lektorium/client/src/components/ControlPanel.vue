@@ -507,9 +507,10 @@ export default {
         const message = data.errors[0].message;
         this.showMessage(`Error: ${message}`, `danger`);
       }
-      else if(data.requestRelease.ok)
+      else if(data.data.requestRelease.ok)
       {
         this.showMessage(`Release request was sent.`, `success`);
+        this.current_tab = 3;
         this.getPanelData();
       }
       else {
