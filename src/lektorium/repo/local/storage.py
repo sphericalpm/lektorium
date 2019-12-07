@@ -187,7 +187,7 @@ class GitConfig(FileConfig):
 
 
 class AWS:
-    S3_PREFIX = 'lectorium-'
+    S3_PREFIX = 'lektorium-'
     S3_SUFFIX = '.s3.amazonaws.com'
 
     @staticmethod
@@ -238,7 +238,7 @@ class AWS:
         response = boto3.client('cloudfront').create_distribution(
             DistributionConfig=dict(
                 CallerReference=str(uuid4()),
-                Comment='Lectorium',
+                Comment='Lektorium',
                 Enabled=True,
                 DefaultRootObject='index.html',
                 Origins=dict(
@@ -312,7 +312,7 @@ class GitLab:
                 'namespace_id': self.namespace_id,
                 'visibility': 'private',
                 'default_branch': self.options['branch'],
-                'tag_list': 'lectorium',
+                'tag_list': 'lektorium',
                 'shared_runners_enabled': 'true',
             },
             headers=self.headers,
