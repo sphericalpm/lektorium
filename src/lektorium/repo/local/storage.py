@@ -314,6 +314,13 @@ class GitLab:
             if item in self.__dict__:
                 del self.__dict__[item]
 
+        ssh_repo_url = self._create_new_project().json()['ssh_url_to_repo']
+        self._create_aws_project_variable()
+        self._create_initial_commit()
+
+        return ssh_repo_url
+
+    def _create_new_project(self):
         response = requests.post(
             '{repo_url}/projects'.format(repo_url=self.repo_url),
             params={
@@ -327,8 +334,9 @@ class GitLab:
             headers=self.headers,
         )
         response.raise_for_status()
-        ssh_repo_url = response.json()['ssh_url_to_repo']
+        return response
 
+    def _create_aws_project_variable(self):
         response = requests.post(
             '{repo_url}/projects/{pid}/variables'.format(
                 repo_url=self.repo_url,
@@ -346,9 +354,11 @@ class GitLab:
             headers=self.headers,
         )
         response.raise_for_status()
+        return response
 
+    def _create_initial_commit(self):
         headers = dict(self.headers)
-        headers.update({'Content-Type': "application/json"})
+        headers.update({'Content-Type': 'application/json'})
         # Make initial empty commit in repository
         response = requests.post(
             '{repo_url}/projects/{pid}/repository/commits'.format(
@@ -359,8 +369,7 @@ class GitLab:
             headers=headers,
         )
         response.raise_for_status()
-
-        return ssh_repo_url
+        return response
 
     @cached_property
     def projects(self):
