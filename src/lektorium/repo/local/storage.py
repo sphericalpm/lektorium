@@ -92,7 +92,7 @@ class FileStorageMixin:
         if path.exists():
             with path.open('rb') as config_file:
                 def iter_sites(config_file):
-                    config_data = yaml.load(config_file, Loader=yaml.Loader)
+                    config_data = yaml.load(config_file, Loader=yaml.Loader) or {}
                     for site_id, props in config_data.items():
                         url = props.get('url', None)
                         config = site_config_fetcher(site_id)
