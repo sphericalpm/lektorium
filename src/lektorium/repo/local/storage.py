@@ -187,7 +187,7 @@ class GitConfig(FileConfig):
 
 
 class AWS:
-    S3_PREFIX = 'spherical-lectorium-'
+    S3_PREFIX = 'lectorium-'
     S3_SUFFIX = '.s3.amazonaws.com'
 
     @staticmethod
