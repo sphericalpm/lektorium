@@ -104,7 +104,7 @@ class FileStorageMixin:
         if path.exists():
             with path.open('rb') as config_file:
                 def iter_sites(config_file):
-                    config_data = yaml.load(config_file, Loader=yaml.Loader)
+                    config_data = yaml.load(config_file, Loader=yaml.Loader) or {}
                     for site_id, props in config_data.items():
                         url = props.get('url', None)
                         config = site_config_fetcher(site_id)
@@ -187,7 +187,7 @@ class GitConfig(FileConfig):
 
 
 class AWS:
-    S3_PREFIX = 'spherical-lectorium-'
+    S3_PREFIX = 'lektorium-'
     S3_SUFFIX = '.s3.amazonaws.com'
     SLEEP_TIMEOUT = 2
 
@@ -246,7 +246,7 @@ class AWS:
         response = self.cloudfront_client.create_distribution(
             DistributionConfig=dict(
                 CallerReference=str(uuid4()),
-                Comment='Lectorium',
+                Comment='Lektorium',
                 Enabled=True,
                 DefaultRootObject='index.html',
                 Origins=dict(
@@ -328,7 +328,7 @@ class GitLab:
                 'namespace_id': self.namespace_id,
                 'visibility': 'private',
                 'default_branch': self.options['branch'],
-                'tag_list': 'lectorium',
+                'tag_list': 'lektorium',
                 'shared_runners_enabled': 'true',
             },
             headers=self.headers,

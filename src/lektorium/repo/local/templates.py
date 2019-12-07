@@ -1,5 +1,5 @@
-AWS_PROFILE_NAME = 'lectorium-aws-deploy'
-LECTOR_AWS_SERVER_NAME = 'lectorium-aws'
+AWS_PROFILE_NAME = 'lektorium-aws-deploy'
+LECTOR_AWS_SERVER_NAME = 'lektorium-aws'
 
 AWS_SHARED_CREDENTIALS_FILE_TEMPLATE = f'''
 [{AWS_PROFILE_NAME}]
@@ -8,7 +8,7 @@ AWS_SHARED_CREDENTIALS_FILE_TEMPLATE = f'''
 '''
 
 GITLAB_CI_TEMPLATE = f'''
-lectorium-aws-deploy:
+lektorium-aws-deploy:
   variables:
     LC_ALL: C.UTF-8
     LANG: C.UTF-8
@@ -25,7 +25,7 @@ lectorium-aws-deploy:
 
 LECTOR_S3_SERVER_TEMPLATE = f'''
 [servers.{LECTOR_AWS_SERVER_NAME}]
-name = Lectorium AWS
+name = Lektorium AWS
 enabled = yes
 target = s3://{{s3_bucket_name}}
 cloudfront = {{cloudfront_id}}

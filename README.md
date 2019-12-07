@@ -61,20 +61,20 @@ the VCS and picked up for promotion to whatever environment by the CI.
 
 
 ---
-# Setting up automatic Lector deployment into AWS infrastructure using gitlab CI/CD pipelines
+# Setting up automatic Lektor deployment into AWS infrastructure using gitlab CI/CD pipelines
 
 ## Prepare AWS
 
 ### Create S3 bucket and Cloudfront
 
-This step will be automated in lectorium
+This step will be automated in lektorium
 
 A guide can be used to create S3 [bucket](https://docs.aws.amazon.com/AmazonS3/latest/dev/website-hosting-custom-domain-walkthrough.html) and [cloudfront](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html#HowCloudFrontWorksOverview)
-Make note of bucket's and Cloudfront's names as they will be used in Lector's config
+Make note of bucket's and Cloudfront's names as they will be used in Lektor's config
 
 ### Create a user for S3 and Cloudfront access
 
-For deploying lector to S3 there must exist a user whose credentials will be used
+For deploying lektor to S3 there must exist a user whose credentials will be used
 
 * Open [IAM](https://console.aws.amazon.com/iam/home#/home)
 * Click on Users in the sidebar
@@ -94,7 +94,7 @@ For deploying lector to S3 there must exist a user whose credentials will be use
 * Add variable of type `File` and key `AWS_SHARED_CREDENTIALS_FILE`
 * The value of this variable should contain the following data (replace `KEY_ID` and `SECRET_KEY` with the ones from created AWS user):
 ```
-[lectorium-aws-deploy]
+[lektorium-aws-deploy]
 aws_access_key_id = <KEY_ID>
 aws_secret_access_key = <SECRET_KEY>
 ```
@@ -110,37 +110,37 @@ Recommended options are: `alpine:latest` as image and `docker` as executor.
 After that, a docker container can be run with command:
 `docker run -d --restart=unless-stopped -v gitlab-runner-config:/etc/gitlab-runner -v /var/run/docker.sock:/var/run/docker.sock gitlab/gitlab-runner run`
 
-## Update Lector project
+## Update Lektor project
 
-### Update lector project file
+### Update lektor project file
 
-In Lector config (`www.lektorproject`) add a section (substituning `NAME_OF_AWS_BUCKET` and `CLOUDFRONT_ID` with appropriate values)
+In Lektor config (`www.lektorproject`) add a section (substituning `NAME_OF_AWS_BUCKET` and `CLOUDFRONT_ID` with appropriate values)
 ```
-[servers.lectorium-aws-deploy]
-name = Lectorium AWS Deploy
+[servers.lektorium-aws-deploy]
+name = Lektorium AWS Deploy
 enabled = yes
 target = s3://<NAME_OF_AWS_BUCKET>
 cloudfront = <CLOUDFRONT_ID>
 ```
-This will tell `lector-s3` plugin where to deploy the project.
+This will tell `lektor-s3` plugin where to deploy the project.
 
 ### Add gitlab ci file
 
-In the root of Lectorium project create a file `.gitlab-ci.yml` containing the following code:
+In the root of Lektorium project create a file `.gitlab-ci.yml` containing the following code:
 ```yaml
-lectorium-aws-deploy:
+lektorium-aws-deploy:
   variables:
     LC_ALL: C.UTF-8
     LANG: C.UTF-8
-    AWS_PROFILE: lectorium-aws-deploy
+    AWS_PROFILE: lektorium-aws-deploy
   script:
     - apk add --update python3 python3-dev libffi-dev openssl-dev build-base
     - pip3 install --upgrade lektor
     - lektor plugins add lektor-s3
     - lektor build
-    - lektor deploy "lectorium-aws-deploy"
+    - lektor deploy "lektorium-aws-deploy"
   only:
     - master
 ```
 Section `only` contains a name of the branch that should trigger deployment script when changed.
-This script will install lector and lector-s3 in a container, build the project and deploy it to AWS.
+This script will install lektor and lektor-s3 in a container, build the project and deploy it to AWS.
