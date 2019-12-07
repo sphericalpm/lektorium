@@ -189,6 +189,7 @@ class GitConfig(FileConfig):
 class AWS:
     S3_PREFIX = 'spherical-lectorium-'
     S3_SUFFIX = '.s3.amazonaws.com'
+    SLEEP_TIMEOUT = 2
 
     @staticmethod
     def _get_status(response):
@@ -217,7 +218,7 @@ class AWS:
             response = client.delete_public_access_block(Bucket=bucket_name)
             response_code = self._get_status(response)
             if response_code == 404:
-                sleep(2)
+                sleep(self.SLEEP_TIMEOUT)
             elif response_code == 204:
                 break
             else:
