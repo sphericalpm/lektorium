@@ -9,7 +9,7 @@ from lektorium.utils import flatten_options, named_args
 
 
 CONTAINERS_BASE = 'containers'
-IMAGE = os.environ.get('LEKTORIUM_IMAGE', 'lektorium')
+IMAGE = 'lektorium'
 CONTAINER = IMAGE
 LEKTOR_BASE = PROXY_BASE = 'alpine'
 LEKTOR_IMAGE = f'{IMAGE}-lektor'
@@ -148,6 +148,14 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
 @task
 def build_server_image(ctx):
     server_dir = f'{CONTAINERS_BASE}/server'
+    with (pathlib.Path(server_dir) / 'key').open('w') as key_file:
+        key = os.linesep.join((
+            '-----BEGIN OPENSSH PRIVATE KEY-----',
+            *ctx['key'],
+            '-----END OPENSSH PRIVATE KEY-----',
+            '',
+        ))
+        key_file.write(key)
     ctx.run(f'rm {server_dir}/lektorium*.whl', warn=True)
     ctx.run(f'pip wheel -w {server_dir} --no-deps .')
     ctx.run((
@@ -193,6 +201,11 @@ def run(
     ))
     ctx.run(f'docker network connect bridge {CONTAINER}')
     ctx.run(f'docker start {start_options or ""} {CONTAINER}')
+
+
+@task(build, run_traefik, run)
+def deploy(ctx):
+    pass
 
 
 @task
