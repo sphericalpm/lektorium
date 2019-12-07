@@ -46,12 +46,14 @@ setuptools.setup(
         'cached-property',
         'graphene',
         'graphql-core<3',
+        'graphql-server-core<1.1.2',
         'importlib-resources ; python_version < "3.7"',
         'lektor',
         'more-itertools',
         'nodeenv',
         'python-dateutil',
         'pyyaml',
+        'wrapt',
     ],
     extras_require={
         'inv': [
@@ -80,7 +82,6 @@ setuptools.setup(
             'flake8-spellcheck',
             'pep8-naming',
             'requests-mock',
-            'wrapt',
         ]
     },
     zip_safe=True,
