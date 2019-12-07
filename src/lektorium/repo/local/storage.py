@@ -191,6 +191,14 @@ class AWS:
     S3_SUFFIX = '.s3.amazonaws.com'
     SLEEP_TIMEOUT = 2
 
+    @cached_property
+    def s3_client(self):
+        return boto3.client('s3')
+
+    @cached_property
+    def cloudfront_client(self):
+        return boto3.client('cloudfront')
+
     @staticmethod
     def _get_status(response):
         return response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1)
@@ -203,7 +211,7 @@ class AWS:
     def create_s3_bucket(self, site_id, prefix=''):
         prefix = prefix or self.S3_PREFIX
         bucket_name = prefix + site_id
-        response = boto3.client('s3').create_bucket(Bucket=bucket_name)
+        response = self.s3_client.create_bucket(Bucket=bucket_name)
         self._raise_if_not_status(
             response, 200,
             'Failed to create S3 bucket',
@@ -211,11 +219,10 @@ class AWS:
         return bucket_name
 
     def open_bucket_access(self, bucket_name):
-        client = boto3.client('s3')
         # Bucket may fail to be created and registered at this moment
         # Retry a few times and wait a bit in case bucket is not found
         for _ in range(3):
-            response = client.delete_public_access_block(Bucket=bucket_name)
+            response = self.s3_client.delete_public_access_block(Bucket=bucket_name)
             response_code = self._get_status(response)
             if response_code == 404:
                 sleep(self.SLEEP_TIMEOUT)
@@ -224,7 +231,7 @@ class AWS:
             else:
                 raise Exception('Failed to remove bucket public access block')
 
-        response = client.put_bucket_policy(
+        response = self.s3_client.put_bucket_policy(
             Bucket=bucket_name,
             Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
         )
@@ -236,7 +243,7 @@ class AWS:
     def create_cloudfront_distribution(self, bucket_name, suffix=''):
         suffix = suffix or self.S3_SUFFIX
         bucket_origin_name = bucket_name + suffix
-        response = boto3.client('cloudfront').create_distribution(
+        response = self.cloudfront_client.create_distribution(
             DistributionConfig=dict(
                 CallerReference=str(uuid4()),
                 Comment='Lectorium',
@@ -260,7 +267,7 @@ class AWS:
                         QueryString=False,
                         QueryStringCacheKeys=dict(Quantity=0),
                     ),
-                    MinTTL=1000
+                    MinTTL=1000,
                 ),
             ))
         self._raise_if_not_status(
