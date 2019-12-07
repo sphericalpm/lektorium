@@ -280,6 +280,7 @@ class AWS:
 
 class GitLab:
     DEFAULT_API_VERSION = 'v4'
+    AWS_CREDENTIALS_VARIABLE_NAME = 'AWS_SHARED_CREDENTIALS_FILE'
 
     def __init__(self, options):
         self.options = options
@@ -336,7 +337,7 @@ class GitLab:
             params={
                 'id': self.project_id,
                 'variable_type': 'file',
-                'key': 'AWS_SHARED_CREDENTIALS_FILE',
+                'key': self.AWS_CREDENTIALS_VARIABLE_NAME,
                 'value': AWS_SHARED_CREDENTIALS_FILE_TEMPLATE.format(
                     aws_key_id=environ['AWS_ACCESS_KEY_ID'],
                     aws_secret_key=environ['AWS_SECRET_ACCESS_KEY'],
