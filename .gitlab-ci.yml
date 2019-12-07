@@ -6,6 +6,9 @@ lektorium-deploy:
     GIT_DEPTH: 0
   script:
     - apk add --update python3 python3-dev libffi-dev openssl-dev build-base
+    - git tag
+    - git status
+    - git describe
     - pip3 install -e .[dev,inv]
     - cp ${LEKTORIUM_DEPLOY_CONFIG} invoke.yaml
     - inv deploy
