@@ -8,11 +8,23 @@ import requests
 import shutil
 import subprocess
 import tempfile
+from os import environ
+from uuid import uuid4
+from time import sleep
+
 from cached_property import cached_property
 from more_itertools import one
 import yaml
+import boto3
 
 from .objects import Site
+from .templates import (
+    AWS_SHARED_CREDENTIALS_FILE_TEMPLATE,
+    LECTOR_S3_SERVER_TEMPLATE,
+    GITLAB_CI_TEMPLATE,
+    EMPTY_COMMIT_PAYLOAD,
+    BUCKET_POLICY_TEMPLATE,
+)
 from ...utils import closer
 
 
@@ -78,7 +90,7 @@ class FileConfig(dict):
             sk: sv
             for sk, sv in site_config.data.items()
             if sk not in ('site_id', 'staging_url') and (
-                sk != 'repo' or 'gitlab' not in site_config.data
+                sk != 'repo' or GitStorage.GITLAB_SECTION_NAME not in site_config.data
             ) and (sk != 'name' or sv != site_config['site_id'])
         }
 
@@ -165,7 +177,7 @@ class GitConfig(FileConfig):
     @classmethod
     def prepare(cls, site_config):
         repo = site_config.get('repo', None)
-        gitlab = site_config.get('gitlab', None)
+        gitlab = site_config.get(GitStorage.GITLAB_SECTION_NAME, None)
         if repo is None:
             if gitlab is None:
                 raise ValueError('repo/gitlab site config values not found')
@@ -174,12 +186,172 @@ class GitConfig(FileConfig):
         return site_config
 
 
+class AWS:
+    S3_PREFIX = 'lektorium-'
+    S3_SUFFIX = '.s3.amazonaws.com'
+
+    @staticmethod
+    def _get_status(response):
+        return response.get('ResponseMetadata', {}).get('HTTPStatusCode', -1)
+
+    @staticmethod
+    def _raise_if_not_status(response, response_code, error_text):
+        if AWS._get_status(response) != response_code:
+            raise Exception(error_text)
+
+    def create_s3_bucket(self, site_id, prefix=''):
+        prefix = prefix or self.S3_PREFIX
+        bucket_name = prefix + site_id
+        response = boto3.client('s3').create_bucket(Bucket=bucket_name)
+        self._raise_if_not_status(
+            response, 200,
+            'Failed to create S3 bucket',
+        )
+        return bucket_name
+
+    def open_bucket_access(self, bucket_name):
+        client = boto3.client('s3')
+        # Bucket may fail to be created and registered at this moment
+        # Retry a few times and wait a bit in case bucket is not found
+        for _ in range(3):
+            response = client.delete_public_access_block(Bucket=bucket_name)
+            response_code = self._get_status(response)
+            if response_code == 404:
+                sleep(2)
+            elif response_code == 204:
+                break
+            else:
+                raise Exception('Failed to remove bucket public access block')
+
+        response = client.put_bucket_policy(
+            Bucket=bucket_name,
+            Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
+        )
+        self._raise_if_not_status(
+            response, 204,
+            'Failed to set bucket access policy',
+        )
+
+    def create_cloudfront_distribution(self, bucket_name, suffix=''):
+        suffix = suffix or self.S3_SUFFIX
+        bucket_origin_name = bucket_name + suffix
+        response = boto3.client('cloudfront').create_distribution(
+            DistributionConfig=dict(
+                CallerReference=str(uuid4()),
+                Comment='Lektorium',
+                Enabled=True,
+                DefaultRootObject='index.html',
+                Origins=dict(
+                    Quantity=1,
+                    Items=[dict(
+                        Id='1',
+                        DomainName=bucket_origin_name,
+                        S3OriginConfig=dict(OriginAccessIdentity=''),
+                    )]
+                ),
+                DefaultCacheBehavior=dict(
+                    TargetOriginId='1',
+                    ViewerProtocolPolicy='redirect-to-https',
+                    TrustedSigners=dict(Quantity=0, Enabled=False),
+                    ForwardedValues=dict(
+                        Cookies={'Forward': 'all'},
+                        Headers=dict(Quantity=0),
+                        QueryString=False,
+                        QueryStringCacheKeys=dict(Quantity=0),
+                    ),
+                    MinTTL=1000
+                ),
+            ))
+        self._raise_if_not_status(
+            response, 201,
+            'Failed to create CloudFront distribution',
+        )
+        distribution_data = response['Distribution']
+        return distribution_data['Id'], distribution_data['DomainName']
+
+
 class GitLab:
     DEFAULT_API_VERSION = 'v4'
 
     def __init__(self, options):
         self.options = options
         self.options.setdefault('api_version', self.DEFAULT_API_VERSION)
+
+    @cached_property
+    def repo_url(self):
+        return '{scheme}://{host}/api/{api_version}'.format(**self.options)
+
+    @cached_property
+    def path(self):
+        return '{namespace}/{project}'.format(**self.options)
+
+    @cached_property
+    def namespace_id(self):
+        namespace_name = self.options['namespace']
+        response = requests.get(
+            '{repo_url}/namespaces'.format(repo_url=self.repo_url),
+            params={'search': namespace_name},
+            headers=self.headers,
+        )
+        response.raise_for_status()
+        namespaces = response.json()
+        return one(x for x in namespaces if x['path'] == namespace_name)['id']
+
+    def init_project(self):
+        if self.path in (x['path_with_namespace'] for x in self.projects):
+            raise Exception(f'Project {self.path} already exists')
+
+        for item in ('projects', 'project_id'):
+            if item in self.__dict__:
+                del self.__dict__[item]
+
+        response = requests.post(
+            '{repo_url}/projects'.format(repo_url=self.repo_url),
+            params={
+                'name': self.options['project'],
+                'namespace_id': self.namespace_id,
+                'visibility': 'private',
+                'default_branch': self.options['branch'],
+                'tag_list': 'lektorium',
+                'shared_runners_enabled': 'true',
+            },
+            headers=self.headers,
+        )
+        response.raise_for_status()
+        ssh_repo_url = response.json()['ssh_url_to_repo']
+
+        response = requests.post(
+            '{repo_url}/projects/{pid}/variables'.format(
+                repo_url=self.repo_url,
+                pid=self.project_id,
+            ),
+            params={
+                'id': self.project_id,
+                'variable_type': 'file',
+                'key': 'AWS_SHARED_CREDENTIALS_FILE',
+                'value': AWS_SHARED_CREDENTIALS_FILE_TEMPLATE.format(
+                    aws_key_id=environ['AWS_ACCESS_KEY_ID'],
+                    aws_secret_key=environ['AWS_SECRET_ACCESS_KEY'],
+                ),
+            },
+            headers=self.headers,
+        )
+        response.raise_for_status()
+
+        headers = dict(self.headers)
+        headers.update({'Content-Type': "application/json"})
+        # Make initial empty commit in repository
+        response = requests.post(
+            '{repo_url}/projects/{pid}/repository/commits'.format(
+                repo_url=self.repo_url,
+                pid=self.project_id,
+            ),
+            data=EMPTY_COMMIT_PAYLOAD,
+            headers=headers,
+        )
+        response.raise_for_status()
+
+        return ssh_repo_url
 
     @cached_property
     def projects(self):
@@ -229,6 +401,7 @@ class GitLab:
 
 class GitStorage(FileStorageMixin, Storage):
     CONFIG_CLASS = GitConfig
+    GITLAB_SECTION_NAME = 'gitlab'
 
     def __init__(self, git):
         self.git = git
@@ -297,7 +470,7 @@ class GitStorage(FileStorageMixin, Storage):
         site = self.config[site_id]
         session = site.sessions[session_id]
         title_template = 'Request from: "{custodian}" <{custodian_email}>'
-        return GitLab(site['gitlab']).create_merge_request(
+        return GitLab(site[self.GITLAB_SECTION_NAME]).create_merge_request(
             source_branch=f'session-{session_id}',
             target_branch=site.get('branch', 'master'),
             title=title_template.format(**session),
@@ -305,7 +478,7 @@ class GitStorage(FileStorageMixin, Storage):
 
     def get_merge_requests(self, site_id):
         site = self.config[site_id]
-        gitlab_options = site.get('gitlab', None)
+        gitlab_options = site.get(self.GITLAB_SECTION_NAME, None)
         if not gitlab_options:
             logging.warn('get_merge_requests: empty gitlab options')
             return []
@@ -317,3 +490,60 @@ class GitStorage(FileStorageMixin, Storage):
     def __repr__(self):
         name = self.__class__.__name__
         return f'{name}("{str(self.git)}"@"{str(self.root)}")'
+
+
+class GitlabStorage(GitStorage):
+    def __init__(self, git, token, protocol):
+        super().__init__(git)
+        self.token = token
+        self.protocol = protocol
+        head, _, tail = git.partition('@')
+        git = tail or head
+        self.repo, _, path = tail.partition(':')
+        self.namespace, _, _ = path.partition('/')
+
+    def create_site(self, lektor, name, owner, site_id):
+        site_workdir, options = super().create_site(lektor, name, owner, site_id)
+
+        aws = AWS()
+        bucket_name = aws.create_s3_bucket(site_id)
+        distribution_id, domain_name = aws.create_cloudfront_distribution(bucket_name)
+        aws.open_bucket_access(bucket_name)
+
+        with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
+            fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
+                s3_bucket_name=bucket_name,
+                cloudfront_id=distribution_id,
+            ))
+        with open(str(site_workdir / '.gitlab-ci.yml'), 'w') as fo:
+            fo.write(GITLAB_CI_TEMPLATE)
+
+        run_local = functools.partial(run, cwd=site_workdir)
+        run_local('git add .')
+        run_local('git commit -m "Add AWS deploy integration"')
+        run_local('git push --set-upstream origin master')
+
+        options.update({
+            'cloudfront_domain_name': domain_name,
+            'production_url': f'https://{domain_name}',
+            self.GITLAB_SECTION_NAME: {
+                'scheme': self.protocol,
+                'host': self.repo,
+                'namespace': self.namespace,
+                'project': site_id,
+                'token': self.token,
+            },
+        })
+
+        return site_workdir, options
+
+    def create_site_repo(self, site_id):
+        site_repo = GitLab(dict(
+            scheme=self.protocol,
+            host=self.repo,
+            namespace=self.namespace,
+            project=site_id,
+            branch='master',
+            token=self.token,
+        )).init_project()
+        return site_repo

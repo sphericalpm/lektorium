@@ -163,11 +163,12 @@ class Repo(BaseRepo):
             owner,
             site_id
         )
+        if 'production_url' not in site_options:
+            site_options['production_url'] = self.server.serve_static(site_root)
         self.config[site_id] = Site(site_id, **dict(
             name=name,
             owner=owner,
             email=email,
-            production_url=self.server.serve_static(site_root),
             **site_options,
         ))
 

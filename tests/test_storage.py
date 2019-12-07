@@ -55,7 +55,7 @@ def test_request_release(tmpdir):
     page.write_text(os.linesep.join((page.read_text(), 'Signature.')))
     site = storage.config[site_id]
     site.sessions[session_id] = dict(custodian='user', custodian_email='email')
-    site.data['gitlab'] = dict(
+    site.data[GitStorage.GITLAB_SECTION_NAME] = dict(
         scheme='https',
         host='server',
         namespace='user',
@@ -85,7 +85,7 @@ def test_get_merge_requests(tmpdir, merge_requests):
     path, options = storage.create_site(LocalLektor, 's', 'o', site_id)
     storage.config[site_id] = Site(site_id, None, **options)
     site = storage.config[site_id]
-    site.data['gitlab'] = dict(
+    site.data[GitStorage.GITLAB_SECTION_NAME] = dict(
         scheme='https',
         host='server',
         namespace='user',
