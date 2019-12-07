@@ -5,7 +5,7 @@ lektorium-deploy:
     GIT_STRATEGY: clone
     GIT_DEPTH: 0
   script:
-    - apk add --update python3 python3-dev libffi-dev openssl-dev build-base git
+    - apk add --update python3 python3-dev libffi-dev openssl-dev build-base git bash
     - git tag
     - git status
     - git describe
