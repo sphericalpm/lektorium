@@ -243,6 +243,7 @@ class AsyncDockerServer(AsyncServer):
                     'entrypoints': 'websecure',
                     'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
                     'tls.certresolver': 'le',
+                    'tls.domains[0].main': f'*.{self.sessions_domain}',
                 },
                 f'{route_name}-redir': {
                     'entrypoints': 'web',
