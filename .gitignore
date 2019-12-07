@@ -131,3 +131,4 @@ yarn-error.log*
 package-lock.json
 /containers/server/key
 /containers/server/*.whl
+/invoke.yaml

@@ -83,6 +83,7 @@ setuptools.setup(
             'flake8-spellcheck',
             'pep8-naming',
             'requests-mock',
+            'wheel',
         ]
     },
     zip_safe=True,
