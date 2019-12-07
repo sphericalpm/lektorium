@@ -7,7 +7,7 @@ from lektorium.repo import (
     SessionNotFound,
     SITES,
 )
-from lektorium.repo.local import FileStorage
+from lektorium.repo.local import FileStorage, GitStorage
 from conftest import local_repo, git_repo
 from lektorium.repo.memory import VALID_MERGE_REQUEST
 
@@ -140,7 +140,7 @@ def test_releasing(repo, merge_requests):
         'site_name': 'Buy Our Widgets',
         **VALID_MERGE_REQUEST,
     }
-    if isinstance(getattr(repo, 'storage', None), FileStorage):
+    if isinstance(getattr(repo, 'storage', None), (FileStorage, GitStorage)):
         return
     assert result == [request]
 

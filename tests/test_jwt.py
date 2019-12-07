@@ -36,12 +36,14 @@ def jwt_middleware():
         'data-auth0-domain': 'test.auth.com',
         'data-auth0-id': 'test_id',
         'data-auth0-api': 'test_api',
+        'data-auth0-management-id': 'test_id',
+        'data-auth0-management-secret': 'secret',
     }
     return JWTMiddleware(auth)
 
 
 def test_get_token_auth(jwt_middleware):
-    assert jwt_middleware.get_token_auth(TEST_HEADERS) == TEST_TOKEN
+    assert jwt_middleware.get_token_auth(TEST_HEADERS) == (TEST_TOKEN, TEST_TOKEN)
 
     with pytest.raises(GraphExecutionError) as excinfo:
         jwt_middleware.get_token_auth({})

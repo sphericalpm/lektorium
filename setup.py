@@ -47,12 +47,14 @@ setuptools.setup(
         'cached-property',
         'graphene',
         'graphql-core<3',
+        'graphql-server-core<1.1.2',
         'importlib-resources ; python_version < "3.7"',
         'lektor',
         'more-itertools',
         'nodeenv',
         'python-dateutil<2.8.1',
         'pyyaml',
+        'wrapt',
     ],
     extras_require={
         'inv': [
@@ -61,6 +63,7 @@ setuptools.setup(
         'dev': [
             'aiohttp-devtools',
             'aresponses',
+            'aioresponses',
             'async-timeout',
 
             'mypy',
@@ -80,7 +83,6 @@ setuptools.setup(
             'flake8-spellcheck',
             'pep8-naming',
             'requests-mock',
-            'wrapt',
         ]
     },
     zip_safe=True,

@@ -9,9 +9,9 @@ from lektorium.utils import flatten_options, named_args
 
 
 CONTAINERS_BASE = 'containers'
-IMAGE = 'lektorium'
+IMAGE = os.environ.get('LEKTORIUM_IMAGE', 'lektorium')
 CONTAINER = IMAGE
-LEKTOR_BASE = PROXY_BASE = 'alpine:v3.10'
+LEKTOR_BASE = PROXY_BASE = 'alpine'
 LEKTOR_IMAGE = f'{IMAGE}-lektor'
 PROXY_IMAGE = f'{IMAGE}-proxy'
 PROXY_CONTAINER = PROXY_IMAGE
@@ -19,11 +19,14 @@ PROXY_CONTAINER = PROXY_IMAGE
 
 def get_config(ctx, env, cfg, auth, network):
     if env is None:
-        env = named_args('-e', ctx.get('env', {}))
+        env = named_args('-e ', ctx.get('env', {}))
     if cfg is None:
         cfg = ctx['cfg']
+        cfg = f'{cfg["repo"]}:{",".join(cfg["server"])}'
     if auth is None:
-        auth = ctx['auth']
+        auth = ctx.get('auth', None)
+        if auth is not None:
+            auth = ','.join(auth)
     network = network or ctx.get('network')
     return env, cfg, auth, network
 
@@ -91,7 +94,7 @@ def lektorium_labels(server_name, port=80):
             },
         },
     }
-    return named_args("--label", flatten_options(labels, "traefik"))
+    return named_args("--label ", flatten_options(labels, "traefik"))
 
 
 @task
@@ -111,9 +114,14 @@ def run_nginx(ctx, network=None):
 
 @task
 def run_traefik(ctx, image='traefik', ip=None, network=None):
-    *_, network = get_config(ctx, None, None, None, network)
+    env, *_, network = get_config(ctx, None, None, None, network)
     ctx.run(f'docker kill {PROXY_CONTAINER}', warn=True)
     ctx.run(f'docker rm {PROXY_CONTAINER}', warn=True)
+    resolver = flatten_options(
+        ctx['certificate-resolver'],
+        'certificatesresolvers.le.acme'
+    )
+    resolver = named_args('--', resolver)
     ctx.run((
         'docker create '
         '--restart unless-stopped '
@@ -122,12 +130,11 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
         '-v traefik-letsencrypt:/letsencrypt '
         f'-p {ip or ""}{":" if ip else ""}80:80 '
         f'-p {ip or ""}{":" if ip else ""}443:443 '
+        f'{env} '
         f'{image} '
         '--accessLog '
         '--api.dashboard '
-        f'--certificatesresolvers.le.acme.email=ctx["le-email"] '
-        '--certificatesresolvers.le.acme.storage=/letsencrypt/acme.json '
-        '--certificatesresolvers.le.acme.tlschallenge '
+        f'{resolver} '
         '--entrypoints.web.address=:80 '
         '--entrypoints.websecure.address=:443 '
         '--log.level=DEBUG '
