@@ -208,7 +208,7 @@ def run(
         f'-v /var/run/docker.sock:/var/run/docker.sock '
         f'{lektorium_labels(ctx["server-name"], 8000)} '
         f'{IMAGE} '
-        f'"{cfg}" {auth}'
+        f'{cfg} "{auth}"'
     ))
     ctx.run(f'docker network create {network}', warn=True)
     ctx.run(f'docker network connect {network} {CONTAINER}')
