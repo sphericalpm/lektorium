@@ -161,9 +161,9 @@ def build_server_image(ctx):
     server_dir = f'{CONTAINERS_BASE}/server'
     with (pathlib.Path(server_dir) / 'key').open('w') as key_file:
         key = os.linesep.join((
-            '-----BEGIN OPENSSH PRIVATE KEY-----',
+            '-----BEGIN RSA PRIVATE KEY-----',
             *ctx['key'],
-            '-----END OPENSSH PRIVATE KEY-----',
+            '-----END RSA PRIVATE KEY-----',
             '',
         ))
         key_file.write(key)
