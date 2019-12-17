@@ -2,10 +2,20 @@ import os
 import pathlib
 import shlex
 import subprocess
+import sys
 import webbrowser
 from invoke import task
 from invoke.tasks import call
-from lektorium.utils import flatten_options, named_args
+
+
+try:
+    from lektorium.utils import flatten_options, named_args
+except ModuleNotFoundError:
+    src_dir = pathlib.Path('src')
+    if not (src_dir / 'lektorium').exists():
+        raise
+    sys.path.append(str(src_dir.resolve()))
+    from lektorium.utils import flatten_options, named_args
 
 
 CONTAINERS_BASE = 'containers'
@@ -141,6 +151,7 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
         '--log '
         '--providers.docker.exposedbydefault=false '
     ))
+    ctx.run(f'docker network create {network}', warn=True)
     ctx.run(f'docker network connect {network} {PROXY_CONTAINER}')
     ctx.run(f'docker start {PROXY_CONTAINER}')
 
@@ -199,7 +210,8 @@ def run(
         f'{IMAGE} '
         f'{cfg} {auth}'
     ))
-    ctx.run(f'docker network connect bridge {CONTAINER}')
+    ctx.run(f'docker network create {network}', warn=True)
+    ctx.run(f'docker network connect {network} {CONTAINER}')
     ctx.run(f'docker start {start_options or ""} {CONTAINER}')
 
 
