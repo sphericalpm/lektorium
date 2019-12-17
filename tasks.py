@@ -2,10 +2,20 @@ import os
 import pathlib
 import shlex
 import subprocess
+import sys
 import webbrowser
 from invoke import task
 from invoke.tasks import call
-from lektorium.utils import flatten_options, named_args
+
+
+try:
+    from lektorium.utils import flatten_options, named_args
+except ModuleNotFoundError:
+    src_dir = pathlib.Path('src')
+    if not (src_dir / 'lektorium').exists():
+        raise
+    sys.path.append(str(src_dir.resolve()))
+    from lektorium.utils import flatten_options, named_args
 
 
 CONTAINERS_BASE = 'containers'
