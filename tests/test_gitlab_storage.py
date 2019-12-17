@@ -4,11 +4,6 @@ from unittest import mock
 from lektorium.repo.local.storage import GitlabStorage, GitStorage, GitLab, AWS
 
 
-def patch_attributes(obj, attrs=[]):
-    for attr in attrs:
-        mock.patch.object(obj, attr).start()
-
-
 def test_gitlabstorage(tmpdir):
     remote_dir = tmpdir / 'remote'
     local_dir = tmpdir / 'local'
