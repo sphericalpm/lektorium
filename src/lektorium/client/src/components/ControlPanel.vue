@@ -432,6 +432,12 @@ export default {
               }
           `;
       let result = await this.makeRequest(query);
+      if (result.data.errors !== undefined) {
+        if (result.data.errors[0].code == 403){
+          this.$bvModal.show('perm-alert');
+          return;
+        }
+      }
       this.available_sites = result.data.data.sites;
       this.edit_sessions = result.data.data.editSessions;
       this.parked_sessions = result.data.data.parkedSessions;
