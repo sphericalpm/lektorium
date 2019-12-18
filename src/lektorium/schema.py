@@ -96,18 +96,22 @@ def skip_permissions_check():
     return environ.get('CHECKPERMISSIONS', '') == 'disable'
 
 
+def get_user_permissions(info):
+    permissions = set(info.context.get('user_permissions', []))
+    if not permissions:
+        raise GraphExecutionError(
+            'User has no permissions',
+            code=403
+        )
+    return permissions
+
+
 def require_permissions(required):
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
         if skip_permissions_check():
             return await wrapped(*args, **kwargs)
-        info = args[0]
-        permissions = set(info.context.get('user_permissions', []))
-        if not permissions:
-            raise GraphExecutionError(
-                'User has no permissions',
-                code=403
-            )
+        permissions = get_user_permissions(args[0])
         if required is not None and len(required):
             if not required.difference(permissions):
                 return await wrapped(*args, **kwargs)
@@ -168,12 +172,7 @@ class MutationBase(Mutation):
     def has_permission(cls, root, info, **kwargs):
         if skip_permissions_check():
             return True
-        permissions = set(info.context.get('user_permissions', []))
-        if not permissions:
-            raise GraphExecutionError(
-                'User has no permissions',
-                code=403
-            )
+        permissions = get_user_permissions(info)
         if cls.REQUIRES is None:
             return True
         if not cls.REQUIRES.difference(permissions):
