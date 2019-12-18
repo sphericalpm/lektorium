@@ -285,6 +285,9 @@
         </b-button>
       </div>
     </b-modal>
+    <b-modal id="perm-alert" hide-footer title="Permission denied">
+      <p>You do not have permission for this operation. Please, contact your system administrator.</p>
+    </b-modal>
     <b-alert
       :show="message_visible"
       :variant="message_type"
