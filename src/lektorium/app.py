@@ -69,18 +69,20 @@ class ServerType(BaseEnum):
 
 def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
     init_logging()
-    auth0_client = None
-    auth0_options = None
+    auth0_client, auth0_options = None, None
     if auth:
         auth_attributes = ('domain', 'id', 'api', 'management-id', 'management-secret')
         auth_attributes = ('data-auth0-{}'.format(x) for x in auth_attributes)
         auth0_options = dict(zip(auth_attributes, auth.split(',')))
+        if len(auth0_options) > 3:
+            auth0_client = Auth0Client(auth0_options)
 
     if repo_type == RepoType.LIST:
         if repo_args:
             raise ValueError('LIST repo does not support arguments')
         lektorium_repo = repo.ListRepo(repo.SITES)
-        auth0_client = FakeAuth0Client()
+        if auth0_client is None:
+            auth0_client = FakeAuth0Client()
     elif repo_type == RepoType.LOCAL:
         server_type, _, storage_config = repo_args.partition(',')
         storage_config, _, params = storage_config.partition(',')
@@ -112,8 +114,6 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
             LocalLektor,
             sessions_root=sessions_root
         )
-        if auth0_options:
-            auth0_client = Auth0Client(auth0_options)
     else:
         raise ValueError(f'repo_type not supported {repo_type}')
 
