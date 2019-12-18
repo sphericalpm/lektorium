@@ -139,23 +139,28 @@ class Query(ObjectType):
         repo = info.context['repo']
         return [Site(**x) for x in repo.sites]
 
+    @require_permissions({'read:sessions'})
     async def resolve_sessions(self, info, parked):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
 
+    @require_permissions({'read:users'})
     async def resolve_users(self, info):
         auth0_client = info.context['auth0_client']
         return [User(**x) for x in await auth0_client.get_users()]
 
+    @require_permissions({'read:user-permissions'})
     async def resolve_permissions(self, info, user_id):
         auth0_client = info.context['auth0_client']
         return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
 
+    @require_permissions({'read:all-permissions'})
     async def resolve_available_permissions(self, info):
         auth0_client = info.context['auth0_client']
         return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
 
+    @require_permissions({'read:releases'})
     async def resolve_releasing(self, info):
         repo = info.context['repo']
         return [Releasing(**x) for x in repo.releasing]
