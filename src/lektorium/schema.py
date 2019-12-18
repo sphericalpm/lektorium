@@ -163,6 +163,7 @@ class Query(ObjectType):
 
 class MutationResult(ObjectType):
     ok = Boolean()
+    nopermission = Boolean(default_value=False)
 
 
 class MutationBase(Mutation):
@@ -182,7 +183,7 @@ class MutationBase(Mutation):
     @classmethod
     async def mutate(cls, root, info, **kwargs):
         if not cls.has_permission(root, info, **kwargs):
-            return MutationResult(ok=False)
+            return MutationResult(ok=False, nopermission=True)
         try:
             method = getattr(info.context['repo'], cls.REPO_METHOD)
             result = method(**kwargs)
