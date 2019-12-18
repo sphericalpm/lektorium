@@ -189,6 +189,15 @@ class GitConfig(FileConfig):
 class AWS:
     S3_PREFIX = 'lektorium-'
     S3_SUFFIX = '.s3.amazonaws.com'
+    SLEEP_TIMEOUT = 2
+
+    @cached_property
+    def s3_client(self):
+        return boto3.client('s3')
+
+    @cached_property
+    def cloudfront_client(self):
+        return boto3.client('cloudfront')
 
     @staticmethod
     def _get_status(response):
@@ -202,7 +211,7 @@ class AWS:
     def create_s3_bucket(self, site_id, prefix=''):
         prefix = prefix or self.S3_PREFIX
         bucket_name = prefix + site_id
-        response = boto3.client('s3').create_bucket(Bucket=bucket_name)
+        response = self.s3_client.create_bucket(Bucket=bucket_name)
         self._raise_if_not_status(
             response, 200,
             'Failed to create S3 bucket',
@@ -210,20 +219,19 @@ class AWS:
         return bucket_name
 
     def open_bucket_access(self, bucket_name):
-        client = boto3.client('s3')
         # Bucket may fail to be created and registered at this moment
         # Retry a few times and wait a bit in case bucket is not found
         for _ in range(3):
-            response = client.delete_public_access_block(Bucket=bucket_name)
+            response = self.s3_client.delete_public_access_block(Bucket=bucket_name)
             response_code = self._get_status(response)
             if response_code == 404:
-                sleep(2)
+                sleep(self.SLEEP_TIMEOUT)
             elif response_code == 204:
                 break
             else:
                 raise Exception('Failed to remove bucket public access block')
 
-        response = client.put_bucket_policy(
+        response = self.s3_client.put_bucket_policy(
             Bucket=bucket_name,
             Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
         )
@@ -235,7 +243,7 @@ class AWS:
     def create_cloudfront_distribution(self, bucket_name, suffix=''):
         suffix = suffix or self.S3_SUFFIX
         bucket_origin_name = bucket_name + suffix
-        response = boto3.client('cloudfront').create_distribution(
+        response = self.cloudfront_client.create_distribution(
             DistributionConfig=dict(
                 CallerReference=str(uuid4()),
                 Comment='Lektorium',
@@ -259,7 +267,7 @@ class AWS:
                         QueryString=False,
                         QueryStringCacheKeys=dict(Quantity=0),
                     ),
-                    MinTTL=1000
+                    MinTTL=1000,
                 ),
             ))
         self._raise_if_not_status(
@@ -272,6 +280,7 @@ class AWS:
 
 class GitLab:
     DEFAULT_API_VERSION = 'v4'
+    AWS_CREDENTIALS_VARIABLE_NAME = 'AWS_SHARED_CREDENTIALS_FILE'
 
     def __init__(self, options):
         self.options = options
@@ -305,6 +314,13 @@ class GitLab:
             if item in self.__dict__:
                 del self.__dict__[item]
 
+        ssh_repo_url = self._create_new_project().json()['ssh_url_to_repo']
+        self._create_aws_project_variable()
+        self._create_initial_commit()
+
+        return ssh_repo_url
+
+    def _create_new_project(self):
         response = requests.post(
             '{repo_url}/projects'.format(repo_url=self.repo_url),
             params={
@@ -318,8 +334,9 @@ class GitLab:
             headers=self.headers,
         )
         response.raise_for_status()
-        ssh_repo_url = response.json()['ssh_url_to_repo']
+        return response
 
+    def _create_aws_project_variable(self):
         response = requests.post(
             '{repo_url}/projects/{pid}/variables'.format(
                 repo_url=self.repo_url,
@@ -328,7 +345,7 @@ class GitLab:
             params={
                 'id': self.project_id,
                 'variable_type': 'file',
-                'key': 'AWS_SHARED_CREDENTIALS_FILE',
+                'key': self.AWS_CREDENTIALS_VARIABLE_NAME,
                 'value': AWS_SHARED_CREDENTIALS_FILE_TEMPLATE.format(
                     aws_key_id=environ['AWS_ACCESS_KEY_ID'],
                     aws_secret_key=environ['AWS_SECRET_ACCESS_KEY'],
@@ -337,9 +354,11 @@ class GitLab:
             headers=self.headers,
         )
         response.raise_for_status()
+        return response
 
+    def _create_initial_commit(self):
         headers = dict(self.headers)
-        headers.update({'Content-Type': "application/json"})
+        headers.update({'Content-Type': 'application/json'})
         # Make initial empty commit in repository
         response = requests.post(
             '{repo_url}/projects/{pid}/repository/commits'.format(
@@ -350,8 +369,7 @@ class GitLab:
             headers=headers,
         )
         response.raise_for_status()
-
-        return ssh_repo_url
+        return response
 
     @cached_property
     def projects(self):
