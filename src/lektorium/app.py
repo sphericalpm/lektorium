@@ -163,7 +163,8 @@ def init_app(repo, auth0_options=None, auth0_client=None):
 
     middleware = []
     if auth0_options is not None:
-        middleware.append(JWTMiddleware(auth0_options))
+        auth0_domain = auth0_options['data-auth0-domain']
+        middleware.append(JWTMiddleware(auth0_domain))
 
     aiohttp_graphql.GraphQLView.attach(
         app,
