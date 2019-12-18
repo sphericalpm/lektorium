@@ -8,6 +8,8 @@ import tempfile
 import aiohttp.web
 import aiohttp_graphql
 from graphql.execution.executors.asyncio import AsyncioExecutor
+from graphql.error import format_error as format_graphql_error
+from graphql.error import GraphQLError
 import bs4
 import graphene
 
@@ -141,6 +143,16 @@ def init_logging(stream=sys.stderr, level=logging.DEBUG):
     )
 
 
+def error_formatter(error):
+    if isinstance(error, GraphQLError):
+        formatted = format_graphql_error(error)
+        error_code = getattr(error.original_error, 'code')
+        if error_code:
+            formatted['code'] = error_code
+        return formatted
+    return error
+
+
 def init_app(repo, auth0_options=None, auth0_client=None):
     app = aiohttp.web.Application()
     app_path = client.install()
@@ -179,6 +191,7 @@ def init_app(repo, auth0_options=None, auth0_client=None):
             repo=repo,
             auth0_client=auth0_client
         ),
+        error_formatter=error_formatter,
     )
 
     app.on_startup.append(log_application_ready)
