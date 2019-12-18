@@ -483,10 +483,15 @@ export default {
                 mutation {
                 parkSession(sessionId: "${id}") {
                   ok
+                  nopermission
                 }
               }
           `;
       let result = await this.makeRequest(query);
+      if(result.data.data.parkSession.nopermission){
+        this.showMessage(`You do not have permission to park this session.`, `danger`);
+        return
+      }
       if(result.data.data.parkSession.ok)
       {
         this.showMessage(`'${id}' parked successfully.`,`success`);
@@ -503,10 +508,15 @@ export default {
                 mutation {
                 unparkSession(sessionId: "${id}") {
                   ok
+                  nopermission
                 }
               }
           `;
       let result = await this.makeRequest(query);
+      if(result.data.data.unparkSession.nopermission){
+        this.showMessage(`You do not have permission to unpark this session.`, `danger`);
+        return
+      }
       if(result.data.data.unparkSession.ok)
       {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
