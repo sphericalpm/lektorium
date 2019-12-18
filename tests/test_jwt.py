@@ -32,14 +32,7 @@ TEST_JWK = {
 
 @pytest.fixture
 def jwt_middleware():
-    auth = {
-        'data-auth0-domain': 'test.auth.com',
-        'data-auth0-id': 'test_id',
-        'data-auth0-api': 'test_api',
-        'data-auth0-management-id': 'test_id',
-        'data-auth0-management-secret': 'secret',
-    }
-    return JWTMiddleware(auth)
+    return JWTMiddleware('test.auth0.com')
 
 
 def test_get_token_auth(jwt_middleware):
@@ -75,9 +68,9 @@ def test_jwt_middleware_init():
     with pytest.raises(ValueError):
         JWTMiddleware(None)
     with pytest.raises(ValueError):
-        JWTMiddleware({'auth1': '', 'auth2': ''})
+        JWTMiddleware('')
     with pytest.raises(ValueError):
-        JWTMiddleware({'auth1': '', 'auth2': '', 'auth3': ''})
+        JWTMiddleware('aaa.bbb.com')
 
 
 @pytest.mark.asyncio
@@ -89,7 +82,7 @@ async def test_public_key(aresponses, jwt_middleware):
             body=b'{"public_key": "somekey"}'
         )
     aresponses.add(
-        jwt_middleware.auth['data-auth0-domain'],
+        jwt_middleware.auth0_domain,
         '/.well-known/jwks.json',
         'get',
         response_handler
@@ -122,7 +115,7 @@ async def test_jwt_resolve(aresponses, jwt_middleware, monkeypatch):
         )
 
     aresponses.add(
-        jwt_middleware.auth['data-auth0-domain'],
+        jwt_middleware.auth0_domain,
         '/.well-known/jwks.json',
         'get',
         response_handler

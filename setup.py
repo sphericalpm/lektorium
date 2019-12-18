@@ -45,6 +45,7 @@ setuptools.setup(
         'bidict',
         'boto3',
         'cached-property',
+        'coverage<5',
         'graphene',
         'graphql-core<3',
         'graphql-server-core<1.1.2',

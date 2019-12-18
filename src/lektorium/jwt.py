@@ -6,10 +6,10 @@ from cached_property import cached_property
 
 
 class JWTMiddleware:
-    def __init__(self, auth):
-        if auth is None or len(auth.values()) != 5 or not all(auth.values()):
-            raise ValueError('check jwt auth param')
-        self.auth = auth
+    def __init__(self, auth0_domain):
+        if not (auth0_domain and auth0_domain.endswith('.auth0.com')):
+            raise ValueError('wrong auth0 domain')
+        self.auth0_domain = auth0_domain
 
     async def resolve(self, next, root, info, **kwargs):
         token, extra = self.get_token_auth(info.context['request'].headers)
@@ -47,9 +47,8 @@ class JWTMiddleware:
 
     @cached_property
     async def public_key(self):
-        auth_domain = self.auth['data-auth0-domain']
         async with aiohttp.ClientSession() as client:
-            jwks_url = f'https://{auth_domain}/.well-known/jwks.json'
+            jwks_url = f'https://{self.auth0_domain}/.well-known/jwks.json'
             async with client.get(jwks_url) as resp:
                 return await resp.json()
 

@@ -161,9 +161,9 @@ def build_server_image(ctx):
     server_dir = f'{CONTAINERS_BASE}/server'
     with (pathlib.Path(server_dir) / 'key').open('w') as key_file:
         key = os.linesep.join((
-            '-----BEGIN OPENSSH PRIVATE KEY-----',
+            '-----BEGIN RSA PRIVATE KEY-----',
             *ctx['key'],
-            '-----END OPENSSH PRIVATE KEY-----',
+            '-----END RSA PRIVATE KEY-----',
             '',
         ))
         key_file.write(key)
@@ -208,7 +208,7 @@ def run(
         f'-v /var/run/docker.sock:/var/run/docker.sock '
         f'{lektorium_labels(ctx["server-name"], 8000)} '
         f'{IMAGE} '
-        f'{cfg} {auth}'
+        f'{cfg} "{auth}"'
     ))
     ctx.run(f'docker network create {network}', warn=True)
     ctx.run(f'docker network connect {network} {CONTAINER}')

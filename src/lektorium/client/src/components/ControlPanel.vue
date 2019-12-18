@@ -348,6 +348,12 @@ export default {
     finishLoadingModal(timer_id) {
       clearTimeout(timer_id);
       this.loading_overlay_active = false;
+      if (this.$auth !== undefined) {
+        var permissions = this.$auth.profile.access_token.permissions;
+        if (permissions.indexOf('create:site') >= 0) {
+          this.create_site_btn_visible = true;
+        };
+      };
     },
 
     async makeRequest(query) {
