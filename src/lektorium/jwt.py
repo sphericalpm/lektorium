@@ -19,7 +19,13 @@ class JWTMiddleware:
         if payload:
             userdata = (payload['nickname'], payload['email'])
             info.context['userdata'] = userdata
-        info.context['user_permissions'] = permissions
+        if permissions:
+            info.context['user_permissions'] = permissions
+        else:
+            raise GraphExecutionError(
+                'User has no permissions',
+                code=403
+            )
         return next(root, info, **kwargs)
 
     def get_token_auth(self, headers):
