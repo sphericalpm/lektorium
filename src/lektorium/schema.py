@@ -200,6 +200,7 @@ class MutationBase(Mutation):
 
 
 class AddPermissions(MutationBase):
+    REQUIRES = {'add:permission'}
     REPO_METHOD = 'set_user_permissions'
 
     class Arguments:
@@ -208,6 +209,8 @@ class AddPermissions(MutationBase):
 
     @classmethod
     async def mutate(cls, root, info, **kwargs):
+        if not cls.has_permission(root, info, **kwargs):
+            return MutationResult(ok=False, nopermission=True)
         try:
             method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
             result = method(**kwargs)
@@ -219,6 +222,7 @@ class AddPermissions(MutationBase):
 
 
 class DeletePermissions(MutationBase):
+    REQUIRES = {'delete:permission'}
     REPO_METHOD = 'delete_user_permissions'
 
     class Arguments:
@@ -227,6 +231,8 @@ class DeletePermissions(MutationBase):
 
     @classmethod
     async def mutate(cls, root, info, **kwargs):
+        if not cls.has_permission(root, info, **kwargs):
+            return MutationResult(ok=False, nopermission=True)
         try:
             method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
             result = method(**kwargs)
@@ -238,40 +244,40 @@ class DeletePermissions(MutationBase):
 
 
 class DestroySession(MutationBase):
+    REQUIRES = {'delete:session'}
     REPO_METHOD = 'destroy_session'
-    REQUIRES = None
 
     class Arguments:
         session_id = String()
 
 
 class ParkSession(MutationBase):
+    REQUIRES = {'edit:session'}
     REPO_METHOD = 'park_session'
-    REQUIRES = None
 
     class Arguments:
         session_id = String()
 
 
 class RequestRelease(MutationBase):
+    REQUIRES = {'add:release'}
     REPO_METHOD = 'request_release'
-    REQUIRES = None
 
     class Arguments:
         session_id = String()
 
 
 class UnparkSession(MutationBase):
+    REQUIRES = {'edit:session'}
     REPO_METHOD = 'unpark_session'
-    REQUIRES = None
 
     class Arguments:
         session_id = String()
 
 
 class CreateSession(MutationBase):
+    REQUIRES = {'add:session'}
     REPO_METHOD = 'create_session'
-    REQUIRES = None
 
     class Arguments:
         site_id = String()
@@ -283,7 +289,7 @@ class CreateSession(MutationBase):
 
 
 class CreateSite(MutationBase):
-    REQUIRES = {'create:site'}
+    REQUIRES = {'add:site'}
     REPO_METHOD = 'create_site'
 
     class Arguments:
