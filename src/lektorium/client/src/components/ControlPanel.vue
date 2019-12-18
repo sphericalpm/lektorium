@@ -285,7 +285,7 @@
         </b-button>
       </div>
     </b-modal>
-    <b-modal id="perm-alert" no-close-on-esc no-close-on-backdrop hide-header-close hide-footer title="Permission denied">
+    <b-modal id="perm-alert" hide-footer title="Permission denied">
       <p>You do not have permission for this operation. Please, contact your system administrator.</p>
     </b-modal>
     <b-alert
@@ -580,15 +580,14 @@ export default {
                 )
                 {
                   ok
+                  nopermission
                 }
               }
           `;
       var result = await this.makeRequest(query);
-      if (result.data.errors !== undefined) {
-        if (result.data.errors[0].code == 403){
-          this.$bvModal.show('perm-alert');
-          return;
-        }
+      if (result.data.data.createSite.nopermission) {
+        this.$bvModal.show('perm-alert');
+        return;
       }
       if(result.data.data.createSite.ok) {
         this.showMessage(`${site_name} was created`, `success`);
