@@ -459,10 +459,15 @@ export default {
                 mutation {
                 destroySession(sessionId: "${id}") {
                   ok
+                  nopermission
                 }
               }
           `;
       let result = await this.makeRequest(query);
+      if(result.data.data.destroySession.nopermission){
+        this.showMessage(`You do not have permission to destroy this session.`, `danger`);
+        return
+      }
       if(result.data.data.destroySession.ok) {
         this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
