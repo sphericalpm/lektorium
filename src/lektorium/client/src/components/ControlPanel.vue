@@ -285,7 +285,7 @@
         </b-button>
       </div>
     </b-modal>
-    <b-modal id="perm-alert" hide-footer title="Permission denied">
+    <b-modal id="perm-alert" no-close-on-backdrop hide-header-close hide-footer title="Permission denied">
       <p>You do not have permission for this operation. Please, contact your system administrator.</p>
     </b-modal>
     <b-alert
@@ -336,6 +336,15 @@ export default {
   },
   methods: {
 
+    isAnonymous(result) {
+      if (result.data.errors !== undefined) {
+        if (result.data.errors[0].code == 403){
+          return true;
+        }
+      }
+      return false;
+    },
+
     async getHeaders() {
       if (this.$auth === undefined) return {};
       const tokens = await this.$auth.getTokens();
@@ -355,8 +364,8 @@ export default {
         var permissions = this.$auth.profile.access_token.permissions;
         if (permissions.indexOf('create:site') >= 0) {
           this.create_site_btn_visible = true;
-        };
-      };
+        }
+      }
     },
 
     async makeRequest(query) {
@@ -432,11 +441,9 @@ export default {
               }
           `;
       let result = await this.makeRequest(query);
-      if (result.data.errors !== undefined) {
-        if (result.data.errors[0].code == 403){
-          this.$bvModal.show('perm-alert');
-          return;
-        }
+      if (this.isAnonymous(result)) {
+        this.$bvModal.show('perm-alert');
+        return;
       }
       this.available_sites = result.data.data.sites;
       this.edit_sessions = result.data.data.editSessions;
@@ -585,8 +592,12 @@ export default {
               }
           `;
       var result = await this.makeRequest(query);
-      if (result.data.data.createSite.nopermission) {
+      if(this.isAnonymous(result)) {
         this.$bvModal.show('perm-alert');
+        return;
+      }
+      if(result.data.data.createSite.nopermission) {
+        this.showMessage('You do not have permission to create sites','danger');
         return;
       }
       if(result.data.data.createSite.ok) {
@@ -595,6 +606,7 @@ export default {
       }
       else {
         this.showMessage(`Unable to create site`, `danger`);
+        return;
       }
     },
 
