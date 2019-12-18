@@ -12,6 +12,7 @@ from graphene import (
     String,
 )
 
+from .jwt import GraphExecutionError
 import lektorium.repo
 from lektorium.auth0 import Auth0Error
 
@@ -100,9 +101,14 @@ def require_permissions(required):
     async def wrapper(wrapped, instance, args, kwargs):
         if skip_permissions_check():
             return await wrapped(*args, **kwargs)
+        info = args[0]
+        permissions = set(info.context.get('user_permissions', []))
+        if not permissions:
+            raise GraphExecutionError(
+                'User has no permissions',
+                code=403
+            )
         if required is not None and len(required):
-            info = args[0]
-            permissions = set(info.context.get('user_permissions', []))
             if not required.difference(permissions):
                 return await wrapped(*args, **kwargs)
         return ()
@@ -162,9 +168,14 @@ class MutationBase(Mutation):
     def has_permission(cls, root, info, **kwargs):
         if skip_permissions_check():
             return True
+        permissions = set(info.context.get('user_permissions', []))
+        if not permissions:
+            raise GraphExecutionError(
+                'User has no permissions',
+                code=403
+            )
         if cls.REQUIRES is None:
             return True
-        permissions = set(info.context.get('user_permissions', []))
         if not cls.REQUIRES.difference(permissions):
             return True
         return False
