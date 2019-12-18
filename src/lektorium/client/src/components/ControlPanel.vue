@@ -534,10 +534,15 @@ export default {
                 mutation {
                 requestRelease(sessionId: "${id}") {
                   ok
+                  nopermission
                 }
               }
           `;
       const result = await this.makeRequest(query);
+      if(result.data.data.requestRelease.nopermission){
+        this.showMessage(`You do not have permission to request release.`, `danger`);
+        return
+      }
       const data = result.data;
       if(data.errors)
       {
@@ -561,10 +566,15 @@ export default {
                 mutation {
                 createSession(siteId: "${id}") {
                   ok
+                  nopermission
                 }
               }
           `;
       let result = await this.makeRequest(query);
+      if(result.data.data.createSession.nopermission){
+        this.showMessage(`You do not have permission to create sessions.`, `danger`);
+        return
+      }
       if(result.data.data.createSession.ok)
       {
         this.showMessage(`Session created successfully.`, `success`);
@@ -607,13 +617,13 @@ export default {
               }
           `;
       var result = await this.makeRequest(query);
-      if(this.isAnonymous(result)) {
-        this.$bvModal.show('perm-alert');
-        return;
-      }
       if(result.data.data.createSite.nopermission) {
         this.showMessage('You do not have permission to create sites','danger');
-        return;
+        return
+      }
+      if(this.isAnonymous(result)) {
+        this.$bvModal.show('perm-alert');
+        return
       }
       if(result.data.data.createSite.ok) {
         this.showMessage(`${site_name} was created`, `success`);
@@ -648,10 +658,15 @@ export default {
                 mutation {
                 setUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
                   ok
+                  nopermission
                 }
               }
           `;
       let result = await this.makeRequest(query);
+      if(result.data.data.setUserPermissions.nopermission) {
+        this.showMessage('You do not have permission to set user permissions','danger');
+        return
+      }
       if(result.data.data.setUserPermissions.ok) {
         this.refreshUserModal(userId);
         this.refreshPanelData();
@@ -667,10 +682,15 @@ export default {
                 mutation {
                 deleteUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
                   ok
+                  nopermission
                 }
               }
           `;
       let result = await this.makeRequest(query);
+      if(result.data.data.deleteUserPermissions.nopermission) {
+        this.showMessage('You do not have permission to delete user permissions','danger');
+        return
+      }
       if(result.data.data.deleteUserPermissions.ok) {
         this.refreshUserModal(userId);
         this.refreshPanelData();
