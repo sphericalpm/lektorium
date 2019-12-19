@@ -1,6 +1,8 @@
 import copy
 import pytest
 import collections
+from os import environ
+
 import graphene.test
 from graphql.execution.executors.asyncio import AsyncioExecutor
 import lektorium.schema
@@ -19,6 +21,7 @@ def deorder(obj):
 
 @pytest.fixture
 def client():
+    environ['CHECKPERMISSIONS'] = 'disable'
     return graphene.test.Client(
         graphene.Schema(
             query=lektorium.schema.Query,
@@ -28,7 +31,7 @@ def client():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             ),
-            'user_permissions': ['read:sites', 'create:site'],
+            'user_permissions': ['fake:permission'],
             'auth0_client': FakeAuth0Client(),
         },
         executor=AsyncioExecutor(),
