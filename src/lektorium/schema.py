@@ -17,6 +17,9 @@ import lektorium.repo
 from lektorium.auth0 import Auth0Error
 
 
+ADMIN_PERMISSION = "all:admin"
+
+
 class Site(ObjectType):
     def __init__(self, **kwargs):
         super().__init__(**{
@@ -112,6 +115,8 @@ def require_permissions(required):
         if skip_permissions_check():
             return await wrapped(*args, **kwargs)
         permissions = get_user_permissions(args[0])
+        if ADMIN_PERMISSION in permissions:
+            return await wrapped(*args, **kwargs)
         if required is not None and len(required):
             if not required.difference(permissions):
                 return await wrapped(*args, **kwargs)
@@ -179,6 +184,8 @@ class MutationBase(Mutation):
         if skip_permissions_check():
             return True
         permissions = get_user_permissions(info)
+        if ADMIN_PERMISSION in permissions:
+            return True
         if cls.REQUIRES is None:
             return True
         if not cls.REQUIRES.difference(permissions):
