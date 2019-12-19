@@ -7,6 +7,7 @@ import graphene.test
 from graphql.execution.executors.asyncio import AsyncioExecutor
 import lektorium.schema
 import lektorium.repo
+from lektorium.app import error_formatter
 
 
 def deorder(obj):
@@ -67,6 +68,98 @@ def client_without_permissions():
         },
         executor=AsyncioExecutor(),
     )
+
+
+@pytest.fixture
+def client_admin():
+    environ.pop('CHECKPERMISSIONS', '')
+    return graphene.test.Client(
+        graphene.Schema(
+            query=lektorium.schema.Query,
+            mutation=lektorium.schema.MutationQuery,
+        ),
+        context={
+            'repo': lektorium.repo.ListRepo(
+                copy.deepcopy(lektorium.repo.SITES)
+            ),
+            'user_permissions': [lektorium.schema.ADMIN_PERMISSION],
+        },
+        executor=AsyncioExecutor(),
+    )
+
+
+def test_admin_query(client_admin):
+    result = client_admin.execute(r'''{
+        sites {
+            siteId
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sites': [
+                {'siteId': 'bow'},
+                {'siteId': 'uci'},
+                {'siteId': 'ldi'},
+            ]
+        }
+    }
+
+
+def test_admin_mutation(client_admin):
+    result = client_admin.execute(r'''mutation {
+        createSite(siteId:"test" siteName:"test") {
+            ok,
+            nopermission,
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'createSite': {
+                'ok': True,
+                'nopermission': False,
+            },
+        }
+    }
+
+
+@pytest.fixture
+def anonymous_client():
+    environ.pop('CHECKPERMISSIONS', '')
+    return graphene.test.Client(
+        graphene.Schema(
+            query=lektorium.schema.Query,
+            mutation=lektorium.schema.MutationQuery,
+        ),
+        context={
+            'repo': lektorium.repo.ListRepo(
+                copy.deepcopy(lektorium.repo.SITES)
+            ),
+            'user_permissions': [],
+        },
+        executor=AsyncioExecutor(),
+        format_error=error_formatter,
+    )
+
+
+def test_query_no_permissions(anonymous_client):
+    result = anonymous_client.execute(r'''{
+        sites {
+            siteId
+        }
+    }''')
+    assert result.get('errors', [{}])[0].get('code') == 403
+    assert not result.get('data', {}).get('sites')
+
+
+def test_mutation_no_permissions(anonymous_client):
+    result = anonymous_client.execute(r'''mutation {
+        createSite(siteId:"test" siteName:"test") {
+            ok,
+            nopermission,
+        }
+    }''')
+    assert result.get('errors', [{}])[0].get('code') == 403
+    assert not result.get('data', {}).get('createSite')
 
 
 def test_query_with_permissions(client_with_permissions):
