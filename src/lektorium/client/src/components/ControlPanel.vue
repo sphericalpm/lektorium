@@ -1,5 +1,5 @@
 <template>
-  <div v-shortkey="['shift', 'o']" @shortkey="changeHiddenButton">
+  <div>
     <loading :active.sync="loading_overlay_active" :is-full-page="true"></loading>
     <b-card no-body>
       <b-tabs pills card vertical v-model="current_tab">
@@ -191,7 +191,7 @@
             </table>
           </b-card-text>
         </b-tab>
-        <b-tab @click="refreshPanelData" title="Users">
+        <b-tab v-if="manage_users_visible" @click="refreshPanelData">
           <template slot="title">
             Users <b-badge pill>{{users.length}}</b-badge>
           </template>
@@ -322,6 +322,7 @@ export default {
       },
 
       create_site_btn_visible: false,
+      manage_users_visible: false,
       current_tab: 0,
       loading_overlay_active: false,
 
@@ -364,8 +365,12 @@ export default {
         var permissions = this.$auth.profile.access_token.permissions;
         if (permissions.indexOf('create:site') >= 0) {
           this.create_site_btn_visible = true;
-        }
-      }
+        };
+        if (permissions.indexOf('all:admin') >= 0) {
+          this.create_site_btn_visible = true;
+          this.manage_users_visible = true;
+        };
+      };
     },
 
     async makeRequest(query) {
@@ -704,10 +709,6 @@ export default {
       evt.preventDefault();
       this.$refs.addSiteModal.hide();
       this.initForm();
-    },
-
-    changeHiddenButton() {
-      this.create_site_btn_visible = !this.create_site_btn_visible;
     },
 
     checkStarting() {
