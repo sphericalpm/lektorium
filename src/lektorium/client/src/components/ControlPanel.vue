@@ -382,18 +382,13 @@ export default {
       return result;
     },
 
-    async makeMutationRequest(query, request_name, message) {
+    async makeMutationRequest(query, request_name) {
       let response = await this.makeRequest(`mutation {${query}}`);
       if (this.isAnonymous(response)) {
         this.$bvModal.show('perm-alert');
         return;
-      }
-      let result = response.data.data[request_name];
-      if(result && result.nopermission) {
-        this.showMessage(`You do not have permission to ${message}`, 'danger');
-        return;
-      }
-      return [result, response.data.data.errors];
+      };
+      return [response.data.data[request_name], response.data.data.errors];
     },
 
     refreshPanelData() {
@@ -472,11 +467,10 @@ export default {
       let query = `
         destroySession(sessionId: "${id}") {
           ok
-          nopermission
         }
       `;
-      const [result, errors] = await this.makeMutationRequest(query, 'destroySession', 'destroy this session');
-      if (result && result.ok) {
+      const result = await this.makeMutationRequest(query, 'destroySession');
+      if (result && result[0] && result[0].ok) {
         this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
       } else {
@@ -489,11 +483,10 @@ export default {
       let query = `
         parkSession(sessionId: "${id}") {
           ok
-          nopermission
         }
       `;
-      const [result, errors] = await this.makeMutationRequest(query, 'parkSession', 'park this session');
-      if (result && result.ok) {
+      const result = await this.makeMutationRequest(query, 'parkSession');
+      if (result && result[0] && result[0].ok) {
         this.showMessage(`'${id}' parked successfully.`,`success`);
         this.getPanelData();
       } else {
@@ -506,11 +499,10 @@ export default {
       let query = `
         unparkSession(sessionId: "${id}") {
           ok
-          nopermission
         }
       `;
-      const [result, errors] = await this.makeMutationRequest(query, 'unparkSession', 'unpark this session');
-      if (result && result.ok) {
+      const result = await this.makeMutationRequest(query, 'unparkSession');
+      if (result && result[0] && result[0].ok) {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
         this.current_tab = 1;
         this.getPanelData();
@@ -524,10 +516,9 @@ export default {
       let query = `
         requestRelease(sessionId: "${id}") {
           ok
-          nopermission
         }
       `;
-      const [result, errors] = await this.makeMutationRequest(query, 'requestRelease', 'request release');
+      const [result, errors] = await this.makeMutationRequest(query, 'requestRelease');
       if (errors) {
         this.showMessage(`Error: ${errors[0].message}`, `danger`);
       } else if (result && result.ok) {
@@ -544,11 +535,10 @@ export default {
       let query = `
         createSession(siteId: "${id}") {
           ok
-          nopermission
         }
       `;
-      const [result, errors] = await this.makeMutationRequest(query, 'createSession', 'create sessions');
-      if (result && result.ok) {
+      const result = await this.makeMutationRequest(query, 'createSession');
+      if (result && result[0] && result[0].ok) {
         this.showMessage(`Session created successfully.`, `success`);
         this.getPanelData();
         this.current_tab = 1;
@@ -578,11 +568,10 @@ export default {
       let query = `
         createSite(siteId: "${site_id}", siteName: "${site_name}") {
           ok
-          nopermission
         }
       `;
-      const [result, errors] = await this.makeMutationRequest(query, 'createSite', 'create sites');
-      if (result && result.ok) {
+      const result = await this.makeMutationRequest(query, 'createSite', 'create sites');
+      if (result && result[0] && result[0].ok) {
         this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
       } else {
@@ -612,11 +601,10 @@ export default {
       let query = `
         setUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
           ok
-          nopermission
         }
       `;
-      const [result, errors] = await this.makeMutationRequest(query, 'setUserPermissions', 'set user permissions');
-      if (result && result.ok) {
+      const result = await this.makeMutationRequest(query, 'setUserPermissions');
+      if (result && result[0] && result[0].ok) {
         this.refreshUserModal(userId);
         this.refreshPanelData();
       } else {
@@ -629,11 +617,10 @@ export default {
       let query = `
         deleteUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
           ok
-          nopermission
         }
       `;
-      const [result, errors] = await this.makeMutationRequest(query, 'deleteUserPermissions', 'delete user permissions');
-      if (result && result.ok) {
+      const result = await this.makeMutationRequest(query, 'deleteUserPermissions');
+      if (result && result[0] && result[0].ok) {
         this.refreshUserModal(userId);
         this.refreshPanelData();
       } else {

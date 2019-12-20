@@ -12,10 +12,9 @@ from graphql.error import format_error as format_graphql_error
 import bs4
 import graphene
 
-from lektorium.auth0 import Auth0Client, FakeAuth0Client
-from lektorium.jwt import JWTMiddleware, GraphExecutionError
 from . import install as client, schema, repo
-from .utils import closer
+from .auth0 import Auth0Client, FakeAuth0Client
+from .jwt import JWTMiddleware, GraphExecutionError
 from .repo.local import (
     AsyncLocalServer,
     AsyncDockerServer,
@@ -25,6 +24,7 @@ from .repo.local import (
     GitlabStorage,
     LocalLektor,
 )
+from .utils import closer
 
 
 async def index(request, app_path, auth0_options=None):
