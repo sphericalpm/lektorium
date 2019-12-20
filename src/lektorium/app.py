@@ -14,7 +14,7 @@ import bs4
 import graphene
 
 from lektorium.auth0 import Auth0Client, FakeAuth0Client
-from lektorium.jwt import JWTMiddleware
+from lektorium.jwt import JWTMiddleware, GraphExecutionError
 from . import install as client, schema, repo
 from .utils import closer
 from .repo.local import (
@@ -147,9 +147,8 @@ def error_formatter(error):
     if isinstance(error, GraphQLError):
         formatted = format_graphql_error(error)
         if hasattr(error, 'original_error'):
-            error_code = getattr(error.original_error, 'code', None)
-            if error_code:
-                formatted['code'] = error_code
+            if isinstance(error.original_error, GraphExecutionError):
+                formatted['code'] = error.original_error.code
         return formatted
     return error
 
