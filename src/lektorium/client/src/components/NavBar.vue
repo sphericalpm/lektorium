@@ -108,7 +108,7 @@ export default {
     }
   },
   created(){
-    this.anonymousMode = !Boolean(this.$auth);
+    this.anonymousMode = !this.$auth;
   },
 };
 </script>
