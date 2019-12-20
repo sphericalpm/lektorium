@@ -99,14 +99,15 @@ def skip_permissions_check():
     return environ.get('CHECKPERMISSIONS', '') == 'disable'
 
 
-def raise_permissions_error():
-    raise GraphExecutionError('User has no permission', code=403)
+class PermissionError(GraphExecutionError):
+    def __init__(self):
+        super().__init__('User has no permission', code=403)
 
 
 def get_user_permissions(info):
     permissions = set(info.context.get('user_permissions', []))
     if not permissions:
-        raise_permissions_error()
+        raise PermissionError()
     return permissions
 
 
@@ -195,7 +196,7 @@ class MutationBase(Mutation):
     @classmethod
     async def mutate(cls, root, info, **kwargs):
         if not cls.has_permission(root, info, **kwargs):
-            raise_permissions_error()
+            raise PermissionError()
         try:
             method = getattr(info.context['repo'], cls.REPO_METHOD)
             result = method(**kwargs)
@@ -217,7 +218,7 @@ class AddPermissions(MutationBase):
     @classmethod
     async def mutate(cls, root, info, **kwargs):
         if not cls.has_permission(root, info, **kwargs):
-            raise_permissions_error()
+            raise PermissionError()
         try:
             method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
             result = method(**kwargs)
@@ -239,7 +240,7 @@ class DeletePermissions(MutationBase):
     @classmethod
     async def mutate(cls, root, info, **kwargs):
         if not cls.has_permission(root, info, **kwargs):
-            raise_permissions_error()
+            raise PermissionError()
         try:
             method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
             result = method(**kwargs)
