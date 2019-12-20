@@ -9,7 +9,6 @@ import aiohttp.web
 import aiohttp_graphql
 from graphql.execution.executors.asyncio import AsyncioExecutor
 from graphql.error import format_error as format_graphql_error
-from graphql.error import GraphQLError
 import bs4
 import graphene
 
@@ -144,13 +143,11 @@ def init_logging(stream=sys.stderr, level=logging.DEBUG):
 
 
 def error_formatter(error):
-    if isinstance(error, GraphQLError):
-        formatted = format_graphql_error(error)
-        if hasattr(error, 'original_error'):
-            if isinstance(error.original_error, GraphExecutionError):
-                formatted['code'] = error.original_error.code
-        return formatted
-    return error
+    formatted = format_graphql_error(error)
+    if hasattr(error, 'original_error'):
+        if isinstance(error.original_error, GraphExecutionError):
+            formatted['code'] = error.original_error.code
+    return formatted
 
 
 def init_app(repo, auth0_options=None, auth0_client=None):
