@@ -146,9 +146,10 @@ def init_logging(stream=sys.stderr, level=logging.DEBUG):
 def error_formatter(error):
     if isinstance(error, GraphQLError):
         formatted = format_graphql_error(error)
-        error_code = getattr(error.original_error, 'code', None)
-        if error_code:
-            formatted['code'] = error_code
+        if hasattr(error, 'original_error'):
+            error_code = getattr(error.original_error, 'code', None)
+            if error_code:
+                formatted['code'] = error_code
         return formatted
     return error
 
