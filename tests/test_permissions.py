@@ -67,6 +67,7 @@ def client_without_permissions():
             'user_permissions': ['fake:permission'],
         },
         executor=AsyncioExecutor(),
+        format_error=error_formatter,
     )
 
 
@@ -109,14 +110,12 @@ def test_admin_mutation(client_admin):
     result = client_admin.execute(r'''mutation {
         createSite(siteId:"test" siteName:"test") {
             ok,
-            nopermission,
         }
     }''')
     assert deorder(result) == {
         'data': {
             'createSite': {
                 'ok': True,
-                'nopermission': False,
             },
         }
     }
@@ -147,19 +146,18 @@ def test_query_no_permissions(anonymous_client):
             siteId
         }
     }''')
-    assert result.get('errors', [{}])[0].get('code') == 403
-    assert not result.get('data', {}).get('sites')
+    assert result['errors'][0]['code'] == 403
+    assert not result['data']['sites']
 
 
 def test_mutation_no_permissions(anonymous_client):
     result = anonymous_client.execute(r'''mutation {
         createSite(siteId:"test" siteName:"test") {
             ok,
-            nopermission,
         }
     }''')
-    assert result.get('errors', [{}])[0].get('code') == 403
-    assert not result.get('data', {}).get('createSite')
+    assert result['errors'][0]['code'] == 403
+    assert not result['data']['createSite']
 
 
 def test_query_with_permissions(client_with_permissions):
@@ -198,14 +196,12 @@ def test_mutation_with_permissions(client_with_permissions):
     result = client_with_permissions.execute(r'''mutation {
         createSite(siteId:"test" siteName:"test") {
             ok,
-            nopermission,
         }
     }''')
     assert deorder(result) == {
         'data': {
             'createSite': {
                 'ok': True,
-                'nopermission': False,
             },
         }
     }
@@ -215,14 +211,7 @@ def test_mutation_without_permissions(client_without_permissions):
     result = client_without_permissions.execute(r'''mutation {
         createSite(siteId:"test" siteName:"test") {
             ok,
-            nopermission,
         }
     }''')
-    assert deorder(result) == {
-        'data': {
-            'createSite': {
-                'ok': False,
-                'nopermission': True,
-            },
-        }
-    }
+    assert result['errors'][0]['code'] == 403
+    assert not result['data']['createSite']
