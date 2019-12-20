@@ -382,6 +382,20 @@ export default {
       return result;
     },
 
+    async makeMutationRequest(query, request_name, message) {
+      let response = await this.makeRequest(`mutation {${query}}`);
+      if (this.isAnonymous(response)) {
+        this.$bvModal.show('perm-alert');
+        return;
+      }
+      let result = response.data.data[request_name];
+      if(result && result.nopermission) {
+        this.showMessage(`You do not have permission to ${message}`, 'danger');
+        return;
+      }
+      return [result, response.data.data.errors];
+    },
+
     refreshPanelData() {
       this.getPanelData();
       this.message_visible = false;
@@ -456,23 +470,16 @@ export default {
     async destroySession(session) {
       let id = session.sessionId;
       let query = `
-                mutation {
-                destroySession(sessionId: "${id}") {
-                  ok
-                  nopermission
-                }
-              }
-          `;
-      let result = await this.makeRequest(query);
-      if(result.data.data.destroySession.nopermission){
-        this.showMessage(`You do not have permission to destroy this session.`, `danger`);
-        return
-      }
-      if(result.data.data.destroySession.ok) {
+        destroySession(sessionId: "${id}") {
+          ok
+          nopermission
+        }
+      `;
+      const [result, errors] = await this.makeMutationRequest(query, 'destroySession', 'destroy this session');
+      if (result && result.ok) {
         this.showMessage(`'${id}' removed successfully.`, `success`);
         this.getPanelData();
-      }
-      else {
+      } else {
         this.showMessage(`Unable to remove '${id}'`, `danger`);
       }
     },
@@ -480,24 +487,16 @@ export default {
     async parkSession(session) {
       let id = session.sessionId;
       let query = `
-                mutation {
-                parkSession(sessionId: "${id}") {
-                  ok
-                  nopermission
-                }
-              }
-          `;
-      let result = await this.makeRequest(query);
-      if(result.data.data.parkSession.nopermission){
-        this.showMessage(`You do not have permission to park this session.`, `danger`);
-        return
-      }
-      if(result.data.data.parkSession.ok)
-      {
+        parkSession(sessionId: "${id}") {
+          ok
+          nopermission
+        }
+      `;
+      const [result, errors] = await this.makeMutationRequest(query, 'parkSession', 'park this session');
+      if (result && result.ok) {
         this.showMessage(`'${id}' parked successfully.`,`success`);
         this.getPanelData();
-      }
-      else {
+      } else {
         this.showMessage(`Unable to park '${id}'`, `danger`);
       }
     },
@@ -505,25 +504,17 @@ export default {
     async unparkSession(session) {
       let id = session.sessionId;
       let query = `
-                mutation {
-                unparkSession(sessionId: "${id}") {
-                  ok
-                  nopermission
-                }
-              }
-          `;
-      let result = await this.makeRequest(query);
-      if(result.data.data.unparkSession.nopermission){
-        this.showMessage(`You do not have permission to unpark this session.`, `danger`);
-        return
-      }
-      if(result.data.data.unparkSession.ok)
-      {
+        unparkSession(sessionId: "${id}") {
+          ok
+          nopermission
+        }
+      `;
+      const [result, errors] = await this.makeMutationRequest(query, 'unparkSession', 'unpark this session');
+      if (result && result.ok) {
         this.showMessage(`'${id}' unparked successfully.`,`success`);
         this.current_tab = 1;
         this.getPanelData();
-      }
-      else {
+      } else {
         this.showMessage(`Unable to unpark '${id}'`, `danger`);
       }
     },
@@ -531,31 +522,19 @@ export default {
     async requestRelease(session) {
       let id = session.sessionId;
       let query = `
-                mutation {
-                requestRelease(sessionId: "${id}") {
-                  ok
-                  nopermission
-                }
-              }
-          `;
-      const result = await this.makeRequest(query);
-      if(result.data.data.requestRelease.nopermission){
-        this.showMessage(`You do not have permission to request release.`, `danger`);
-        return
-      }
-      const data = result.data;
-      if(data.errors)
-      {
-        const message = data.errors[0].message;
-        this.showMessage(`Error: ${message}`, `danger`);
-      }
-      else if(data.data.requestRelease.ok)
-      {
+        requestRelease(sessionId: "${id}") {
+          ok
+          nopermission
+        }
+      `;
+      const [result, errors] = await this.makeMutationRequest(query, 'requestRelease', 'request release');
+      if (errors) {
+        this.showMessage(`Error: ${errors[0].message}`, `danger`);
+      } else if (result && result.ok) {
         this.showMessage(`Release request was sent.`, `success`);
         this.current_tab = 3;
         this.getPanelData();
-      }
-      else {
+      } else {
         this.showMessage(`Unable to send release request`, `danger`);
       }
     },
@@ -563,25 +542,17 @@ export default {
     async createSession(site) {
       let id = site.siteId;
       let query = `
-                mutation {
-                createSession(siteId: "${id}") {
-                  ok
-                  nopermission
-                }
-              }
-          `;
-      let result = await this.makeRequest(query);
-      if(result.data.data.createSession.nopermission){
-        this.showMessage(`You do not have permission to create sessions.`, `danger`);
-        return
-      }
-      if(result.data.data.createSession.ok)
-      {
+        createSession(siteId: "${id}") {
+          ok
+          nopermission
+        }
+      `;
+      const [result, errors] = await this.makeMutationRequest(query, 'createSession', 'create sessions');
+      if (result && result.ok) {
         this.showMessage(`Session created successfully.`, `success`);
         this.getPanelData();
         this.current_tab = 1;
-      }
-      else {
+      } else {
         this.showMessage(`Unable to create session`, `danger`);
       }
     },
@@ -605,33 +576,17 @@ export default {
       const site_name = payload.title;
       const site_id = payload.site_id;
       let query = `
-                mutation {
-                createSite(
-                  siteId: "${site_id}",
-                  siteName: "${site_name}",
-                )
-                {
-                  ok
-                  nopermission
-                }
-              }
-          `;
-      var result = await this.makeRequest(query);
-      if(result.data.data.createSite.nopermission) {
-        this.showMessage('You do not have permission to create sites','danger');
-        return
-      }
-      if(this.isAnonymous(result)) {
-        this.$bvModal.show('perm-alert');
-        return
-      }
-      if(result.data.data.createSite.ok) {
+        createSite(siteId: "${site_id}", siteName: "${site_name}") {
+          ok
+          nopermission
+        }
+      `;
+      const [result, errors] = await this.makeMutationRequest(query, 'createSite', 'create sites');
+      if (result && result.ok) {
         this.showMessage(`${site_name} was created`, `success`);
         this.getPanelData();
-      }
-      else {
+      } else {
         this.showMessage(`Unable to create site`, `danger`);
-        return;
       }
     },
 
@@ -655,23 +610,16 @@ export default {
     async setUserPermissions(userId, permissions) {
       let permissionsString = permissions.join('","');
       let query = `
-                mutation {
-                setUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
-                  ok
-                  nopermission
-                }
-              }
-          `;
-      let result = await this.makeRequest(query);
-      if(result.data.data.setUserPermissions.nopermission) {
-        this.showMessage('You do not have permission to set user permissions','danger');
-        return
-      }
-      if(result.data.data.setUserPermissions.ok) {
+        setUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
+          ok
+          nopermission
+        }
+      `;
+      const [result, errors] = await this.makeMutationRequest(query, 'setUserPermissions', 'set user permissions');
+      if (result && result.ok) {
         this.refreshUserModal(userId);
         this.refreshPanelData();
-      }
-      else {
+      } else {
         this.showMessage(`Unable to add permisson`, `danger`);
       }
     },
@@ -679,23 +627,16 @@ export default {
     async deleteUserPermissions(userId, permissions) {
       let permissionsString = permissions.join('","');
       let query = `
-                mutation {
-                deleteUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
-                  ok
-                  nopermission
-                }
-              }
-          `;
-      let result = await this.makeRequest(query);
-      if(result.data.data.deleteUserPermissions.nopermission) {
-        this.showMessage('You do not have permission to delete user permissions','danger');
-        return
-      }
-      if(result.data.data.deleteUserPermissions.ok) {
+        deleteUserPermissions(userId: "${userId}", permissions: ["${permissionsString}"]) {
+          ok
+          nopermission
+        }
+      `;
+      const [result, errors] = await this.makeMutationRequest(query, 'deleteUserPermissions', 'delete user permissions');
+      if (result && result.ok) {
         this.refreshUserModal(userId);
         this.refreshPanelData();
-      }
-      else {
+      } else {
         this.showMessage(`Unable to remove permisson`, `danger`);
       }
     },
