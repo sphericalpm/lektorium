@@ -152,17 +152,17 @@ class Query(ObjectType):
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
 
-    @require_permissions({'all:admin'})
+    @require_permissions(None)
     async def resolve_users(self, info):
         auth0_client = info.context['auth0_client']
         return [User(**x) for x in await auth0_client.get_users()]
 
-    @require_permissions({'all:admin'})
+    @require_permissions(None)
     async def resolve_permissions(self, info, user_id):
         auth0_client = info.context['auth0_client']
         return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
 
-    @require_permissions({'all:admin'})
+    @require_permissions(None)
     async def resolve_available_permissions(self, info):
         auth0_client = info.context['auth0_client']
         return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
