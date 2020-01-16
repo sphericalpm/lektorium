@@ -84,7 +84,7 @@ setuptools.setup(
             'flake8-mutable',
             'flake8-spellcheck',
             'pep8-naming',
-            'requests-mock',
+            'respx==0.8.*',
             'wheel',
         ]
     },

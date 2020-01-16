@@ -1,6 +1,9 @@
 import pytest
 from os import environ
 from unittest import mock
+from urllib import parse as url_parse
+
+import respx
 
 from lektorium.repo.local.storage import GitLab
 from lektorium.repo.local.templates import (
@@ -9,12 +12,12 @@ from lektorium.repo.local.templates import (
 )
 
 
-def mock_namespaces(mocker, gitlab_instance):
+def mock_namespaces(gitlab_instance):
     namespace_id = '2'
-    mocker.get(
+    respx.get(
         f'{gitlab_instance.repo_url}/namespaces?search={gitlab_instance.options["namespace"]}',
-        request_headers=gitlab_instance.headers,
-        json=[
+        headers=gitlab_instance.headers,
+        content=[
             {'path': 'fizzle', 'id': '1'},
             {'path': gitlab_instance.options["namespace"], 'id': namespace_id},
             {'path': 'fizzy', 'id': '3'},
@@ -23,12 +26,12 @@ def mock_namespaces(mocker, gitlab_instance):
     return namespace_id
 
 
-def mock_projects(mocker, gitlab_instance):
+def mock_projects(gitlab_instance):
     namespace = gitlab_instance.options["namespace"]
-    mocker.get(
+    respx.get(
         f'{gitlab_instance.repo_url}/projects',
-        request_headers=gitlab_instance.headers,
-        json=[
+        headers=gitlab_instance.headers,
+        content=[
             {'path_with_namespace': f'{namespace}/proj1', 'id': '1'},
             {'path_with_namespace': 'other/proj1', 'id': '2'},
             {'path_with_namespace': f'{namespace}/proj2', 'id': '3'},
@@ -54,7 +57,9 @@ def test_headers():
     assert headers == {'Authorization': 'Bearer foo'}
 
 
-def test_project_id(requests_mock):
+@pytest.mark.asyncio
+@respx.mock
+async def test_project_id():
     options = dict(
         scheme='http',
         host='foo.bar',
@@ -64,18 +69,20 @@ def test_project_id(requests_mock):
     )
     gitlab = GitLab(options)
 
-    mock_projects(requests_mock, gitlab)
+    mock_projects(gitlab)
 
-    assert gitlab.project_id == '1'
+    assert await gitlab.project_id == '1'
 
     options['project'] = 'proj'
     gitlab = GitLab(options)
 
     with pytest.raises(ValueError):
-        gitlab.project_id
+        await gitlab.project_id
 
 
-def test_get_namespace_id(requests_mock):
+@pytest.mark.asyncio
+@respx.mock
+async def test_get_namespace_id():
     gitlab = GitLab(dict(
         scheme='http',
         host='foo.bar',
@@ -83,12 +90,14 @@ def test_get_namespace_id(requests_mock):
         namespace='fizz',
     ))
 
-    namespace_id = mock_namespaces(requests_mock, gitlab)
+    namespace_id = mock_namespaces(gitlab)
 
-    assert gitlab.namespace_id == namespace_id
+    assert await gitlab.namespace_id == namespace_id
 
 
-def test_projects(requests_mock):
+@pytest.mark.asyncio
+@respx.mock
+async def test_projects():
     gitlab = GitLab(dict(
         scheme='http',
         host='foo.bar',
@@ -96,12 +105,14 @@ def test_projects(requests_mock):
         namespace='fizz',
     ))
 
-    mock_projects(requests_mock, gitlab)
+    mock_projects(gitlab)
 
-    assert len(gitlab.projects) == 3
+    assert len(await gitlab.projects) == 3
 
 
-def test_create_new_project(requests_mock):
+@pytest.mark.asyncio
+@respx.mock
+async def test_create_new_project():
     options = dict(
         scheme='http',
         host='foo.bar',
@@ -112,24 +123,34 @@ def test_create_new_project(requests_mock):
     )
     gitlab = GitLab(options)
 
-    namespace_id = mock_namespaces(requests_mock, gitlab)
+    namespace_id = mock_namespaces(gitlab)
 
-    requests_mock.post(
-        (
-            f'{gitlab.repo_url}/projects?name=proj&namespace_id={namespace_id}'
-            f'&visibility=private&default_branch={options["branch"]}'
-        ),
-        request_headers=gitlab.headers,
-        json={'id': '50'},
-    )
+    def matcher(request, response):
+        if request.method != 'POST':
+            return None
+        if not str(request.url).startswith(f'{gitlab.repo_url}/projects'):
+            return None
+        query_dict = dict(url_parse.parse_qsl(request.url.query))
 
-    response = gitlab._create_new_project()
+        if not all((
+            query_dict['name'] == 'proj',
+            query_dict['namespace_id'] == namespace_id,
+            query_dict['visibility'] == 'private',
+            query_dict['default_branch'] == options['branch'],
+        )):
+            return None
+        return response
+
+    respx.request(matcher, headers=gitlab.headers, content={'id': '50'})
+    response = await gitlab._create_new_project()
 
     assert response.status_code == 200
     assert response.json()['id'] == '50'
 
 
-def test_create_project_variables(requests_mock):
+@pytest.mark.asyncio
+@respx.mock
+async def test_create_project_variables():
     options = dict(
         scheme='http',
         host='foo.bar',
@@ -150,24 +171,34 @@ def test_create_project_variables(requests_mock):
     )
     aws_variable_name = gitlab.AWS_CREDENTIALS_VARIABLE_NAME
 
-    mock_projects(requests_mock, gitlab)
-    requests_mock.post(
-        (
-            f'{gitlab.repo_url}/projects/{project_id}/variables?id={project_id}'
-            f'&variable_type=file&key={aws_variable_name}&value={value}'
-        ),
-        request_headers=gitlab.headers,
-    )
+    mock_projects(gitlab)
 
-    response = gitlab._create_aws_project_variable()
+    def matcher(request, response):
+        if request.method != 'POST':
+            return None
+        if not str(request.url).startswith(f'{gitlab.repo_url}/projects/{project_id}/variables'):
+            return None
+        query_dict = dict(url_parse.parse_qsl(request.url.query))
+
+        if not all((
+            query_dict['id'] == project_id,
+            query_dict['variable_type'] == 'file',
+            query_dict['key'] == aws_variable_name,
+            query_dict['value'] == value,
+        )):
+            return None
+        return response
+
+    respx.request(matcher, headers=gitlab.headers)
+
+    response = await gitlab._create_aws_project_variable()
 
     assert response.status_code == 200
 
 
-def test_create_initial_commit(requests_mock):
-    def additional_matcher(request):
-        return EMPTY_COMMIT_PAYLOAD in request.text
-
+@pytest.mark.asyncio
+@respx.mock
+async def test_create_initial_commit():
     options = dict(
         scheme='http',
         host='foo.bar',
@@ -181,25 +212,37 @@ def test_create_initial_commit(requests_mock):
     headers['Content-Type'] = 'application/json'
     project_id = '1'
 
-    mock_projects(requests_mock, gitlab)
-    requests_mock.post(
-        f'{gitlab.repo_url}/projects/{project_id}/repository/commits',
-        request_headers=headers,
-        additional_matcher=additional_matcher,
-    )
+    mock_projects(gitlab)
 
-    response = gitlab._create_initial_commit()
+    def matcher(request, response):
+        if request.method != 'POST':
+            return None
+        if not str(request.url).startswith(f'{gitlab.repo_url}/projects/{project_id}/repository/commits'):
+            return None
+        if EMPTY_COMMIT_PAYLOAD not in request.read().decode():
+            return None
+
+        return response
+
+    respx.request(matcher, headers=headers)
+
+    response = await gitlab._create_initial_commit()
 
     assert response.status_code == 200
 
 
-def test_init_project(requests_mock):
+@pytest.mark.asyncio
+@respx.mock
+async def test_init_project():
     new_proj_url = 'git@foo.bar:fizz/new_proj'
 
-    def create_project():
+    async def create_project():
         mocked = mock.Mock()
         mocked.json = mock.MagicMock(return_value={'ssh_url_to_repo': new_proj_url})
         return mocked
+
+    async def blank():
+        pass
 
     options = dict(
         scheme='http',
@@ -211,10 +254,10 @@ def test_init_project(requests_mock):
     )
     gitlab = GitLab(options)
 
-    mock_projects(requests_mock, gitlab)
+    mock_projects(gitlab)
 
     with pytest.raises(Exception):
-        gitlab.init_project()
+        await gitlab.init_project()
 
     options['project'] = 'new_proj'
     gitlab = GitLab(options)
@@ -222,24 +265,15 @@ def test_init_project(requests_mock):
     with mock.patch.multiple(
         gitlab,
         _create_new_project=create_project,
-        _create_aws_project_variable=lambda: None,
-        _create_initial_commit=lambda: None,
+        _create_aws_project_variable=blank,
+        _create_initial_commit=blank,
     ):
-        pp = gitlab.init_project()
-
-        assert pp == new_proj_url
+        assert await gitlab.init_project() == new_proj_url
 
 
-def test_merge_requests(requests_mock):
-    src_branch = 'branch_source_abc'
-    tgt_branch = 'branch_target_def'
-    title = 'request title ghi'
-
-    def additional_matcher(request):
-        return all(
-            item in request.text for item in (src_branch, tgt_branch, title)
-        )
-
+@pytest.mark.asyncio
+@respx.mock
+async def test_merge_requests():
     options = dict(
         scheme='http',
         host='foo.bar',
@@ -252,27 +286,24 @@ def test_merge_requests(requests_mock):
 
     project_id = '1'
 
-    mock_projects(requests_mock, gitlab)
-    requests_mock.get(
+    mock_projects(gitlab)
+    respx.get(
         f'{gitlab.repo_url}/projects/{project_id}/merge_requests',
-        request_headers=gitlab.headers,
-        json=['a', 'b', 'c']
+        headers=gitlab.headers,
+        content=['a', 'b', 'c']
     )
 
-    response = gitlab.merge_requests
+    response = await gitlab.merge_requests
 
     assert len(response) == 3
 
 
-def test_create_merge_request(requests_mock):
+@pytest.mark.asyncio
+@respx.mock
+async def test_create_merge_request():
     src_branch = 'branch_source_abc'
     tgt_branch = 'branch_target_def'
     title = 'request-title-ghi'
-
-    def additional_matcher(request):
-        return all(
-            item in request.text for item in (src_branch, tgt_branch, title)
-        )
 
     options = dict(
         scheme='http',
@@ -286,14 +317,22 @@ def test_create_merge_request(requests_mock):
 
     project_id = '1'
 
-    mock_projects(requests_mock, gitlab)
-    requests_mock.post(
-        f'{gitlab.repo_url}/projects/{project_id}/merge_requests',
-        request_headers=gitlab.headers,
-        additional_matcher=additional_matcher,
-    )
+    mock_projects(gitlab)
 
-    gitlab.create_merge_request(
+    def matcher(request, response):
+        if request.method != 'POST':
+            return None
+        if not str(request.url).startswith(f'{gitlab.repo_url}/projects/{project_id}/merge_requests'):
+            return None
+        body = request.read().decode()
+        if not all(item in body for item in (src_branch, tgt_branch, title)):
+            return None
+
+        return response
+
+    respx.request(matcher, headers=gitlab.headers)
+
+    await gitlab.create_merge_request(
         source_branch=src_branch,
         target_branch=tgt_branch,
         title=title,

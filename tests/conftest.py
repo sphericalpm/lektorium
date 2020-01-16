@@ -1,9 +1,9 @@
 import pathlib
 import subprocess
 import pytest
-import requests_mock
 import wrapt
 import asyncio
+import respx
 from lektorium.repo import LocalRepo
 from lektorium.repo.local import (
     FileStorage,
@@ -29,8 +29,7 @@ def git_prepare(wrapped, instance, args, kwargs):
 def local_repo(root_dir, storage_factory=FileStorage):
     repo = LocalRepo(storage_factory(root_dir), FakeServer(), FakeLektor)
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    loop = asyncio.get_event_loop()
     loop.run_until_complete(repo.create_site('bow', 'Buy Our Widgets'))
     loop.run_until_complete(repo.create_site('uci', 'Underpants Collectors International'))
 
@@ -51,7 +50,7 @@ def git_repo(root_dir):
 
 @pytest.fixture
 def merge_requests():
-    with requests_mock.Mocker() as m:
+    with respx.mock():
         project = {
             'id': 122,
             'path_with_namespace': 'user/project',
@@ -67,14 +66,12 @@ def merge_requests():
                 'web_url': 'url124',
             }
         ]
-        m.get(
+        respx.get(
             'https://server/api/v4/projects',
-            json=[
-                project
-            ]
+            content=[project],
         )
-        m.get(
+        respx.get(
             f'https://server/api/v4/projects/{project["id"]}/merge_requests',
-            json=merge_requests
+            content=merge_requests,
         )
-        yield merge_requests
+        return merge_requests
