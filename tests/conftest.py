@@ -48,6 +48,14 @@ def git_repo(root_dir):
     return repo
 
 
+def mock_async_fn(return_val):
+    val = return_val
+
+    async def fn(*args, **kwargs):
+        return val
+    return fn
+
+
 @pytest.fixture
 def merge_requests():
     with respx.mock():

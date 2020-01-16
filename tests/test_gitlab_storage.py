@@ -3,6 +3,7 @@ import subprocess
 from unittest import mock
 
 from lektorium.repo.local.storage import GitlabStorage, GitStorage, GitLab, AWS
+from conftest import mock_async_fn
 
 
 @pytest.mark.asyncio
@@ -16,22 +17,18 @@ async def test_gitlabstorage(tmpdir):
 
     with mock.patch.multiple(
         AWS,
-        create_s3_bucket=lambda *args, **kwargs: 'bucket_name',
-        create_cloudfront_distribution=lambda *args, **kwargs: ('dist_id', 'domain_name'),
-        open_bucket_access=lambda *args, **kwargs: None,
+        create_s3_bucket=mock_async_fn('bucket_name'),
+        create_cloudfront_distribution=mock_async_fn(('dist_id', 'domain_name')),
+        open_bucket_access=mock_async_fn(None),
     ):
-        async def mock_init_project(*args, **kwargs):
-            return 'site_repo'
         with mock.patch.multiple(
             GitLab,
-            init_project=mock_init_project,
+            init_project=mock_async_fn('site_repo'),
         ):
-            async def mock_create_site(*args, **kwargs):
-                return local_dir, {}
             with mock.patch.multiple(
                 GitStorage,
                 __init__=lambda *args, **kwargs: None,
-                create_site=mock_create_site
+                create_site=mock_async_fn((local_dir, {})),
             ):
                 storage = GitlabStorage(
                     'git@server.domain:namespace/reponame.git',

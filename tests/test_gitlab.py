@@ -10,6 +10,7 @@ from lektorium.repo.local.templates import (
     AWS_SHARED_CREDENTIALS_FILE_TEMPLATE,
     EMPTY_COMMIT_PAYLOAD,
 )
+from conftest import mock_async_fn
 
 
 def mock_namespaces(gitlab_instance):
@@ -241,9 +242,6 @@ async def test_init_project():
         mocked.json = mock.MagicMock(return_value={'ssh_url_to_repo': new_proj_url})
         return mocked
 
-    async def blank():
-        pass
-
     options = dict(
         scheme='http',
         host='foo.bar',
@@ -265,8 +263,8 @@ async def test_init_project():
     with mock.patch.multiple(
         gitlab,
         _create_new_project=create_project,
-        _create_aws_project_variable=blank,
-        _create_initial_commit=blank,
+        _create_aws_project_variable=mock_async_fn(None),
+        _create_initial_commit=mock_async_fn(None),
     ):
         assert await gitlab.init_project() == new_proj_url
 
