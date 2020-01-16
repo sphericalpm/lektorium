@@ -7,16 +7,15 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
+import asyncio
 from os import environ
 from uuid import uuid4
-from time import sleep
-from asyncio import get_event_loop
 
+import yaml
 import httpx
+import aiobotocore
 from cached_property import cached_property
 from more_itertools import one
-import yaml
-import boto3
 
 from .objects import Site
 from .templates import (
@@ -33,7 +32,7 @@ run = functools.partial(subprocess.check_call, shell=True)
 
 
 def async_run(func, *args, **kwargs):
-    return get_event_loop().run_in_executor(
+    return asyncio.get_event_loop().run_in_executor(
         None,
         functools.partial(func, *args, **kwargs),
     )
@@ -200,12 +199,16 @@ class AWS:
     SLEEP_TIMEOUT = 2
 
     @cached_property
+    def session(self):
+        return aiobotocore.get_session()
+
+    @cached_property
     def s3_client(self):
-        return boto3.client('s3')
+        return self.session.create_client('s3')
 
     @cached_property
     def cloudfront_client(self):
-        return boto3.client('cloudfront')
+        return self.session.create_client('cloudfront')
 
     @staticmethod
     def _get_status(response):
@@ -216,30 +219,30 @@ class AWS:
         if AWS._get_status(response) != response_code:
             raise Exception(error_text)
 
-    def create_s3_bucket(self, site_id, prefix=''):
+    async def create_s3_bucket(self, site_id, prefix=''):
         prefix = prefix or self.S3_PREFIX
         bucket_name = prefix + site_id
-        response = self.s3_client.create_bucket(Bucket=bucket_name)
+        response = await self.s3_client.create_bucket(Bucket=bucket_name)
         self._raise_if_not_status(
             response, 200,
             'Failed to create S3 bucket',
         )
         return bucket_name
 
-    def open_bucket_access(self, bucket_name):
+    async def open_bucket_access(self, bucket_name):
         # Bucket may fail to be created and registered at this moment
         # Retry a few times and wait a bit in case bucket is not found
         for _ in range(3):
-            response = self.s3_client.delete_public_access_block(Bucket=bucket_name)
+            response = await self.s3_client.delete_public_access_block(Bucket=bucket_name)
             response_code = self._get_status(response)
             if response_code == 404:
-                sleep(self.SLEEP_TIMEOUT)
+                await asyncio.sleep(self.SLEEP_TIMEOUT)
             elif response_code == 204:
                 break
             else:
                 raise Exception('Failed to remove bucket public access block')
 
-        response = self.s3_client.put_bucket_policy(
+        response = await self.s3_client.put_bucket_policy(
             Bucket=bucket_name,
             Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
         )
@@ -248,10 +251,10 @@ class AWS:
             'Failed to set bucket access policy',
         )
 
-    def create_cloudfront_distribution(self, bucket_name, suffix=''):
+    async def create_cloudfront_distribution(self, bucket_name, suffix=''):
         suffix = suffix or self.S3_SUFFIX
         bucket_origin_name = bucket_name + suffix
-        response = self.cloudfront_client.create_distribution(
+        response = await self.cloudfront_client.create_distribution(
             DistributionConfig=dict(
                 CallerReference=str(uuid4()),
                 Comment='Lektorium',
@@ -539,9 +542,9 @@ class GitlabStorage(GitStorage):
         site_workdir, options = await super().create_site(lektor, name, owner, site_id)
 
         aws = AWS()
-        bucket_name = aws.create_s3_bucket(site_id)
-        distribution_id, domain_name = aws.create_cloudfront_distribution(bucket_name)
-        aws.open_bucket_access(bucket_name)
+        bucket_name = await aws.create_s3_bucket(site_id)
+        distribution_id, domain_name = await aws.create_cloudfront_distribution(bucket_name)
+        await aws.open_bucket_access(bucket_name)
 
         with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
             fo.write(LECTOR_S3_SERVER_TEMPLATE.format(

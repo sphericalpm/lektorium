@@ -43,7 +43,7 @@ setuptools.setup(
         'authlib',
         'beautifulsoup4',
         'bidict',
-        'boto3',
+        'aiobotocore==0.11.*'
         'cached-property',
         'coverage<5',
         'graphene',
