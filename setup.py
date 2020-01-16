@@ -56,6 +56,7 @@ setuptools.setup(
         'python-dateutil<2.8.1',
         'pyyaml',
         'wrapt',
+        'httpx==0.11.*',
     ],
     extras_require={
         'inv': [

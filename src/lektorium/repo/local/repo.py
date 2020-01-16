@@ -92,10 +92,9 @@ class Repo(BaseRepo):
                 if session.parked:
                     yield session
 
-    @property
-    def releasing(self):
+    async def releasing(self):
         for site_id, site in self.config.items():
-            for merge_request_data in self.storage.get_merge_requests(site_id):
+            for merge_request_data in await self.storage.get_merge_requests(site_id):
                 if merge_request_data['source_branch'].startswith('session-'):
                     yield {
                         'site_name': site['name'],
@@ -172,7 +171,7 @@ class Repo(BaseRepo):
             **site_options,
         ))
 
-    def request_release(self, session_id):
+    async def request_release(self, session_id):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]
@@ -180,7 +179,7 @@ class Repo(BaseRepo):
             raise InvalidSessionState()
         site_id = site['site_id']
         session_dir = self.sessions_root / site_id / session_id
-        self.storage.request_release(site_id, session_id, session_dir)
+        await self.storage.request_release(site_id, session_id, session_dir)
         self.destroy_session(session_id)
 
     def __repr__(self):
