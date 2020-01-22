@@ -233,14 +233,18 @@ class AWS:
         # Bucket may fail to be created and registered at this moment
         # Retry a few times and wait a bit in case bucket is not found
         for _ in range(3):
-            response = await self.s3_client.delete_public_access_block(Bucket=bucket_name)
-            response_code = self._get_status(response)
-            if response_code == 404:
+            try:
+                response = await self.s3_client.delete_public_access_block(Bucket=bucket_name)
+            except self.s3_client.exceptions.NoSuchBucket:
                 await asyncio.sleep(self.SLEEP_TIMEOUT)
-            elif response_code == 204:
-                break
             else:
-                raise Exception('Failed to remove bucket public access block')
+                self._raise_if_not_status(
+                    response, 204,
+                    'Failed to remove bucket public access block',
+                )
+                break
+        else:
+            raise Exception('Failed to remove bucket public access block')
 
         response = await self.s3_client.put_bucket_policy(
             Bucket=bucket_name,
