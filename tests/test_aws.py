@@ -1,31 +1,33 @@
 import pytest
 from datetime import datetime
 
-import boto3
+import aiobotocore
 from botocore.stub import Stubber, ANY
 
 from lektorium.repo.local.storage import AWS
 from lektorium.repo.local.templates import BUCKET_POLICY_TEMPLATE
 
 
-def test_create_s3_bucket():
+@pytest.mark.asyncio
+async def test_create_s3_bucket():
     bucket_name = AWS.S3_PREFIX + 'foo'
     stub_response = {'ResponseMetadata': {'HTTPStatusCode': 200}}
     expected_params = {'Bucket': bucket_name}
 
-    client = boto3.client('s3')
+    client = aiobotocore.get_session().create_client('s3')
     stubber = Stubber(client)
     stubber.add_response('create_bucket', stub_response, expected_params)
 
     aws = AWS()
     aws.s3_client = client
     with stubber:
-        response = aws.create_s3_bucket('foo')
+        response = await aws.create_s3_bucket('foo')
 
     assert response == bucket_name
 
 
-def test_open_bucket_access():
+@pytest.mark.asyncio
+async def test_open_bucket_access():
     bucket_name = AWS.S3_PREFIX + 'foo'
     stub_response = {'ResponseMetadata': {'HTTPStatusCode': 204}}
     expected_params_1 = {'Bucket': bucket_name}
@@ -34,7 +36,7 @@ def test_open_bucket_access():
         'Policy': BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
     }
 
-    client = boto3.client('s3')
+    client = aiobotocore.get_session().create_client('s3')
     stubber = Stubber(client)
     stubber.add_response(
         'delete_public_access_block',
@@ -50,15 +52,16 @@ def test_open_bucket_access():
     aws = AWS()
     aws.s3_client = client
     with stubber:
-        aws.open_bucket_access(bucket_name)
+        await aws.open_bucket_access(bucket_name)
 
 
-def test_open_bucket_access_timeout():
+@pytest.mark.asyncio
+async def test_open_bucket_access_timeout():
     bucket_name = AWS.S3_PREFIX + 'foo'
     stub_response = {'ResponseMetadata': {'HTTPStatusCode': 404}}
     expected_params_1 = {'Bucket': bucket_name}
 
-    client = boto3.client('s3')
+    client = aiobotocore.get_session().create_client('s3')
     stubber = Stubber(client)
     stubber.add_response(
         'delete_public_access_block',
@@ -71,10 +74,11 @@ def test_open_bucket_access_timeout():
     aws.SLEEP_TIMEOUT = 0.01
     with pytest.raises(Exception):
         with stubber:
-            aws.open_bucket_access(bucket_name)
+            await aws.open_bucket_access(bucket_name)
 
 
-def test_create_cloudfront_distribution():
+@pytest.mark.asyncio
+async def test_create_cloudfront_distribution():
     bucket_name = AWS.S3_PREFIX + 'foo'
     bucket_origin_name = bucket_name + AWS.S3_SUFFIX
     distribution_id = 'bar'
@@ -140,13 +144,13 @@ def test_create_cloudfront_distribution():
             ),
         ))
 
-    client = boto3.client('cloudfront')
+    client = aiobotocore.get_session().create_client('cloudfront')
     stubber = Stubber(client)
     stubber.add_response('create_distribution', stub_response, expected_params)
 
     aws = AWS()
     aws.cloudfront_client = client
     with stubber:
-        response = aws.create_cloudfront_distribution(bucket_name)
+        response = await aws.create_cloudfront_distribution(bucket_name)
 
     assert response == (distribution_id, domain_name)

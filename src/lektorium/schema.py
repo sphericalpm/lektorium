@@ -148,7 +148,7 @@ class Query(ObjectType):
 
     async def resolve_releasing(self, info):
         repo = info.context['repo']
-        return [Releasing(**x) for x in repo.releasing]
+        return [Releasing(**x) async for x in repo.releasing()]
 
 
 class MutationResult(ObjectType):

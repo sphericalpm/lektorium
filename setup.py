@@ -43,7 +43,7 @@ setuptools.setup(
         'authlib',
         'beautifulsoup4',
         'bidict',
-        'boto3',
+        'aiobotocore==0.11.*',
         'cached-property',
         'coverage<5',
         'graphene',
@@ -56,6 +56,7 @@ setuptools.setup(
         'python-dateutil<2.8.1',
         'pyyaml',
         'wrapt',
+        'httpx==0.11.*',
     ],
     extras_require={
         'inv': [
@@ -83,7 +84,7 @@ setuptools.setup(
             'flake8-mutable',
             'flake8-spellcheck',
             'pep8-naming',
-            'requests-mock',
+            'respx==0.8.*',
             'wheel',
         ]
     },

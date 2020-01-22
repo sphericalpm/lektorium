@@ -3,9 +3,9 @@ import os
 import shutil
 import pathlib
 import pytest
+import respx
 from lektorium.repo.local.objects import Site
 from lektorium.repo.local import FileStorage, GitStorage, LocalLektor
-import requests_mock
 from conftest import git_prepare
 
 
@@ -46,6 +46,7 @@ async def test_everything(tmpdir, storage_factory):
 
 
 @pytest.mark.asyncio
+@respx.mock
 async def test_request_release(tmpdir):
     site_id, storage = 'site-id', git_prepare(GitStorage)(tmpdir)
     path, options = await storage.create_site(LocalLektor, 's', 'o', site_id)
@@ -65,24 +66,24 @@ async def test_request_release(tmpdir):
         token='token',
     )
     storage.config[site_id] = site
-    with requests_mock.Mocker() as m:
-        projects = [{'id': 123, 'path_with_namespace': 'user/project'}]
-        m.get('https://server/api/v4/projects', json=projects)
-        POST_URL = 'https://server/api/v4/projects/123/merge_requests'
-        m.post(POST_URL)
-        storage.request_release(site_id, session_id, session_dir)
-        assert m.call_count == 2
-        last_request = m.request_history[-1]
-        assert last_request.url == POST_URL
-        assert last_request.method == 'POST'
-        assert last_request.body == (
-            'source_branch=session-session-id&'
-            'target_branch=master&'
-            'title=Request+from%3A+%22user%22+%3Cemail%3E'
-        )
+    projects = [{'id': 123, 'path_with_namespace': 'user/project'}]
+    respx.get('https://server/api/v4/projects', content=projects)
+    POST_URL = 'https://server/api/v4/projects/123/merge_requests'
+    respx.post(POST_URL)
+    await storage.request_release(site_id, session_id, session_dir)
+    assert len(respx.calls) == 2
+    last_request = respx.calls[-1][0]
+    assert str(last_request.url) == POST_URL
+    assert last_request.method == 'POST'
+    assert last_request.read().decode() == (
+        'source_branch=session-session-id&'
+        'target_branch=master&'
+        'title=Request+from%3A+%22user%22+%3Cemail%3E'
+    )
 
 
 @pytest.mark.asyncio
+@respx.mock
 async def test_get_merge_requests(tmpdir, merge_requests):
     site_id, storage = 'site-id', git_prepare(GitStorage)(tmpdir)
     path, options = await storage.create_site(LocalLektor, 's', 'o', site_id)
@@ -96,7 +97,7 @@ async def test_get_merge_requests(tmpdir, merge_requests):
         token='token',
     )
     storage.config[site_id] = site
-    result = storage.get_merge_requests(site_id)
+    result = await storage.get_merge_requests(site_id)
     assert result == merge_requests
 
 
