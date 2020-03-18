@@ -12,6 +12,7 @@ from lektorium.repo.local import (
     FakeLektor,
 )
 from lektorium.repo.memory import VALID_MERGE_REQUEST
+from lektorium.utils import run_coroutine
 
 
 @wrapt.decorator
@@ -29,9 +30,8 @@ def git_prepare(wrapped, instance, args, kwargs):
 def local_repo(root_dir, storage_factory=FileStorage):
     repo = LocalRepo(storage_factory(root_dir), FakeServer(), FakeLektor)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(repo.create_site('bow', 'Buy Our Widgets'))
-    loop.run_until_complete(repo.create_site('uci', 'Underpants Collectors International'))
+    run_coroutine(repo.create_site('bow', 'Buy Our Widgets'))
+    run_coroutine(repo.create_site('uci', 'Underpants Collectors International'))
 
     return repo
 

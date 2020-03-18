@@ -1,4 +1,5 @@
 import pytest
+import asyncio
 import unittest.mock
 from lektorium.repo import LocalRepo
 from lektorium.repo.local import (
@@ -8,6 +9,7 @@ from lektorium.repo.local import (
     LocalLektor,
 )
 from lektorium.repo.local.repo import Site, Session
+from lektorium.utils import run_coroutine
 from conftest import local_repo, git_repo
 
 
@@ -16,23 +18,23 @@ def repo(request, tmpdir):
     return request.param(tmpdir)
 
 
-def test_fake_server():
-    server = FakeServer()
-    assert server.serve_lektor('/tmp')
-    with pytest.raises(RuntimeError):
-        assert server.serve_lektor('/tmp')
-    server.stop_server('/tmp')
-    assert server.serve_lektor('/tmp')
-
-
 @pytest.mark.asyncio
-async def test_create_site(tmpdir):
+async def test_fake_server():
+    server = FakeServer()
+    assert await server.serve_lektor('/tmp')
+    with pytest.raises(RuntimeError):
+        assert await server.serve_lektor('/tmp')
+    await server.stop_server('/tmp')
+    assert await server.serve_lektor('/tmp')
+
+
+def test_create_site(tmpdir):
     repo = LocalRepo(FileStorage(tmpdir), FakeServer(), FakeLektor)
     assert not len(list(repo.storage.root.iterdir()))
     assert not len(list(repo.sites))
-    await repo.create_site('bow', 'Buy Our Widgets')
+    run_coroutine(repo.create_site('bow', 'Buy Our Widgets'))
     assert len(list(repo.sites)) == 1
-    server = unittest.mock.Mock()
+    server = unittest.mock.AsyncMock()
     server.serve_static.assert_not_called()
     repo = LocalRepo(FileStorage(tmpdir), server, FakeLektor)
     assert len(list(repo.sites)) == 1
@@ -73,13 +75,13 @@ def test_session_callable_editurl():
     assert session.edit_url == 'http://stag.test'
 
 
-def test_session_create(repo):
-    repo.create_session(next(repo.sites)['site_id'])
+@pytest.mark.asyncio
+async def test_session_create(repo):
+    await repo.create_session(next(repo.sites)['site_id'])
     assert len(list(repo.sessions)) == 1
 
 
-@pytest.mark.asyncio
-async def test_lektor_config_loading(tmpdir):
+def test_lektor_config_loading(tmpdir):
     repo = LocalRepo(FileStorage(tmpdir), FakeServer(), LocalLektor)
-    await repo.create_site('a', 'b')
+    run_coroutine(repo.create_site('a', 'b'))
     LocalRepo(FileStorage(tmpdir), FakeServer(), LocalLektor)

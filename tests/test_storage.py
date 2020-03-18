@@ -38,7 +38,7 @@ async def test_everything(tmpdir, storage_factory):
     assert len(storage.config)
     session_dir = tmpdir / 'session-id'
     assert not session_dir.exists()
-    storage.create_session(site_id, 'session-id', session_dir)
+    await storage.create_session(site_id, 'session-id', session_dir)
     assert len(session_dir.listdir())
     if (tmpdir / site_id).exists():
         shutil.rmtree(tmpdir / site_id)
@@ -53,7 +53,7 @@ async def test_request_release(tmpdir):
     storage.config[site_id] = Site(site_id, None, **options)
     session_id = 'session-id'
     session_dir = tmpdir / session_id
-    storage.create_session(site_id, session_id, session_dir)
+    await storage.create_session(site_id, session_id, session_dir)
     page = (pathlib.Path(session_dir) / 'content' / 'contents.lr')
     page.write_text(os.linesep.join((page.read_text(), 'Signature.')))
     site = storage.config[site_id]
