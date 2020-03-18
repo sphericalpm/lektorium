@@ -4,8 +4,11 @@ import shlex
 import subprocess
 import sys
 import webbrowser
+
 from invoke import task
 from invoke.tasks import call
+from spherical_dev.tasks import clean, flake, isort, test  # noqa: F401
+from spherical_dev.utils import ask
 
 
 try:
@@ -44,28 +47,6 @@ def get_config(ctx, env, cfg, auth, network):
 @task
 def dev(ctx):
     ctx.run('pip install -e .[dev,inv]')
-
-
-@task
-def test(ctx):
-    ctx.run('pytest -rxXs')
-
-
-@task
-def cov(ctx):
-    ctx.run('pytest --cov=lektorium --cov-report=html')
-    path = (pathlib.Path('.') / 'htmlcov' / 'index.html').resolve()
-    webbrowser.open(f"file://{path}")
-
-
-@task
-def flake(ctx):
-    ctx.run('flake8 src tests')
-
-
-@task(test, flake)
-def full(c):
-    pass
 
 
 @task
