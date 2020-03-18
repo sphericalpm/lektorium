@@ -155,9 +155,9 @@ class Repo(BaseRepo):
         session['edit_url'] = self.server.serve_lektor(session_dir)
         session.pop('parked_time', None)
 
-    def create_site(self, site_id, name, owner=None):
+    async def create_site(self, site_id, name, owner=None):
         owner, email = owner or self.DEFAULT_USER
-        site_root, site_options = self.storage.create_site(
+        site_root, site_options = await self.storage.create_site(
             self.lektor,
             name,
             owner,

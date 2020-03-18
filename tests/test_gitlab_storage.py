@@ -1,10 +1,12 @@
+import pytest
 import subprocess
 from unittest import mock
 
 from lektorium.repo.local.storage import GitlabStorage, GitStorage, GitLab, AWS
 
 
-def test_gitlabstorage(tmpdir):
+@pytest.mark.asyncio
+async def test_gitlabstorage(tmpdir):
     remote_dir = tmpdir / 'remote'
     local_dir = tmpdir / 'local'
     remote_dir.mkdir()
@@ -22,10 +24,12 @@ def test_gitlabstorage(tmpdir):
             GitLab,
             init_project=lambda *args, **kwargs: 'site_repo',
         ):
+            async def mock_create_site(*args, **kwargs):
+                return local_dir, {}
             with mock.patch.multiple(
                 GitStorage,
                 __init__=lambda *args, **kwargs: None,
-                create_site=lambda *args, **kwargs: (local_dir, {})
+                create_site=mock_create_site
             ):
                 storage = GitlabStorage(
                     'git@server.domain:namespace/reponame.git',
@@ -36,7 +40,7 @@ def test_gitlabstorage(tmpdir):
                 assert storage.repo == 'server.domain'
                 assert storage.namespace == 'namespace'
 
-                site_workdir, options = storage.create_site(None, 'foo', '', 'bar')
+                site_workdir, options = await storage.create_site(None, 'foo', '', 'bar')
 
                 assert (local_dir / '.gitlab-ci.yml').exists()
                 assert (local_dir / 'foo.lektorproject').exists()
@@ -53,4 +57,4 @@ def test_gitlabstorage(tmpdir):
                     }
                 }
 
-                assert storage.create_site_repo('') == 'site_repo'
+                assert await storage.create_site_repo('') == 'site_repo'

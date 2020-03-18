@@ -25,11 +25,12 @@ def test_fake_server():
     assert server.serve_lektor('/tmp')
 
 
-def test_create_site(tmpdir):
+@pytest.mark.asyncio
+async def test_create_site(tmpdir):
     repo = LocalRepo(FileStorage(tmpdir), FakeServer(), FakeLektor)
     assert not len(list(repo.storage.root.iterdir()))
     assert not len(list(repo.sites))
-    repo.create_site('bow', 'Buy Our Widgets')
+    await repo.create_site('bow', 'Buy Our Widgets')
     assert len(list(repo.sites)) == 1
     server = unittest.mock.Mock()
     server.serve_static.assert_not_called()
@@ -77,7 +78,8 @@ def test_session_create(repo):
     assert len(list(repo.sessions)) == 1
 
 
-def test_lektor_config_loading(tmpdir):
+@pytest.mark.asyncio
+async def test_lektor_config_loading(tmpdir):
     repo = LocalRepo(FileStorage(tmpdir), FakeServer(), LocalLektor)
-    repo.create_site('a', 'b')
+    await repo.create_site('a', 'b')
     LocalRepo(FileStorage(tmpdir), FakeServer(), LocalLektor)

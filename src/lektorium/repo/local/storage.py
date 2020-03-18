@@ -11,6 +11,7 @@ import tempfile
 from os import environ
 from uuid import uuid4
 from time import sleep
+from asyncio import get_event_loop
 
 from cached_property import cached_property
 from more_itertools import one
@@ -29,6 +30,13 @@ from ...utils import closer
 
 
 run = functools.partial(subprocess.check_call, shell=True)
+
+
+def async_run(func, *args, **kwargs):
+    return get_event_loop().run_in_executor(
+        None,
+        functools.partial(func, *args, **kwargs),
+    )
 
 
 class Storage:
@@ -140,7 +148,7 @@ class FileStorage(FileStorageMixin, Storage):
         site_root = self._site_dir(site_id)
         shutil.copytree(site_root, session_dir)
 
-    def create_site(self, lektor, name, owner, site_id):
+    async def create_site(self, lektor, name, owner, site_id):
         site_root = self._site_dir(site_id)
         lektor.quickstart(name, owner, site_root)
         return site_root, {}
@@ -447,36 +455,36 @@ class GitStorage(FileStorageMixin, Storage):
         run_local(f'git checkout -b session-{session_id}')
         run_local(f'git push --set-upstream origin session-{session_id}')
 
-    def create_site(self, lektor, name, owner, site_id):
+    async def create_site(self, lektor, name, owner, site_id):
         site_workdir = self.workdir / site_id
         if site_workdir.exists():
             raise ValueError('workdir for such site-id already exists')
 
-        site_repo = self.create_site_repo(site_id)
+        site_repo = await self.create_site_repo(site_id)
         lektor.quickstart(name, owner, site_workdir)
         run_local = functools.partial(run, cwd=site_workdir)
-        run_local('git init')
-        run_local(f'git remote add origin {site_repo}')
-        run_local('git fetch')
-        run_local('git reset origin/master')
-        run_local('git add .')
-        run_local('git commit -m quickstart')
-        run_local('git push --set-upstream origin master')
+        await async_run(run_local, 'git init')
+        await async_run(run_local, f'git remote add origin {site_repo}')
+        await async_run(run_local, 'git fetch')
+        await async_run(run_local, 'git reset origin/master')
+        await async_run(run_local, 'git add .')
+        await async_run(run_local, 'git commit -m quickstart')
+        await async_run(run_local, 'git push --set-upstream origin master')
 
         return site_workdir, dict(repo=str(site_repo))
 
-    def create_site_repo(self, site_id):
+    async def create_site_repo(self, site_id):
         site_repo = self.git.parent / site_id
         if site_repo.exists():
             raise ValueError('repo for such site-id already exists')
 
         site_repo.mkdir()
-        run('git init --bare .', cwd=site_repo)
+        await async_run(run, 'git init --bare .', cwd=site_repo)
         with tempfile.TemporaryDirectory() as workdir:
             run_local = functools.partial(run, cwd=workdir)
-            run_local(f'git clone {site_repo} .')
-            run_local('git commit -m initial --allow-empty')
-            run_local('git push')
+            await async_run(run_local, f'git clone {site_repo} .')
+            await async_run(run_local, 'git commit -m initial --allow-empty')
+            await async_run(run_local, 'git push')
 
         return site_repo
 
@@ -520,8 +528,8 @@ class GitlabStorage(GitStorage):
         self.repo, _, path = tail.partition(':')
         self.namespace, _, _ = path.partition('/')
 
-    def create_site(self, lektor, name, owner, site_id):
-        site_workdir, options = super().create_site(lektor, name, owner, site_id)
+    async def create_site(self, lektor, name, owner, site_id):
+        site_workdir, options = await super().create_site(lektor, name, owner, site_id)
 
         aws = AWS()
         bucket_name = aws.create_s3_bucket(site_id)
@@ -537,9 +545,9 @@ class GitlabStorage(GitStorage):
             fo.write(GITLAB_CI_TEMPLATE)
 
         run_local = functools.partial(run, cwd=site_workdir)
-        run_local('git add .')
-        run_local('git commit -m "Add AWS deploy integration"')
-        run_local('git push --set-upstream origin master')
+        await async_run(run_local, 'git add .')
+        await async_run(run_local, 'git commit -m "Add AWS deploy integration"')
+        await async_run(run_local, 'git push --set-upstream origin master')
 
         options.update({
             'cloudfront_domain_name': domain_name,
@@ -555,7 +563,7 @@ class GitlabStorage(GitStorage):
 
         return site_workdir, options
 
-    def create_site_repo(self, site_id):
+    async def create_site_repo(self, site_id):
         site_repo = GitLab(dict(
             scheme=self.protocol,
             host=self.repo,

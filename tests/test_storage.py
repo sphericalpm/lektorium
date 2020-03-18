@@ -20,11 +20,12 @@ def storage_factory(request):
     return request.param
 
 
-def test_everything(tmpdir, storage_factory):
+@pytest.mark.asyncio
+async def test_everything(tmpdir, storage_factory):
     storage = storage_factory(tmpdir)
     assert isinstance(storage.config, dict)
     site_id = 'test-site'
-    path, options = storage.create_site(
+    path, options = await storage.create_site(
         LocalLektor,
         'Site Name',
         'Site Owner',
@@ -44,9 +45,10 @@ def test_everything(tmpdir, storage_factory):
         storage.site_config(site_id).get('project.name')
 
 
-def test_request_release(tmpdir):
+@pytest.mark.asyncio
+async def test_request_release(tmpdir):
     site_id, storage = 'site-id', git_prepare(GitStorage)(tmpdir)
-    path, options = storage.create_site(LocalLektor, 's', 'o', site_id)
+    path, options = await storage.create_site(LocalLektor, 's', 'o', site_id)
     storage.config[site_id] = Site(site_id, None, **options)
     session_id = 'session-id'
     session_dir = tmpdir / session_id
@@ -80,9 +82,10 @@ def test_request_release(tmpdir):
         )
 
 
-def test_get_merge_requests(tmpdir, merge_requests):
+@pytest.mark.asyncio
+async def test_get_merge_requests(tmpdir, merge_requests):
     site_id, storage = 'site-id', git_prepare(GitStorage)(tmpdir)
-    path, options = storage.create_site(LocalLektor, 's', 'o', site_id)
+    path, options = await storage.create_site(LocalLektor, 's', 'o', site_id)
     storage.config[site_id] = Site(site_id, None, **options)
     site = storage.config[site_id]
     site.data[GitStorage.GITLAB_SECTION_NAME] = dict(

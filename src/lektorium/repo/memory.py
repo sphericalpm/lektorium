@@ -160,7 +160,7 @@ class Repo(BaseRepo):
         session['edit_url'] = edit_url
         session.pop('parked_time', None)
 
-    def create_site(self, site_id, name, owner=None):
+    async def create_site(self, site_id, name, owner=None):
         owner, email = owner or self.DEFAULT_USER
         self.data.append(dict(
             site_id=site_id,
