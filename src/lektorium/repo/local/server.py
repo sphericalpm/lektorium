@@ -26,15 +26,15 @@ class Server(metaclass=abc.ABCMeta):
         return port
 
     @abc.abstractmethod
-    def serve_lektor(self, path):
+    async def serve_lektor(self, path):
         pass
 
     @abc.abstractmethod
-    def serve_static(self, path):
+    async def serve_static(self, path):
         pass
 
     @abc.abstractmethod
-    def stop_server(self, path, finalizer=None):
+    async def stop_server(self, path, finalizer=None):
         pass
 
     def __repr__(self):
@@ -45,14 +45,14 @@ class FakeServer(Server):
     def __init__(self):
         self.serves = {}
 
-    def serve_lektor(self, path):
+    async def serve_lektor(self, path):
         if path in self.serves:
             raise RuntimeError()
         port = self.generate_port(list(self.serves.values()))
         self.serves[path] = port
         return f'http://localhost:{self.serves[path]}/'
 
-    def stop_server(self, path, finalizer=None):
+    async def stop_server(self, path, finalizer=None):
         self.serves.pop(path)
         callable(finalizer) and finalizer()
 
@@ -65,7 +65,7 @@ class AsyncServer(Server):
     def __init__(self):
         self.serves = {}
 
-    def serve_lektor(self, path):
+    async def serve_lektor(self, path):
         def resolver(started):
             if started.done():
                 if started.exception() is not None:
@@ -77,27 +77,23 @@ class AsyncServer(Server):
                 return (started.result(),) * 2
             return (functools.partial(resolver, started), 'Starting')
         started = asyncio.Future()
-        task = asyncio.ensure_future(self.start(path, started))
+        task = asyncio.create_task(self.start(path, started))
         self.serves[path] = [lambda: task if task.cancel() else task, started]
         return functools.partial(resolver, started)
 
     serve_static = serve_lektor
 
-    def stop_server(self, path, finalizer=None):
-        result = asyncio.ensure_future(self.stop(path, finalizer))
-        result.add_done_callback(lambda _: result.result())
-
-    @abc.abstractmethod
-    async def start(self, path, started):
-        pass
-
-    async def stop(self, path, finalizer=None):
+    async def stop_server(self, path, finalizer=None):
         task_cancel, _ = self.serves[path]
         finalize = asyncio.gather(task_cancel(), return_exceptions=True)
         finalize.add_done_callback(
             lambda _: callable(finalizer) and finalizer()
         )
         await finalize
+
+    @abc.abstractmethod
+    async def start(self, path, started):
+        pass
 
 
 class AsyncLocalServer(AsyncServer):

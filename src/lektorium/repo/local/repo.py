@@ -1,3 +1,4 @@
+import asyncio
 import collections.abc
 import datetime
 import functools
@@ -7,7 +8,7 @@ import tempfile
 
 from cached_property import cached_property
 
-from ...utils import closer
+from ...utils import closer, run_coroutine
 from ..interface import (
     DuplicateEditSession,
     InvalidSessionState,
@@ -54,6 +55,7 @@ class FilteredMergeRequestData(FilteredDict):
 
 class Repo(BaseRepo):
     def __init__(self, storage, server, lektor, sessions_root=None):
+        self._generated_ids = []
         self.storage = storage
         self.server = server
         self.lektor = lektor
@@ -66,8 +68,8 @@ class Repo(BaseRepo):
         for site_id, site in self.config.items():
             if site.production_url is None:
                 session_dir = self.sessions_root / site_id / 'production'
-                self.storage.create_session(site_id, 'production', session_dir)
-                site.production_url = self.server.serve_static(session_dir)
+                run_coroutine(self.storage.create_session(site_id, 'production', session_dir))
+                run_coroutine(self.server.serve_static(session_dir))
 
     @cached_property
     def config(self):
@@ -86,6 +88,10 @@ class Repo(BaseRepo):
         return dict(iterate())
 
     @property
+    def session_ids(self):
+        return list(self.sessions.keys()) + self._generated_ids
+
+    @property
     def parked_sessions(self):
         for site in self.config.values():
             for session in site.sessions.values():
@@ -101,48 +107,50 @@ class Repo(BaseRepo):
                         **FilteredMergeRequestData(merge_request_data)
                     }
 
-    def create_session(self, site_id, custodian=None):
+    async def create_session(self, site_id, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER
         site = self.config[site_id]
         if any(not s.parked for s in site.sessions.values()):
             raise DuplicateEditSession()
         session_id = self.generate_session_id()
+        self._generated_ids.append(session_id)
         session_dir = self.sessions_root / site_id / session_id
-        self.storage.create_session(site_id, session_id, session_dir)
+        await self.storage.create_session(site_id, session_id, session_dir)
+        edit_url = await self.server.serve_lektor(session_dir)
         session_object = Session(
             session_id=session_id,
             creation_time=datetime.datetime.now(),
             view_url=None,
-            edit_url=self.server.serve_lektor(session_dir),
+            edit_url=edit_url,
             custodian=custodian,
             custodian_email=custodian_email,
         )
         self.config[site_id].sessions[session_id] = session_object
         return session_id
 
-    def destroy_session(self, session_id):
+    async def destroy_session(self, session_id):
         if session_id not in self.sessions:
             raise SessionNotFound()
         site = self.sessions[session_id][1]
         session_dir = self.sessions_root / site['site_id'] / session_id
-        self.server.stop_server(
+        await self.server.stop_server(
             session_dir,
             functools.partial(shutil.rmtree, session_dir)
         )
         site.sessions.pop(session_id)
 
-    def park_session(self, session_id):
+    async def park_session(self, session_id):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]
         session_dir = self.sessions_root / site['site_id'] / session_id
         if session.parked:
             raise InvalidSessionState()
-        self.server.stop_server(session_dir)
+        await self.server.stop_server(session_dir)
         session['edit_url'] = None
         session['parked_time'] = datetime.datetime.now()
 
-    def unpark_session(self, session_id):
+    async def unpark_session(self, session_id):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]
@@ -151,7 +159,7 @@ class Repo(BaseRepo):
             raise InvalidSessionState()
         if any(not s.parked for s in site.sessions.values()):
             raise DuplicateEditSession()
-        session['edit_url'] = self.server.serve_lektor(session_dir)
+        session['edit_url'] = await self.server.serve_lektor(session_dir)
         session.pop('parked_time', None)
 
     async def create_site(self, site_id, name, owner=None):
@@ -163,7 +171,7 @@ class Repo(BaseRepo):
             site_id
         )
         if 'production_url' not in site_options:
-            site_options['production_url'] = self.server.serve_static(site_root)
+            site_options['production_url'] = await self.server.serve_static(site_root)
         self.config[site_id] = Site(site_id, **dict(
             name=name,
             owner=owner,
@@ -180,7 +188,7 @@ class Repo(BaseRepo):
         site_id = site['site_id']
         session_dir = self.sessions_root / site_id / session_id
         await self.storage.request_release(site_id, session_id, session_dir)
-        self.destroy_session(session_id)
+        await self.destroy_session(session_id)
 
     def __repr__(self):
         qname = f'{self.__class__.__module__}.{self.__class__.__name__}'

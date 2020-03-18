@@ -1,6 +1,7 @@
 import atexit
 import contextlib
 import shlex
+import asyncio
 
 
 def flatten_options(labels, prefix=''):
@@ -38,3 +39,13 @@ def closer(manager):
     result = closer.enter_context(manager)
     atexit.register(closer.close)
     return result
+
+
+def run_coroutine(coroutine):
+    event_loop = None
+    try:
+        event_loop = asyncio.get_event_loop()
+    except RuntimeError:
+        event_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(event_loop)
+    return event_loop.run_until_complete(coroutine)

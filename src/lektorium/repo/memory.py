@@ -100,6 +100,10 @@ class Repo(BaseRepo):
         }
 
     @property
+    def session_ids(self) -> Iterable:
+        return self.sessions.keys()
+
+    @property
     def parked_sessions(self) -> Generator:
         yield from filter(
             lambda s: not bool(s[0].get('edit_url', None)),
@@ -111,7 +115,7 @@ class Repo(BaseRepo):
             for item in site.get('releasing', []):
                 yield item
 
-    def create_session(
+    async def create_session(
         self,
         site_id: str,
         custodian: Optional[Tuple[str, str]] = None,
@@ -131,7 +135,7 @@ class Repo(BaseRepo):
         ))
         return session_id
 
-    def destroy_session(self, session_id: str) -> None:
+    async def destroy_session(self, session_id: str) -> None:
         if session_id not in self.sessions:
             raise SessionNotFound()
         site = self.sessions[session_id][1]
@@ -140,7 +144,7 @@ class Repo(BaseRepo):
             if x['session_id'] != session_id
         ]
 
-    def park_session(self, session_id: str) -> None:
+    async def park_session(self, session_id: str) -> None:
         if session_id not in self.sessions:
             raise SessionNotFound()
         session = self.sessions[session_id][0]
@@ -148,7 +152,7 @@ class Repo(BaseRepo):
             raise InvalidSessionState()
         session['parked_time'] = datetime.datetime.now()
 
-    def unpark_session(self, session_id: str) -> None:
+    async def unpark_session(self, session_id: str) -> None:
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]

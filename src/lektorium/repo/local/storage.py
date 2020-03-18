@@ -50,7 +50,7 @@ class Storage:
         """
 
     @abc.abstractmethod
-    def create_session(self, site_id, session_id, session_dir):
+    async def create_session(self, site_id, session_id, session_dir):
         """Creates new session.
 
         This method mades all mandatory actions to create new session in
@@ -143,13 +143,13 @@ class FileStorage(FileStorageMixin, Storage):
     def __init__(self, root):
         self.root = pathlib.Path(root).resolve()
 
-    def create_session(self, site_id, session_id, session_dir):
+    async def create_session(self, site_id, session_id, session_dir):
         site_root = self._site_dir(site_id)
         shutil.copytree(site_root, session_dir)
 
     async def create_site(self, lektor, name, owner, site_id):
         site_root = self._site_dir(site_id)
-        lektor.quickstart(name, owner, site_root)
+        await lektor.quickstart(name, owner, site_root)
         return site_root, {}
 
     def site_config(self, site_id):
@@ -448,6 +448,7 @@ class GitStorage(FileStorageMixin, Storage):
         self.workdir = pathlib.Path(closer(tempfile.TemporaryDirectory()))
         self.root = self.workdir / 'lektorium'
         self.root.mkdir()
+        # run(f'git init .', cwd=self.root)
         run(f'git clone {self.git} .', cwd=self.root)
 
     @staticmethod
@@ -457,17 +458,17 @@ class GitStorage(FileStorageMixin, Storage):
         run(f'git init --bare .', cwd=lektorium)
         return lektorium
 
-    def create_session(self, site_id, session_id, session_dir):
+    async def create_session(self, site_id, session_id, session_dir):
         repo = self.config[site_id].get('repo', None)
         if repo is None:
             raise ValueError('site repo not found')
         branch = self.config[site_id].get('branch', '')
         if branch:
             branch = f'-b {branch}'
-        run(f'git clone {repo} {branch} {session_dir}')
+        await async_run(run, f'git clone {repo} {branch} {session_dir}')
         run_local = functools.partial(run, cwd=session_dir)
-        run_local(f'git checkout -b session-{session_id}')
-        run_local(f'git push --set-upstream origin session-{session_id}')
+        await async_run(run_local, f'git checkout -b session-{session_id}')
+        await async_run(run_local, f'git push --set-upstream origin session-{session_id}')
 
     async def create_site(self, lektor, name, owner, site_id):
         site_workdir = self.workdir / site_id
@@ -475,7 +476,7 @@ class GitStorage(FileStorageMixin, Storage):
             raise ValueError('workdir for such site-id already exists')
 
         site_repo = await self.create_site_repo(site_id)
-        lektor.quickstart(name, owner, site_workdir)
+        await lektor.quickstart(name, owner, site_workdir)
         run_local = functools.partial(run, cwd=site_workdir)
         await async_run(run_local, 'git init')
         await async_run(run_local, f'git remote add origin {site_repo}')

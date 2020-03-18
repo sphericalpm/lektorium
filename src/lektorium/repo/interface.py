@@ -31,7 +31,7 @@ class Repo(metaclass=abc.ABCMeta):
 
     def generate_session_id(self) -> str:
         session_id = None
-        while not session_id or session_id in self.sessions:
+        while not session_id or session_id in self.session_ids:
             session_id = ''.join(random.sample(string.ascii_lowercase, 8))
         return session_id
 
@@ -47,11 +47,16 @@ class Repo(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
+    def session_ids(self) -> Iterable:
+        pass
+
+    @property
+    @abc.abstractmethod
     def parked_sessions(self) -> Generator:
         pass
 
     @abc.abstractmethod
-    def create_session(
+    async def create_session(
         self,
         site_id: str,
         custodian: Optional[Tuple[str, str]] = None,
@@ -59,13 +64,13 @@ class Repo(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def destroy_session(self, session_id: str) -> None:
+    async def destroy_session(self, session_id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def park_session(self, session_id: str) -> None:
+    async def park_session(self, session_id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def unpark_session(self, session_id: str) -> None:
+    async def unpark_session(self, session_id: str) -> None:
         pass

@@ -1,31 +1,30 @@
 import abc
 import os
-import subprocess
+import asyncio
 
 
 class Lektor(metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def quickstart(cls, name, owner, folder):
+    async def quickstart(cls, name, owner, folder):
         raise NotImplementedError()
 
 
 class FakeLektor(Lektor):
     @classmethod
-    def quickstart(cls, name, owner, folder):
+    async def quickstart(cls, name, owner, folder):
         folder.mkdir(parents=True)
         (folder / 'fake-lektor.file').touch()
 
 
 class LocalLektor(Lektor):
     @classmethod
-    def quickstart(cls, name, owner, folder):
-        proc = subprocess.Popen(
+    async def quickstart(cls, name, owner, folder):
+        proc = await asyncio.create_subprocess_shell(
             'lektor quickstart',
-            shell=True,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.DEVNULL,
         )
-        proc.communicate(input=os.linesep.join((
+        await proc.communicate(input=os.linesep.join((
             name,
             owner,
             str(folder),
@@ -33,5 +32,5 @@ class LocalLektor(Lektor):
             'Y',
             '',
         )).encode())
-        if proc.wait() != 0:
+        if await proc.wait() != 0:
             raise RuntimeError()
