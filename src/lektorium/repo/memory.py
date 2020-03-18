@@ -106,10 +106,10 @@ class Repo(BaseRepo):
             self.sessions.values()
         )
 
-    @property
-    def releasing(self):
+    async def releasing(self):
         for site in self.data:
-            yield from site.get('releasing', [])
+            for item in site.get('releasing', []):
+                yield item
 
     def create_session(
         self,
@@ -171,7 +171,7 @@ class Repo(BaseRepo):
             custodian_email=email,
         ))
 
-    def request_release(self, session_id):
+    async def request_release(self, session_id):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, _ = self.sessions[session_id]

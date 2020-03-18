@@ -1,5 +1,6 @@
 import copy
 import pytest
+import respx
 from lektorium.repo import (
     DuplicateEditSession,
     InvalidSessionState,
@@ -135,8 +136,10 @@ async def test_create_site(repo):
     assert len(list(repo.sites)) == site_count_before + 1
 
 
-def test_releasing(repo, merge_requests):
-    result = list(repo.releasing)
+@pytest.mark.asyncio
+@respx.mock
+async def test_releasing(repo, merge_requests):
+    result = [item async for item in repo.releasing()]
     request = {
         'site_name': 'Buy Our Widgets',
         **VALID_MERGE_REQUEST,
@@ -147,6 +150,7 @@ def test_releasing(repo, merge_requests):
 
 
 @pytest.mark.xfail
-def test_request_release(repo):
+@pytest.mark.asyncio
+async def test_request_release(repo):
     session_id = repo.create_session('uci')
-    repo.request_release(session_id)
+    await repo.request_release(session_id)

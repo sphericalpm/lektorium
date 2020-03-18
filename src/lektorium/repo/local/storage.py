@@ -4,19 +4,18 @@ import functools
 import inifile
 import logging
 import pathlib
-import requests
 import shutil
 import subprocess
 import tempfile
+import asyncio
 from os import environ
 from uuid import uuid4
-from time import sleep
-from asyncio import get_event_loop
 
+import yaml
+import httpx
+import aiobotocore
 from cached_property import cached_property
 from more_itertools import one
-import yaml
-import boto3
 
 from .objects import Site
 from .templates import (
@@ -33,7 +32,7 @@ run = functools.partial(subprocess.check_call, shell=True)
 
 
 def async_run(func, *args, **kwargs):
-    return get_event_loop().run_in_executor(
+    return asyncio.get_event_loop().run_in_executor(
         None,
         functools.partial(func, *args, **kwargs),
     )
@@ -160,7 +159,7 @@ class FileStorage(FileStorageMixin, Storage):
             return inifile.IniFile(config[0])
         return collections.defaultdict(type(None))
 
-    def get_merge_requests(self, site_id):
+    async def get_merge_requests(self, site_id):
         logging.warn('get_merge_requests: site has no gitlab option')
         return []
 
@@ -200,12 +199,16 @@ class AWS:
     SLEEP_TIMEOUT = 2
 
     @cached_property
+    def session(self):
+        return aiobotocore.get_session()
+
+    @cached_property
     def s3_client(self):
-        return boto3.client('s3')
+        return self.session.create_client('s3')
 
     @cached_property
     def cloudfront_client(self):
-        return boto3.client('cloudfront')
+        return self.session.create_client('cloudfront')
 
     @staticmethod
     def _get_status(response):
@@ -216,30 +219,34 @@ class AWS:
         if AWS._get_status(response) != response_code:
             raise Exception(error_text)
 
-    def create_s3_bucket(self, site_id, prefix=''):
+    async def create_s3_bucket(self, site_id, prefix=''):
         prefix = prefix or self.S3_PREFIX
         bucket_name = prefix + site_id
-        response = self.s3_client.create_bucket(Bucket=bucket_name)
+        response = await self.s3_client.create_bucket(Bucket=bucket_name)
         self._raise_if_not_status(
             response, 200,
             'Failed to create S3 bucket',
         )
         return bucket_name
 
-    def open_bucket_access(self, bucket_name):
+    async def open_bucket_access(self, bucket_name):
         # Bucket may fail to be created and registered at this moment
         # Retry a few times and wait a bit in case bucket is not found
         for _ in range(3):
-            response = self.s3_client.delete_public_access_block(Bucket=bucket_name)
-            response_code = self._get_status(response)
-            if response_code == 404:
-                sleep(self.SLEEP_TIMEOUT)
-            elif response_code == 204:
-                break
+            try:
+                response = await self.s3_client.delete_public_access_block(Bucket=bucket_name)
+            except self.s3_client.exceptions.NoSuchBucket:
+                await asyncio.sleep(self.SLEEP_TIMEOUT)
             else:
-                raise Exception('Failed to remove bucket public access block')
+                self._raise_if_not_status(
+                    response, 204,
+                    'Failed to remove bucket public access block',
+                )
+                break
+        else:
+            raise Exception('Failed to remove bucket public access block')
 
-        response = self.s3_client.put_bucket_policy(
+        response = await self.s3_client.put_bucket_policy(
             Bucket=bucket_name,
             Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
         )
@@ -248,10 +255,10 @@ class AWS:
             'Failed to set bucket access policy',
         )
 
-    def create_cloudfront_distribution(self, bucket_name, suffix=''):
+    async def create_cloudfront_distribution(self, bucket_name, suffix=''):
         suffix = suffix or self.S3_SUFFIX
         bucket_origin_name = bucket_name + suffix
-        response = self.cloudfront_client.create_distribution(
+        response = await self.cloudfront_client.create_distribution(
             DistributionConfig=dict(
                 CallerReference=str(uuid4()),
                 Comment='Lektorium',
@@ -303,88 +310,93 @@ class GitLab:
         return '{namespace}/{project}'.format(**self.options)
 
     @cached_property
-    def namespace_id(self):
+    async def namespace_id(self):
         namespace_name = self.options['namespace']
-        response = requests.get(
-            '{repo_url}/namespaces'.format(repo_url=self.repo_url),
-            params={'search': namespace_name},
-            headers=self.headers,
-        )
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                '{repo_url}/namespaces'.format(repo_url=self.repo_url),
+                params={'search': namespace_name},
+                headers=self.headers,
+            )
         response.raise_for_status()
         namespaces = response.json()
         return one(x for x in namespaces if x['path'] == namespace_name)['id']
 
-    def init_project(self):
-        if self.path in (x['path_with_namespace'] for x in self.projects):
+    async def init_project(self):
+        if self.path in (x['path_with_namespace'] for x in await self.projects):
             raise Exception(f'Project {self.path} already exists')
 
         for item in ('projects', 'project_id'):
             if item in self.__dict__:
                 del self.__dict__[item]
 
-        ssh_repo_url = self._create_new_project().json()['ssh_url_to_repo']
-        self._create_aws_project_variable()
-        self._create_initial_commit()
+        ssh_repo_url = (await self._create_new_project()).json()['ssh_url_to_repo']
+        await self._create_aws_project_variable()
+        await self._create_initial_commit()
 
         return ssh_repo_url
 
-    def _create_new_project(self):
-        response = requests.post(
-            '{repo_url}/projects'.format(repo_url=self.repo_url),
-            params={
-                'name': self.options['project'],
-                'namespace_id': self.namespace_id,
-                'visibility': 'private',
-                'default_branch': self.options['branch'],
-                'tag_list': 'lektorium',
-                'shared_runners_enabled': 'true',
-            },
-            headers=self.headers,
-        )
+    async def _create_new_project(self):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                '{repo_url}/projects'.format(repo_url=self.repo_url),
+                params={
+                    'name': self.options['project'],
+                    'namespace_id': await self.namespace_id,
+                    'visibility': 'private',
+                    'default_branch': self.options['branch'],
+                    'tag_list': 'lektorium',
+                    'shared_runners_enabled': 'true',
+                },
+                headers=self.headers,
+            )
         response.raise_for_status()
         return response
 
-    def _create_aws_project_variable(self):
-        response = requests.post(
-            '{repo_url}/projects/{pid}/variables'.format(
-                repo_url=self.repo_url,
-                pid=self.project_id,
-            ),
-            params={
-                'id': self.project_id,
-                'variable_type': 'file',
-                'key': self.AWS_CREDENTIALS_VARIABLE_NAME,
-                'value': AWS_SHARED_CREDENTIALS_FILE_TEMPLATE.format(
-                    aws_key_id=environ['AWS_ACCESS_KEY_ID'],
-                    aws_secret_key=environ['AWS_SECRET_ACCESS_KEY'],
+    async def _create_aws_project_variable(self):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                '{repo_url}/projects/{pid}/variables'.format(
+                    repo_url=self.repo_url,
+                    pid=await self.project_id,
                 ),
-            },
-            headers=self.headers,
-        )
+                params={
+                    'id': await self.project_id,
+                    'variable_type': 'file',
+                    'key': self.AWS_CREDENTIALS_VARIABLE_NAME,
+                    'value': AWS_SHARED_CREDENTIALS_FILE_TEMPLATE.format(
+                        aws_key_id=environ['AWS_ACCESS_KEY_ID'],
+                        aws_secret_key=environ['AWS_SECRET_ACCESS_KEY'],
+                    ),
+                },
+                headers=self.headers,
+            )
         response.raise_for_status()
         return response
 
-    def _create_initial_commit(self):
+    async def _create_initial_commit(self):
         headers = dict(self.headers)
         headers.update({'Content-Type': 'application/json'})
-        # Make initial empty commit in repository
-        response = requests.post(
-            '{repo_url}/projects/{pid}/repository/commits'.format(
-                repo_url=self.repo_url,
-                pid=self.project_id,
-            ),
-            data=EMPTY_COMMIT_PAYLOAD,
-            headers=headers,
-        )
+        async with httpx.AsyncClient() as client:
+            # Make initial empty commit in repository
+            response = await client.post(
+                '{repo_url}/projects/{pid}/repository/commits'.format(
+                    repo_url=self.repo_url,
+                    pid=await self.project_id,
+                ),
+                data=EMPTY_COMMIT_PAYLOAD,
+                headers=headers,
+            )
         response.raise_for_status()
         return response
 
     @cached_property
-    def projects(self):
-        response = requests.get(
-            '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
-            headers=self.headers,
-        )
+    async def projects(self):
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
+                headers=self.headers,
+            )
         response.raise_for_status()
         return response.json()
 
@@ -393,35 +405,37 @@ class GitLab:
         return {'Authorization': 'Bearer {token}'.format(**self.options)}
 
     @cached_property
-    def merge_requests(self):
-        response = requests.get(
-            '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
-                **self.options,
-                pid=self.project_id
-            ),
-            headers=self.headers,
-        )
+    async def merge_requests(self):
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
+                    **self.options,
+                    pid=await self.project_id
+                ),
+                headers=self.headers,
+            )
         response.raise_for_status()
         return response.json()
 
     @cached_property
-    def project_id(self):
+    async def project_id(self):
         path = '{namespace}/{project}'.format(**self.options)
-        return one(x for x in self.projects if x['path_with_namespace'] == path)['id']
+        return one(x for x in await self.projects if x['path_with_namespace'] == path)['id']
 
-    def create_merge_request(self, source_branch, target_branch, title):
-        response = requests.post(
-            '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
-                **self.options,
-                pid=self.project_id,
-            ),
-            data=dict(
-                source_branch=source_branch,
-                target_branch=target_branch,
-                title=title,
-            ),
-            headers=self.headers,
-        )
+    async def create_merge_request(self, source_branch, target_branch, title):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
+                    **self.options,
+                    pid=await self.project_id,
+                ),
+                data=dict(
+                    source_branch=source_branch,
+                    target_branch=target_branch,
+                    title=title,
+                ),
+                headers=self.headers,
+            )
         response.raise_for_status()
 
 
@@ -488,27 +502,27 @@ class GitStorage(FileStorageMixin, Storage):
 
         return site_repo
 
-    def request_release(self, site_id, session_id, session_dir):
+    async def request_release(self, site_id, session_id, session_dir):
         run_local = functools.partial(run, cwd=session_dir)
-        run_local('git add -A .')
-        run_local('git commit -m autosave')
-        run_local('git push')
+        await async_run(run_local, 'git add -A .')
+        await async_run(run_local, 'git commit -m autosave')
+        await async_run(run_local, 'git push')
         site = self.config[site_id]
         session = site.sessions[session_id]
         title_template = 'Request from: "{custodian}" <{custodian_email}>'
-        return GitLab(site[self.GITLAB_SECTION_NAME]).create_merge_request(
+        return await GitLab(site[self.GITLAB_SECTION_NAME]).create_merge_request(
             source_branch=f'session-{session_id}',
             target_branch=site.get('branch', 'master'),
             title=title_template.format(**session),
         )
 
-    def get_merge_requests(self, site_id):
+    async def get_merge_requests(self, site_id):
         site = self.config[site_id]
         gitlab_options = site.get(self.GITLAB_SECTION_NAME, None)
         if not gitlab_options:
             logging.warn('get_merge_requests: empty gitlab options')
             return []
-        return GitLab(gitlab_options).merge_requests
+        return await GitLab(gitlab_options).merge_requests
 
     def site_config(self, site_id):
         return collections.defaultdict(type(None))
@@ -532,9 +546,9 @@ class GitlabStorage(GitStorage):
         site_workdir, options = await super().create_site(lektor, name, owner, site_id)
 
         aws = AWS()
-        bucket_name = aws.create_s3_bucket(site_id)
-        distribution_id, domain_name = aws.create_cloudfront_distribution(bucket_name)
-        aws.open_bucket_access(bucket_name)
+        bucket_name = await aws.create_s3_bucket(site_id)
+        distribution_id, domain_name = await aws.create_cloudfront_distribution(bucket_name)
+        await aws.open_bucket_access(bucket_name)
 
         with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
             fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
@@ -564,7 +578,7 @@ class GitlabStorage(GitStorage):
         return site_workdir, options
 
     async def create_site_repo(self, site_id):
-        site_repo = GitLab(dict(
+        site_repo = await GitLab(dict(
             scheme=self.protocol,
             host=self.repo,
             namespace=self.namespace,

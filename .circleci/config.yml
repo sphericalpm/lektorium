@@ -30,7 +30,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest --cov-report xml
+            python -m pytest --cov=lektorium --cov-report=xml
 
 
       - codecov/upload:
