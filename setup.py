@@ -45,7 +45,6 @@ setuptools.setup(
         'bidict',
         'boto3',
         'cached-property',
-        'coverage<5',
         'graphene',
         'graphql-core<3',
         'graphql-server-core<1.1.2',
@@ -55,6 +54,7 @@ setuptools.setup(
         'nodeenv',
         'python-dateutil<2.8.1',
         'pyyaml',
+        'spherical-dev>0.0.1',
         'wrapt',
     ],
     extras_require={
@@ -63,6 +63,7 @@ setuptools.setup(
             'aioresponses',
             'aresponses',
             'async-timeout',
+            'coverage<5',
             'flake8-blind-except',
             'flake8-builtins',
             'flake8-docstrings',
@@ -77,9 +78,9 @@ setuptools.setup(
             'pydocstyle',
             'pytest-asyncio',
             'requests-mock',
-            'spherical-dev',
+            'spherical-dev[dev]>0.0.1',
             'wheel',
         ]
     },
-    zip_safe=True,
+    zip_safe=False,
 )

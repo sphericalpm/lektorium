@@ -1,24 +1,13 @@
 import os
 import pathlib
-import shlex
 import subprocess
-import sys
 import webbrowser
 
 from invoke import task
 from invoke.tasks import call
-from spherical_dev.tasks import clean, flake, isort, test  # noqa: F401
-from spherical_dev.utils import ask
 
-
-try:
-    from lektorium.utils import flatten_options, named_args
-except ModuleNotFoundError:
-    src_dir = pathlib.Path('src')
-    if not (src_dir / 'lektorium').exists():
-        raise
-    sys.path.append(str(src_dir.resolve()))
-    from lektorium.utils import flatten_options, named_args
+from spherical_dev.tasks import clean, flake, isort, test, dev  # noqa: F401
+from spherical_dev.utils import flatten_options, named_args
 
 
 CONTAINERS_BASE = 'containers'
@@ -42,11 +31,6 @@ def get_config(ctx, env, cfg, auth, network):
             auth = ','.join(auth)
     network = network or ctx.get('network')
     return env, cfg, auth, network
-
-
-@task
-def dev(ctx):
-    ctx.run('pip install -e .[dev,inv]')
 
 
 @task
@@ -78,7 +62,7 @@ def lektorium_labels(server_name, port=80):
         'http.services.lektorium.loadbalancer.server.port': f'{port}',
         'http.middlewares.lektorium-redir.redirectscheme.scheme': 'https',
         'http.routers': {
-            'lektorium' : {
+            'lektorium': {
                 'entrypoints': 'websecure',
                 'rule': f"Host(`{server_name}`)",
                 'tls.certresolver': 'le',
@@ -233,6 +217,6 @@ def list(ctx):
         webbrowser.open(target)
     try:
         proc.communicate()
-    except:
+    except Exception:
         proc.kill()
         proc.wait()
