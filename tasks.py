@@ -88,6 +88,9 @@ def run_nginx(ctx, network=None):
 
 @task
 def run_traefik(ctx, image='traefik', ip=None, network=None):
+    if ctx.get('skip-traefik', False):
+        return
+
     env, *_, network = get_config(ctx, None, None, None, network)
     ctx.run(f'docker kill {PROXY_CONTAINER}', warn=True)
     ctx.run(f'docker rm {PROXY_CONTAINER}', warn=True)
@@ -141,6 +144,9 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
 
 @task
 def build_server_image(ctx):
+    if 'key' not in ctx:
+        raise RuntimeError('pleas provde key for access server to gitlab')
+
     server_dir = f'{CONTAINERS_BASE}/server'
     with (pathlib.Path(server_dir) / 'key').open('w') as key_file:
         key = os.linesep.join((
