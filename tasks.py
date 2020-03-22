@@ -60,7 +60,6 @@ def lektorium_labels(server_name, port=80):
     labels = {
         'enable': 'true',
         'http.services.lektorium.loadbalancer.server.port': f'{port}',
-        'http.middlewares.lektorium-redir.redirectscheme.scheme': 'https',
         'http.routers': {
             'lektorium': {
                 'entrypoints': 'websecure',
@@ -97,6 +96,24 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
         'certificatesresolvers.le.acme'
     )
     resolver = named_args('--', resolver)
+
+    labels = {
+        'enable': 'true',
+        'http': {
+            'middlewares': {
+                'redirect-to-https.redirectscheme.scheme': 'https',
+            },
+            'routers': {
+                'redirect-to-https': {
+                    'entrypoints': 'web',
+                    'rule': 'HostRegexp(`{host:.+}`)',
+                    'middlewares': 'redirect-to-https',
+                },
+            },
+        }
+    }
+    labels = named_args('--label ', flatten_options(labels, 'traefik'))
+
     ctx.run((
         'docker create '
         '--restart unless-stopped '
@@ -107,6 +124,7 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
         f'-p {ip or ""}{":" if ip else ""}443:443 '
         f'{env} '
         f'{image} '
+        f'{labels} '
         '--accessLog '
         '--api.dashboard '
         f'{resolver} '
