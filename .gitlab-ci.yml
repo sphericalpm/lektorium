@@ -11,5 +11,6 @@ lektorium-deploy:
     - pip install -e .[dev]
     - cp ${LEKTORIUM_DEPLOY_CONFIG} invoke.yaml
     - inv deploy
+    - docker ps -a
   only:
     - master
