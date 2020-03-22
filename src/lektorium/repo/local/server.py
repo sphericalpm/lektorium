@@ -9,7 +9,7 @@ import subprocess
 import aiodocker
 from more_itertools import one
 
-from ...utils import flatten_options
+from spherical_dev.utils import flatten_options
 
 
 class Server(metaclass=abc.ABCMeta):

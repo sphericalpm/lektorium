@@ -1,21 +1,13 @@
 import os
 import pathlib
-import shlex
 import subprocess
-import sys
 import webbrowser
+
 from invoke import task
 from invoke.tasks import call
 
-
-try:
-    from lektorium.utils import flatten_options, named_args
-except ModuleNotFoundError:
-    src_dir = pathlib.Path('src')
-    if not (src_dir / 'lektorium').exists():
-        raise
-    sys.path.append(str(src_dir.resolve()))
-    from lektorium.utils import flatten_options, named_args
+from spherical_dev.tasks import clean, flake, isort, test, dev  # noqa: F401
+from spherical_dev.utils import flatten_options, named_args
 
 
 CONTAINERS_BASE = 'containers'
@@ -39,33 +31,6 @@ def get_config(ctx, env, cfg, auth, network):
             auth = ','.join(auth)
     network = network or ctx.get('network')
     return env, cfg, auth, network
-
-
-@task
-def dev(ctx):
-    ctx.run('pip install -e .[dev,inv]')
-
-
-@task
-def test(ctx):
-    ctx.run('pytest -rxXs')
-
-
-@task
-def cov(ctx):
-    ctx.run('pytest --cov=lektorium --cov-report=html')
-    path = (pathlib.Path('.') / 'htmlcov' / 'index.html').resolve()
-    webbrowser.open(f"file://{path}")
-
-
-@task
-def flake(ctx):
-    ctx.run('flake8 src tests')
-
-
-@task(test, flake)
-def full(c):
-    pass
 
 
 @task
@@ -95,9 +60,8 @@ def lektorium_labels(server_name, port=80):
     labels = {
         'enable': 'true',
         'http.services.lektorium.loadbalancer.server.port': f'{port}',
-        'http.middlewares.lektorium-redir.redirectscheme.scheme': 'https',
         'http.routers': {
-            'lektorium' : {
+            'lektorium': {
                 'entrypoints': 'websecure',
                 'rule': f"Host(`{server_name}`)",
                 'tls.certresolver': 'le',
@@ -124,6 +88,9 @@ def run_nginx(ctx, network=None):
 
 @task
 def run_traefik(ctx, image='traefik', ip=None, network=None):
+    if ctx.get('skip-traefik', False):
+        return
+
     env, *_, network = get_config(ctx, None, None, None, network)
     ctx.run(f'docker kill {PROXY_CONTAINER}', warn=True)
     ctx.run(f'docker rm {PROXY_CONTAINER}', warn=True)
@@ -132,6 +99,24 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
         'certificatesresolvers.le.acme'
     )
     resolver = named_args('--', resolver)
+
+    labels = {
+        'enable': 'true',
+        'http': {
+            'middlewares': {
+                'redirect-to-https.redirectscheme.scheme': 'https',
+            },
+            'routers': {
+                'redirect-to-https': {
+                    'entrypoints': 'web',
+                    'rule': 'HostRegexp(`{host:.+}`)',
+                    'middlewares': 'redirect-to-https',
+                },
+            },
+        }
+    }
+    labels = named_args('--label ', flatten_options(labels, 'traefik'))
+
     ctx.run((
         'docker create '
         '--restart unless-stopped '
@@ -141,6 +126,7 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
         f'-p {ip or ""}{":" if ip else ""}80:80 '
         f'-p {ip or ""}{":" if ip else ""}443:443 '
         f'{env} '
+        f'{labels} '
         f'{image} '
         '--accessLog '
         '--api.dashboard '
@@ -158,6 +144,9 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
 
 @task
 def build_server_image(ctx):
+    if 'key' not in ctx:
+        raise RuntimeError('pleas provde key for access server to gitlab')
+
     server_dir = f'{CONTAINERS_BASE}/server'
     with (pathlib.Path(server_dir) / 'key').open('w') as key_file:
         key = os.linesep.join((
@@ -252,6 +241,6 @@ def list(ctx):
         webbrowser.open(target)
     try:
         proc.communicate()
-    except:
+    except Exception:
         proc.kill()
         proc.wait()
