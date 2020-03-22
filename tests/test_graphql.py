@@ -1,7 +1,6 @@
 import copy
 import pytest
 import collections
-from os import environ
 
 import graphene.test
 from graphql.execution.executors.asyncio import AsyncioExecutor
@@ -21,7 +20,6 @@ def deorder(obj):
 
 @pytest.fixture
 def client():
-    environ['CHECKPERMISSIONS'] = 'disable'
     return graphene.test.Client(
         graphene.Schema(
             query=lektorium.schema.Query,
@@ -33,6 +31,7 @@ def client():
             ),
             'user_permissions': ['fake:permission'],
             'auth0_client': FakeAuth0Client(),
+            'skip_permissions_check': True,
         },
         executor=AsyncioExecutor(),
     )

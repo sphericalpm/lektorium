@@ -1,4 +1,3 @@
-from os import environ
 from asyncio import Future, iscoroutine
 
 import wrapt
@@ -95,8 +94,8 @@ class Releasing(ObjectType):
     web_url = String()
 
 
-def skip_permissions_check():
-    return environ.get('CHECKPERMISSIONS', '') == 'disable'
+def skip_permissions_check(info):
+    return info.context.get('skip_permissions_check', False)
 
 
 class PermissionError(GraphExecutionError):
@@ -114,9 +113,10 @@ def get_user_permissions(info):
 def require_permissions(required):
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
-        if skip_permissions_check():
+        info, *_ = args
+        if skip_permissions_check(info):
             return await wrapped(*args, **kwargs)
-        permissions = get_user_permissions(args[0])
+        permissions = get_user_permissions(info)
         if ADMIN_PERMISSION in permissions:
             return await wrapped(*args, **kwargs)
         if required is not None and len(required):
@@ -182,7 +182,7 @@ class MutationBase(Mutation):
 
     @classmethod
     def has_permission(cls, root, info, **kwargs):
-        if skip_permissions_check():
+        if skip_permissions_check(info):
             return True
         permissions = get_user_permissions(info)
         if ADMIN_PERMISSION in permissions:

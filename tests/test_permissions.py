@@ -1,7 +1,6 @@
 import copy
 import pytest
 import collections
-from os import environ
 
 import graphene.test
 from graphql.execution.executors.asyncio import AsyncioExecutor
@@ -21,7 +20,6 @@ def deorder(obj):
 
 @pytest.fixture
 def client_with_permissions():
-    environ.pop('CHECKPERMISSIONS', '')
     return graphene.test.Client(
         graphene.Schema(
             query=lektorium.schema.Query,
@@ -54,7 +52,6 @@ def client_with_permissions():
 
 @pytest.fixture
 def client_without_permissions():
-    environ.pop('CHECKPERMISSIONS', '')
     return graphene.test.Client(
         graphene.Schema(
             query=lektorium.schema.Query,
@@ -73,7 +70,6 @@ def client_without_permissions():
 
 @pytest.fixture
 def client_admin():
-    environ.pop('CHECKPERMISSIONS', '')
     return graphene.test.Client(
         graphene.Schema(
             query=lektorium.schema.Query,
@@ -123,7 +119,6 @@ def test_admin_mutation(client_admin):
 
 @pytest.fixture
 def anonymous_client():
-    environ.pop('CHECKPERMISSIONS', '')
     return graphene.test.Client(
         graphene.Schema(
             query=lektorium.schema.Query,
