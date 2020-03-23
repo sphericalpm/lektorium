@@ -18,18 +18,7 @@ import lektorium.repo
 from lektorium.auth0 import Auth0Error
 
 
-class Permissions(enum.Enum):
-    ADD_PERMISSION = 'add:permission'
-    ADD_RELEASE = 'add:release'
-    ADD_SESSION = 'add:session'
-    ADD_SITE = 'add:site'
-    ADMIN = 'all:admin'
-    DELETE_PERMISSION = 'delete:permission'
-    DELETE_SESSION = 'delete:session'
-    EDIT_SESSION = 'edit:session'
-    READ_RELEASES = 'read:releases'
-    READ_SESSIONS = 'read:sessions'
-    READ_SITES = 'read:sites'
+ADMIN = 'admin'
 
 
 class Site(ObjectType):
@@ -123,22 +112,19 @@ def get_user_permissions(info):
     return permissions
 
 
-def require_permissions(wrapped=None, required=None):
+def inject_permissions(wrapped=None, admin=False):
     if wrapped is None:
-        return functools.partial(require_permissions, required=required)
+        return functools.partial(inject_permissions, admin=admin)
 
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
         info, *_ = args
-        if skip_permissions_check(info):
-            return await wrapped(*args, **kwargs)
         permissions = get_user_permissions(info)
-        if Permissions.ADMIN.value in permissions:
-            return await wrapped(*args, **kwargs)
-        if required is not None and len(required):
-            if not required.difference(permissions):
-                return await wrapped(*args, **kwargs)
-        return ()
+        if skip_permissions_check(info):
+            permissions = (ADMIN,)
+        if admin and ADMIN not in permissions:
+            return ()
+        return await wrapped(*args, permissions=permissions, **kwargs)
 
     return wrapper(wrapped)
 
@@ -158,34 +144,37 @@ class Query(ObjectType):
             for session in site.sessions or ():
                 yield dict(**session, site=site)
 
-    @require_permissions(required={Permissions.READ_SITES.value})
-    async def resolve_sites(self, info):
+    @inject_permissions
+    async def resolve_sites(self, info, permissions):
         repo = info.context['repo']
-        return [Site(**x) for x in repo.sites]
+        return [
+            Site(**x) for x in repo.sites
+            if ADMIN in permissions or f'user:{x["site_id"]}' in permissions
+        ]
 
-    @require_permissions(required={Permissions.READ_SESSIONS.value})
-    async def resolve_sessions(self, info, parked):
+    @inject_permissions
+    async def resolve_sessions(self, info, parked, permissions):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
 
-    @require_permissions(required={Permissions.ADMIN.value})
-    async def resolve_users(self, info):
+    @inject_permissions(admin=True)
+    async def resolve_users(self, info, permissions):
         auth0_client = info.context['auth0_client']
         return [User(**x) for x in await auth0_client.get_users()]
 
-    @require_permissions
-    async def resolve_permissions(self, info, user_id):
+    @inject_permissions(admin=True)
+    async def resolve_permissions(self, info, user_id, permissions):
         auth0_client = info.context['auth0_client']
         return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
 
-    @require_permissions
-    async def resolve_available_permissions(self, info):
+    @inject_permissions(admin=True)
+    async def resolve_available_permissions(self, info, permissions):
         auth0_client = info.context['auth0_client']
         return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
 
-    @require_permissions(required={Permissions.READ_RELEASES.value})
-    async def resolve_releasing(self, info):
+    @inject_permissions
+    async def resolve_releasing(self, info, permissions):
         repo = info.context['repo']
         return [Releasing(**x) for x in repo.releasing]
 
@@ -203,12 +192,12 @@ class MutationBase(Mutation):
         if skip_permissions_check(info):
             return True
         permissions = get_user_permissions(info)
-        if Permissions.ADMIN.value in permissions:
+        if ADMIN in permissions:
             return True
-        if cls.REQUIRES is None:
-            return True
-        if not cls.REQUIRES.difference(permissions):
-            return True
+        return cls.mutate_allowed(permissions, **kwargs)
+
+    @classmethod
+    def mutate_allowed(cls, permissions, **kwargs):
         return False
 
     @classmethod
@@ -234,49 +223,48 @@ class ChangePermissionsMixin:
 
 
 class AddPermissions(ChangePermissionsMixin, MutationBase):
-    REQUIRES = {Permissions.ADD_PERMISSION.value}
     REPO_METHOD = 'set_user_permissions'
 
 
 class DeletePermissions(ChangePermissionsMixin, MutationBase):
-    REQUIRES = {Permissions.DELETE_PERMISSION.value}
     REPO_METHOD = 'delete_user_permissions'
 
 
-class DestroySession(MutationBase):
-    REQUIRES = {Permissions.DELETE_SESSION.value}
+class SitePermissionMixin:
+    @classmethod
+    def mutate_allowed(cls, permissions, site_id, **kwargs):
+        return f'user:{site_id}' in permissions
+
+
+class DestroySession(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'destroy_session'
 
     class Arguments:
         session_id = String()
 
 
-class ParkSession(MutationBase):
-    REQUIRES = {Permissions.EDIT_SESSION.value}
+class ParkSession(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'park_session'
 
     class Arguments:
         session_id = String()
 
 
-class RequestRelease(MutationBase):
-    REQUIRES = {Permissions.ADD_RELEASE.value}
+class RequestRelease(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'request_release'
 
     class Arguments:
         session_id = String()
 
 
-class UnparkSession(MutationBase):
-    REQUIRES = {Permissions.EDIT_SESSION.value}
+class UnparkSession(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'unpark_session'
 
     class Arguments:
         session_id = String()
 
 
-class CreateSession(MutationBase):
-    REQUIRES = {Permissions.ADD_SESSION.value}
+class CreateSession(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'create_session'
 
     class Arguments:
@@ -289,7 +277,6 @@ class CreateSession(MutationBase):
 
 
 class CreateSite(MutationBase):
-    REQUIRES = {Permissions.ADD_SITE.value}
     REPO_METHOD = 'create_site'
 
     class Arguments:

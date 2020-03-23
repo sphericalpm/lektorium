@@ -30,20 +30,7 @@ def client_with_permissions():
                 copy.deepcopy(lektorium.repo.SITES)
             ),
             'user_permissions': [
-                'read:sites',
-                'read:sessions',
-                'read:users',
-                'read:user-permissions',
-                'read:all-permissions',
-                'read:releases',
-
-                'add:permission',
-                'add:release',
-                'add:session',
-                'add:site',
-                'delete:permission',
-                'delete:session',
-                'edit:session',
+                'user:ldi',
             ]
         },
         executor=AsyncioExecutor(),
@@ -79,7 +66,7 @@ def client_admin():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             ),
-            'user_permissions': [lektorium.schema.Permissions.ADMIN.value],
+            'user_permissions': [lektorium.schema.ADMIN],
         },
         executor=AsyncioExecutor(),
     )
@@ -164,8 +151,6 @@ def test_query_with_permissions(client_with_permissions):
     assert deorder(result) == {
         'data': {
             'sites': [
-                {'siteId': 'bow'},
-                {'siteId': 'uci'},
                 {'siteId': 'ldi'},
             ]
         }
@@ -189,13 +174,13 @@ def test_query_without_permissions(client_without_permissions):
 
 def test_mutation_with_permissions(client_with_permissions):
     result = client_with_permissions.execute(r'''mutation {
-        createSite(siteId:"test" siteName:"test") {
+        createSession(siteId: "ldi") {
             ok,
         }
     }''')
     assert deorder(result) == {
         'data': {
-            'createSite': {
+            'createSession': {
                 'ok': True,
             },
         }
