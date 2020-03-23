@@ -9,7 +9,7 @@ lektorium-deploy:
     - apk add --update python3 git docker-cli bash
     - python3 -m pip install -U pip
     - git tag && git status && git describe
-    - pip install spherical-dev
+    - pip install spherical-dev wheel
     - cp ${LEKTORIUM_DEPLOY_CONFIG} invoke.yaml
     - inv deploy
     - docker ps -a
