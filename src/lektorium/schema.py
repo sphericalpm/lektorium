@@ -1,4 +1,5 @@
 from asyncio import Future, iscoroutine
+import functools
 
 import wrapt
 from graphene import (
@@ -110,7 +111,10 @@ def get_user_permissions(info):
     return permissions
 
 
-def require_permissions(required):
+def require_permissions(wrapped=None, required=None):
+    if wrapped is None:
+        return functools.partial(require_permissions, required=required)
+
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
         info, *_ = args
@@ -123,7 +127,8 @@ def require_permissions(required):
             if not required.difference(permissions):
                 return await wrapped(*args, **kwargs)
         return ()
-    return wrapper
+
+    return wrapper(wrapped)
 
 
 class Query(ObjectType):
@@ -141,33 +146,33 @@ class Query(ObjectType):
             for session in site.sessions or ():
                 yield dict(**session, site=site)
 
-    @require_permissions({'read:sites'})
+    @require_permissions(required={'read:sites'})
     async def resolve_sites(self, info):
         repo = info.context['repo']
         return [Site(**x) for x in repo.sites]
 
-    @require_permissions({'read:sessions'})
+    @require_permissions(required={'read:sessions'})
     async def resolve_sessions(self, info, parked):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [x for x in sessions if bool(x.edit_url) != parked]
 
-    @require_permissions(None)
+    @require_permissions
     async def resolve_users(self, info):
         auth0_client = info.context['auth0_client']
         return [User(**x) for x in await auth0_client.get_users()]
 
-    @require_permissions(None)
+    @require_permissions
     async def resolve_permissions(self, info, user_id):
         auth0_client = info.context['auth0_client']
         return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
 
-    @require_permissions(None)
+    @require_permissions
     async def resolve_available_permissions(self, info):
         auth0_client = info.context['auth0_client']
         return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
 
-    @require_permissions({'read:releases'})
+    @require_permissions(required={'read:releases'})
     async def resolve_releasing(self, info):
         repo = info.context['repo']
         return [Releasing(**x) for x in repo.releasing]
