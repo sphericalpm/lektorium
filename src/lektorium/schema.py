@@ -233,12 +233,12 @@ class ChangePermissionsMixin:
         permissions = List(String)
 
 
-class AddPermissions(MutationBase, ChangePermissionsMixin):
+class AddPermissions(ChangePermissionsMixin, MutationBase):
     REQUIRES = {Permissions.ADD_PERMISSION.value}
     REPO_METHOD = 'set_user_permissions'
 
 
-class DeletePermissions(MutationBase, ChangePermissionsMixin):
+class DeletePermissions(ChangePermissionsMixin, MutationBase):
     REQUIRES = {Permissions.DELETE_PERMISSION.value}
     REPO_METHOD = 'delete_user_permissions'
 

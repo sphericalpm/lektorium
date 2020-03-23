@@ -79,7 +79,7 @@ def client_admin():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             ),
-            'user_permissions': [lektorium.schema.ADMIN_PERMISSION],
+            'user_permissions': [lektorium.schema.Permissions.ADMIN.value],
         },
         executor=AsyncioExecutor(),
     )
