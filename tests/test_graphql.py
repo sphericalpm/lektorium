@@ -1,6 +1,7 @@
 import copy
 import pytest
 import collections
+
 import graphene.test
 from graphql.execution.executors.asyncio import AsyncioExecutor
 import lektorium.schema
@@ -28,8 +29,9 @@ def client():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             ),
-            'user_permissions': ['read:sites', 'create:site'],
+            'user_permissions': ['fake:permission'],
             'auth0_client': FakeAuth0Client(),
+            'skip_permissions_check': True,
         },
         executor=AsyncioExecutor(),
     )
@@ -462,13 +464,13 @@ def test_get_users(client):
 
 def test_get_user_permissions(client):
     result = client.execute(r''' {
-        permissions(userId: "test_id") {
+        userPermissions(userId: "test_id") {
             permissionName
         }
     }''')
     assert deorder(result) == {
         'data': {
-            'permissions': [
+            'userPermissions': [
                 {'permissionName': 'Test Permission1'}
             ]
         }
@@ -484,8 +486,10 @@ def test_get_api_permissions(client):
     assert deorder(result) == {
         'data': {
             'availablePermissions': [
-                {'value': 'Test Permission1'},
-                {'value': 'Test Permission2'}
+                {'value': 'admin'},
+                {'value': 'user:bow'},
+                {'value': 'user:uci'},
+                {'value': 'user:ldi'}
             ]
         }
     }
@@ -505,13 +509,13 @@ def test_set_permissions(client):
         }
     }
     result = client.execute(r''' {
-        permissions(userId: "test_id") {
+        userPermissions(userId: "test_id") {
             permissionName
         }
     }''')
     assert deorder(result) == {
         'data': {
-            'permissions': [
+            'userPermissions': [
                 {'permissionName': 'Test Permission1'},
                 {'permissionName': 'Test Permission2'},
             ]
@@ -551,13 +555,13 @@ def test_delete_permissions(client):
         }
     }
     result = client.execute(r''' {
-        permissions(userId: "test_id") {
+        userPermissions(userId: "test_id") {
             permissionName
         }
     }''')
     assert deorder(result) == {
         'data': {
-            'permissions': [
+            'userPermissions': [
                 {'permissionName': 'Test Permission2'},
             ]
         }

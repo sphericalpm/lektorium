@@ -1,5 +1,5 @@
-from os import environ
 from asyncio import Future, iscoroutine
+import functools
 
 import wrapt
 from graphene import (
@@ -12,8 +12,12 @@ from graphene import (
     String,
 )
 
+from .jwt import GraphExecutionError
 import lektorium.repo
 from lektorium.auth0 import Auth0Error
+
+
+ADMIN = 'admin'
 
 
 class Site(ObjectType):
@@ -91,29 +95,44 @@ class Releasing(ObjectType):
     web_url = String()
 
 
-def skip_permissions_check():
-    return environ.get('CHECKPERMISSIONS', '') == 'disable'
+def skip_permissions_check(info):
+    return info.context.get('skip_permissions_check', False)
 
 
-def require_permissions(required):
+class PermissionError(GraphExecutionError):
+    def __init__(self):
+        super().__init__('User has no permission', code=403)
+
+
+def get_user_permissions(info):
+    permissions = set(info.context.get('user_permissions', []))
+    if not permissions:
+        raise PermissionError()
+    return permissions
+
+
+def inject_permissions(wrapped=None, admin=False):
+    if wrapped is None:
+        return functools.partial(inject_permissions, admin=admin)
+
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
-        if skip_permissions_check():
-            return await wrapped(*args, **kwargs)
-        if required is not None and len(required):
-            info = args[0]
-            permissions = set(info.context.get('user_permissions', []))
-            if not required.difference(permissions):
-                return await wrapped(*args, **kwargs)
-        return ()
-    return wrapper
+        info, *_ = args
+        permissions = get_user_permissions(info)
+        if skip_permissions_check(info):
+            permissions = (ADMIN,)
+        if admin and ADMIN not in permissions:
+            return ()
+        return await wrapped(*args, permissions=permissions, **kwargs)
+
+    return wrapper(wrapped)
 
 
 class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
     users = List(User)
-    permissions = List(Permission, user_id=String())
+    user_permissions = List(Permission, user_id=String())
     available_permissions = List(ApiPermission)
     releasing = List(Releasing)
 
@@ -124,29 +143,50 @@ class Query(ObjectType):
             for session in site.sessions or ():
                 yield dict(**session, site=site)
 
-    @require_permissions({'read:sites'})
-    async def resolve_sites(self, info):
+    @inject_permissions
+    async def resolve_sites(self, info, permissions):
         repo = info.context['repo']
-        return [Site(**x) for x in repo.sites]
+        return [
+            Site(**x) for x in repo.sites
+            if ADMIN in permissions or f'user:{x["site_id"]}' in permissions
+        ]
 
-    async def resolve_sessions(self, info, parked):
+    @inject_permissions
+    async def resolve_sessions(self, info, parked, permissions):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
-        return [x for x in sessions if bool(x.edit_url) != parked]
+        return [
+            x for x in sessions
+            if (
+                bool(x.edit_url) != parked and (
+                    ADMIN in permissions or f'user:{x.site.site_id}' in permissions
+                )
+            )
+        ]
 
-    async def resolve_users(self, info):
+    @inject_permissions(admin=True)
+    async def resolve_users(self, info, permissions):
         auth0_client = info.context['auth0_client']
         return [User(**x) for x in await auth0_client.get_users()]
 
-    async def resolve_permissions(self, info, user_id):
+    @inject_permissions(admin=True)
+    async def resolve_user_permissions(self, info, user_id, permissions):
         auth0_client = info.context['auth0_client']
         return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
 
-    async def resolve_available_permissions(self, info):
-        auth0_client = info.context['auth0_client']
-        return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
+    @inject_permissions(admin=True)
+    async def resolve_available_permissions(self, info, permissions):
+        repo = info.context['repo']
+        return [
+            ApiPermission(v, v)
+            for v in (
+                'admin',
+                *(f'user:{x["site_id"]}' for x in repo.sites)
+            )
+        ]
 
-    async def resolve_releasing(self, info):
+    @inject_permissions
+    async def resolve_releasing(self, info, permissions):
         repo = info.context['repo']
         return [Releasing(**x) for x in repo.releasing]
 
@@ -157,105 +197,83 @@ class MutationResult(ObjectType):
 
 class MutationBase(Mutation):
     Output = MutationResult
+    TARGET = 'repo'
 
     @classmethod
-    def has_permission(cls, root, info, **kwargs):
-        if skip_permissions_check():
-            return True
-        if cls.REQUIRES is None:
-            return True
-        permissions = set(info.context.get('user_permissions', []))
-        if not cls.REQUIRES.difference(permissions):
-            return True
+    def mutate_allowed(cls, permissions, **kwargs):
         return False
 
     @classmethod
     async def mutate(cls, root, info, **kwargs):
-        if not cls.has_permission(root, info, **kwargs):
-            return MutationResult(ok=False)
+        if not skip_permissions_check(info):
+            permissions = get_user_permissions(info)
+            if ADMIN not in permissions:
+                if not cls.mutate_allowed(permissions, **kwargs):
+                    raise PermissionError()
+
         try:
-            method = getattr(info.context['repo'], cls.REPO_METHOD)
+            method = getattr(info.context[cls.TARGET], cls.REPO_METHOD)
             result = method(**kwargs)
             if isinstance(result, Future) or iscoroutine(result):
                 await result
-        except lektorium.repo.ExceptionBase:
+        except (Auth0Error, lektorium.repo.ExceptionBase):
             return MutationResult(ok=False)
+
         return MutationResult(ok=True)
 
 
-class AddPermissions(MutationBase):
+class ChangePermissionsMixin:
+    TARGET = 'auth0_client'
+
+    class Arguments:
+        user_id = String()
+        permissions = List(String)
+
+
+class AddPermissions(ChangePermissionsMixin, MutationBase):
     REPO_METHOD = 'set_user_permissions'
 
-    class Arguments:
-        user_id = String()
-        permissions = List(String)
 
-    @classmethod
-    async def mutate(cls, root, info, **kwargs):
-        try:
-            method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
-            result = method(**kwargs)
-            if isinstance(result, Future) or iscoroutine(result):
-                await result
-        except Auth0Error:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
-
-
-class DeletePermissions(MutationBase):
+class DeletePermissions(ChangePermissionsMixin, MutationBase):
     REPO_METHOD = 'delete_user_permissions'
 
-    class Arguments:
-        user_id = String()
-        permissions = List(String)
 
+class SitePermissionMixin:
     @classmethod
-    async def mutate(cls, root, info, **kwargs):
-        try:
-            method = getattr(info.context['auth0_client'], cls.REPO_METHOD)
-            result = method(**kwargs)
-            if isinstance(result, Future) or iscoroutine(result):
-                await result
-        except Auth0Error:
-            return MutationResult(ok=False)
-        return MutationResult(ok=True)
+    def mutate_allowed(cls, permissions, site_id, **kwargs):
+        return f'user:{site_id}' in permissions
 
 
-class DestroySession(MutationBase):
+class DestroySession(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'destroy_session'
-    REQUIRES = None
 
     class Arguments:
         session_id = String()
 
 
-class ParkSession(MutationBase):
+class ParkSession(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'park_session'
-    REQUIRES = None
 
     class Arguments:
         session_id = String()
 
 
-class RequestRelease(MutationBase):
+class RequestRelease(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'request_release'
-    REQUIRES = None
 
     class Arguments:
         session_id = String()
 
 
-class UnparkSession(MutationBase):
+class UnparkSession(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'unpark_session'
-    REQUIRES = None
 
     class Arguments:
         session_id = String()
 
 
-class CreateSession(MutationBase):
+class CreateSession(SitePermissionMixin, MutationBase):
     REPO_METHOD = 'create_session'
-    REQUIRES = None
 
     class Arguments:
         site_id = String()
@@ -267,7 +285,6 @@ class CreateSession(MutationBase):
 
 
 class CreateSite(MutationBase):
-    REQUIRES = {'create:site'}
     REPO_METHOD = 'create_site'
 
     class Arguments:

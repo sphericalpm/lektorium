@@ -8,13 +8,13 @@ import tempfile
 import aiohttp.web
 import aiohttp_graphql
 from graphql.execution.executors.asyncio import AsyncioExecutor
+from graphql.error import format_error as format_graphql_error
 import bs4
 import graphene
 
-from lektorium.auth0 import Auth0Client, FakeAuth0Client
-from lektorium.jwt import JWTMiddleware
 from . import install as client, schema, repo
-from .utils import closer
+from .auth0 import Auth0Client, FakeAuth0Client
+from .jwt import JWTMiddleware, GraphExecutionError
 from .repo.local import (
     AsyncLocalServer,
     AsyncDockerServer,
@@ -24,6 +24,7 @@ from .repo.local import (
     GitlabStorage,
     LocalLektor,
 )
+from .utils import closer
 
 
 async def index(request, app_path, auth0_options=None):
@@ -141,6 +142,14 @@ def init_logging(stream=sys.stderr, level=logging.DEBUG):
     )
 
 
+def error_formatter(error):
+    formatted = format_graphql_error(error)
+    if hasattr(error, 'original_error'):
+        if isinstance(error.original_error, GraphExecutionError):
+            formatted['code'] = error.original_error.code
+    return formatted
+
+
 def init_app(repo, auth0_options=None, auth0_client=None):
     app = aiohttp.web.Application()
     app_path = client.install()
@@ -179,6 +188,7 @@ def init_app(repo, auth0_options=None, auth0_client=None):
             repo=repo,
             auth0_client=auth0_client
         ),
+        error_formatter=error_formatter,
     )
 
     app.on_startup.append(log_application_ready)

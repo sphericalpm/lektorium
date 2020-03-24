@@ -1,10 +1,12 @@
 import copy
 import pytest
 import collections
+
 import graphene.test
 from graphql.execution.executors.asyncio import AsyncioExecutor
 import lektorium.schema
 import lektorium.repo
+from lektorium.app import error_formatter
 
 
 def deorder(obj):
@@ -27,7 +29,9 @@ def client_with_permissions():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             ),
-            'user_permissions': ['read:sites', 'create:site']
+            'user_permissions': [
+                'user:ldi',
+            ]
         },
         executor=AsyncioExecutor(),
     )
@@ -44,10 +48,98 @@ def client_without_permissions():
             'repo': lektorium.repo.ListRepo(
                 copy.deepcopy(lektorium.repo.SITES)
             ),
-            'user_permissions': []
+            'user_permissions': ['fake:permission'],
+        },
+        executor=AsyncioExecutor(),
+        format_error=error_formatter,
+    )
+
+
+@pytest.fixture
+def client_admin():
+    return graphene.test.Client(
+        graphene.Schema(
+            query=lektorium.schema.Query,
+            mutation=lektorium.schema.MutationQuery,
+        ),
+        context={
+            'repo': lektorium.repo.ListRepo(
+                copy.deepcopy(lektorium.repo.SITES)
+            ),
+            'user_permissions': [lektorium.schema.ADMIN],
         },
         executor=AsyncioExecutor(),
     )
+
+
+def test_admin_query(client_admin):
+    result = client_admin.execute(r'''{
+        sites {
+            siteId
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'sites': [
+                {'siteId': 'bow'},
+                {'siteId': 'uci'},
+                {'siteId': 'ldi'},
+            ]
+        }
+    }
+
+
+def test_admin_mutation(client_admin):
+    result = client_admin.execute(r'''mutation {
+        createSite(siteId:"test" siteName:"test") {
+            ok,
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'createSite': {
+                'ok': True,
+            },
+        }
+    }
+
+
+@pytest.fixture
+def anonymous_client():
+    return graphene.test.Client(
+        graphene.Schema(
+            query=lektorium.schema.Query,
+            mutation=lektorium.schema.MutationQuery,
+        ),
+        context={
+            'repo': lektorium.repo.ListRepo(
+                copy.deepcopy(lektorium.repo.SITES)
+            ),
+            'user_permissions': [],
+        },
+        executor=AsyncioExecutor(),
+        format_error=error_formatter,
+    )
+
+
+def test_query_no_permissions(anonymous_client):
+    result = anonymous_client.execute(r'''{
+        sites {
+            siteId
+        }
+    }''')
+    assert result['errors'][0]['code'] == 403
+    assert not result['data']['sites']
+
+
+def test_mutation_no_permissions(anonymous_client):
+    result = anonymous_client.execute(r'''mutation {
+        createSite(siteId:"test" siteName:"test") {
+            ok,
+        }
+    }''')
+    assert result['errors'][0]['code'] == 403
+    assert not result['data']['createSite']
 
 
 def test_query_with_permissions(client_with_permissions):
@@ -59,8 +151,6 @@ def test_query_with_permissions(client_with_permissions):
     assert deorder(result) == {
         'data': {
             'sites': [
-                {'siteId': 'bow'},
-                {'siteId': 'uci'},
                 {'siteId': 'ldi'},
             ]
         }
@@ -84,13 +174,13 @@ def test_query_without_permissions(client_without_permissions):
 
 def test_mutation_with_permissions(client_with_permissions):
     result = client_with_permissions.execute(r'''mutation {
-        createSite(siteId:"test" siteName:"test") {
-            ok
+        createSession(siteId: "ldi") {
+            ok,
         }
     }''')
     assert deorder(result) == {
         'data': {
-            'createSite': {
+            'createSession': {
                 'ok': True,
             },
         }
@@ -100,13 +190,8 @@ def test_mutation_with_permissions(client_with_permissions):
 def test_mutation_without_permissions(client_without_permissions):
     result = client_without_permissions.execute(r'''mutation {
         createSite(siteId:"test" siteName:"test") {
-            ok
+            ok,
         }
     }''')
-    assert deorder(result) == {
-        'data': {
-            'createSite': {
-                'ok': False,
-            },
-        }
-    }
+    assert result['errors'][0]['code'] == 403
+    assert not result['data']['createSite']

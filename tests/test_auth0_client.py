@@ -1,8 +1,8 @@
 import pytest
+import functools
 from aioresponses import aioresponses
 from lektorium.auth0 import Auth0Client, Auth0Error, FakeAuth0Client
 
-pytestmark = pytest.mark.asyncio
 
 TEST_TOKEN = {'access_token': 'test_token'}
 TEST_AUTH_DATA = {
@@ -29,98 +29,124 @@ def fake_auth0_client():
     return FakeAuth0Client()
 
 
+@pytest.mark.asyncio
 async def test_fake_auth_token(fake_auth0_client):
     token = await fake_auth0_client.auth_token
     assert token == 'test_token'
 
 
+@pytest.mark.asyncio
 async def test_fake_get_user_permissions(fake_auth0_client):
     with pytest.raises(Auth0Error):
         await fake_auth0_client.get_user_permissions('wrong_id')
 
 
-async def test_auth_token(auth0_client):
+@pytest.fixture
+def mocked(auth0_client):
     with aioresponses() as mocked:
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        resp = await auth0_client.auth_token
-        assert resp == 'test_token'
-        mocked.post(auth0_client.url, status=404)
-        auth0_client.token_time = 0
-        with pytest.raises(Auth0Error):
-            resp = await auth0_client.auth_token
+        mocked.post(auth0_client.token_url, status=200, payload=TEST_TOKEN)
+        yield mocked
 
 
-async def test_get_users(auth0_client):
-    with aioresponses() as mocked:
-        url = auth0_client.data["audience"] + 'users?fields=name,nickname,email,user_id'
-        users_response = [{'username': 'mjekov'}]
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.get(url, status=200, payload=users_response)
-        resp = await auth0_client.get_users()
-        assert resp == users_response
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.get(url, status=400)
-        auth0_client._cache.pop(('users',), None)
-        with pytest.raises(Auth0Error):
-            resp = await auth0_client.get_users()
+@pytest.mark.asyncio
+async def test_auth_token(auth0_client, mocked):
+    assert (await auth0_client.auth_token) == 'test_token'
+    mocked.post(auth0_client.token_url, status=404)
+    auth0_client.token_time = 0
+    requests = list(mocked.requests.values())
+    assert len(requests) == 1
+    assert len(requests[0]) == 1
+    request = requests[0][0]
+    assert request.kwargs['json']['audience'] == f'{auth0_client.audience}/'
+    with pytest.raises(Auth0Error):
+        await auth0_client.auth_token
 
 
-async def test_get_user_permissions(auth0_client):
-    with aioresponses() as mocked:
-        url = auth0_client.data["audience"] + 'users/user_id/permissions'
-        permissions_response = [{'permission_name': 'read:projects'}]
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.get(url, status=200, payload=permissions_response)
-        resp = await auth0_client.get_user_permissions('user_id')
-        assert resp == permissions_response
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        auth0_client._cache.pop(('user_permissions', 'user_id'), None)
-        mocked.get(url, status=400)
-        with pytest.raises(Auth0Error):
-            resp = await auth0_client.get_user_permissions('user_id')
+@pytest.mark.asyncio
+async def test_get_users(auth0_client, mocked):
+    url = f'{auth0_client.audience}/users?fields=name,nickname,email,user_id'
+    users_response = [{
+        'username': 'mjekov'
+    }]
+    mocked.get(url, status=200, payload=users_response)
+    assert (await auth0_client.get_users()) == users_response
+    mocked.get(url, status=400)
+    auth0_client._cache.pop(('users',), None)
+    with pytest.raises(Auth0Error):
+        await auth0_client.get_users()
 
 
-async def test_set_user_permissions(auth0_client):
-    with aioresponses() as mocked:
-        url = auth0_client.data["audience"] + 'users/user_id/permissions'
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.post(url, status=201)
-        resp = await auth0_client.set_user_permissions('user_id', ['permission'])
-        assert resp
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.post(url, status=400)
-        with pytest.raises(Auth0Error):
-            resp = await auth0_client.set_user_permissions('user_id', ['permission'])
+@pytest.mark.asyncio
+async def test_get_user_permissions(auth0_client, mocked):
+    url = f'{auth0_client.audience}/users/user_id/permissions'
+    permissions_response = [{
+        'permission_name': 'read:projects'
+    }]
+    mocked.get(url, status=200, payload=permissions_response)
+    response = await auth0_client.get_user_permissions('user_id')
+    assert response == permissions_response
+    auth0_client._cache.pop(('user_permissions', 'user_id'), None)
+    mocked.get(url, status=400)
+    with pytest.raises(Auth0Error):
+        await auth0_client.get_user_permissions('user_id')
 
 
-async def test_delete_user_permissions(auth0_client):
-    with aioresponses() as mocked:
-        url = auth0_client.data["audience"] + 'users/user_id/permissions'
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.delete(url, status=204)
-        resp = await auth0_client.delete_user_permissions('user_id', ['permission'])
-        assert resp
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.delete(url, status=400)
-        with pytest.raises(Auth0Error):
-            resp = await auth0_client.delete_user_permissions('user_id', ['permission'])
+@pytest.mark.asyncio
+async def test_set_user_permissions(auth0_client, mocked):
+    api_permissions_url = f'{auth0_client.audience}/resource-servers'
+    mocked.get(
+        api_permissions_url,
+        status=200,
+        payload=[{
+            'identifier': auth0_client.api_id,
+            'scopes': [{
+                'value': 'perm-id',
+                'description': 'perm description'
+            }],
+        }]
+    )
+    url = f'{auth0_client.audience}/resource-servers/{auth0_client.api_id}'
+    mocked.patch(url, status=200)
+    url = f'{auth0_client.audience}/users/user_id/permissions'
+    mocked.post(url, status=201)
+    assert await auth0_client.set_user_permissions('user_id', ['permission'])
 
 
-async def test_get_api_permissions(auth0_client):
-    with aioresponses() as mocked:
-        url = auth0_client.data["audience"] + 'resource-servers'
-        permissions_response = [{'identifier': auth0_client.api_id, 'scopes': 'testdata'}]
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.get(url, status=200, payload=permissions_response)
-        resp = await auth0_client.get_api_permissions()
-        assert resp == 'testdata'
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.get(url, status=400)
-        auth0_client._cache.pop(('api_permissions',), None)
-        with pytest.raises(Auth0Error):
-            resp = await auth0_client.get_api_permissions()
-        permissions_response = []
-        mocked.post(auth0_client.url, status=200, payload=TEST_TOKEN)
-        mocked.get(url, status=200, payload=permissions_response)
-        with pytest.raises(Auth0Error):
-            resp = await auth0_client.get_api_permissions()
+@pytest.mark.asyncio
+async def test_delete_user_permissions(auth0_client, mocked):
+    url = f'{auth0_client.audience}/users/user_id/permissions'
+    call = functools.partial(
+        auth0_client.delete_user_permissions,
+        'user_id',
+        ['permission'],
+    )
+    mocked.delete(url, status=204)
+    assert await call()
+    mocked.delete(url, status=400)
+    with pytest.raises(Auth0Error):
+        await call()
+
+
+@pytest.mark.asyncio
+async def test_get_api_permissions(auth0_client, mocked):
+    url = f'{auth0_client.audience}/resource-servers'
+    permissions = [{
+        'value': 'perm-id',
+        'description': 'perm description'
+    }]
+    mocked.get(
+        url,
+        status=200,
+        payload=[{
+            'identifier': auth0_client.api_id,
+            'scopes': permissions,
+        }]
+    )
+    assert (await auth0_client.get_api_permissions()) == permissions
+    mocked.get(url, status=400)
+    auth0_client._cache.pop(('api_permissions',), None)
+    with pytest.raises(Auth0Error):
+        await auth0_client.get_api_permissions()
+    mocked.get(url, status=200, payload=[])
+    with pytest.raises(Auth0Error):
+        await auth0_client.get_api_permissions()
