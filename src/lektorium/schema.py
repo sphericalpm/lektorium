@@ -1,5 +1,4 @@
 from asyncio import Future, iscoroutine
-import enum
 import functools
 
 import wrapt
@@ -160,8 +159,7 @@ class Query(ObjectType):
             x for x in sessions
             if (
                 bool(x.edit_url) != parked and (
-                    ADMIN in permissions
-                    or f'user:{x.site.site_id}' in permissions
+                    ADMIN in permissions or f'user:{x.site.site_id}' in permissions
                 )
             )
         ]

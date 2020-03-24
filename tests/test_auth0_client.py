@@ -1,4 +1,3 @@
-import contextlib
 import pytest
 import functools
 from aioresponses import aioresponses
