@@ -133,7 +133,7 @@ class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
     users = List(User)
-    permissions = List(Permission, user_id=String())
+    user_permissions = List(Permission, user_id=String())
     available_permissions = List(ApiPermission)
     releasing = List(Releasing)
 
@@ -156,7 +156,15 @@ class Query(ObjectType):
     async def resolve_sessions(self, info, parked, permissions):
         repo = info.context['repo']
         sessions = (Session(**x) for x in Query.sessions_list(repo))
-        return [x for x in sessions if bool(x.edit_url) != parked]
+        return [
+            x for x in sessions
+            if (
+                bool(x.edit_url) != parked and (
+                    ADMIN in permissions
+                    or f'user:{x.site.site_id}' in permissions
+                )
+            )
+        ]
 
     @inject_permissions(admin=True)
     async def resolve_users(self, info, permissions):
@@ -164,14 +172,20 @@ class Query(ObjectType):
         return [User(**x) for x in await auth0_client.get_users()]
 
     @inject_permissions(admin=True)
-    async def resolve_permissions(self, info, user_id, permissions):
+    async def resolve_user_permissions(self, info, user_id, permissions):
         auth0_client = info.context['auth0_client']
         return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
 
     @inject_permissions(admin=True)
     async def resolve_available_permissions(self, info, permissions):
-        auth0_client = info.context['auth0_client']
-        return [ApiPermission(**x) for x in await auth0_client.get_api_permissions()]
+        repo = info.context['repo']
+        return [
+            ApiPermission(v, v)
+            for v in (
+                'admin',
+                *(f'user:{x["site_id"]}' for x in repo.sites)
+            )
+        ]
 
     @inject_permissions
     async def resolve_releasing(self, info, permissions):

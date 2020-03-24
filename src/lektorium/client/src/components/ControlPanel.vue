@@ -363,10 +363,7 @@ export default {
       this.loading_overlay_active = false;
       if (this.$auth !== undefined) {
         var permissions = this.$auth.profile.access_token.permissions;
-        if (permissions.indexOf('create:site') >= 0) {
-          this.create_site_btn_visible = true;
-        };
-        if (permissions.indexOf('all:admin') >= 0) {
+        if (permissions.indexOf('admin') >= 0) {
           this.create_site_btn_visible = true;
           this.manage_users_visible = true;
         };
@@ -587,14 +584,14 @@ export default {
     async getUserPermissions(userId) {
       let query = `
         {
-          permissions(userId: "${userId}") {
+          userPermissions(userId: "${userId}") {
             permissionName
             description
           }
         }
       `;
       let result = await this.makeRequest(query);
-      this.userPermissions = result.data.data.permissions;
+      this.userPermissions = result.data.data.userPermissions;
       this.selectedUserPermissions = [];
       this.userPermissions.forEach(element => {
         this.selectedUserPermissions.push(element.permissionName)
