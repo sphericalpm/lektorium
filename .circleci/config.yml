@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  codecov: codecov/codecov@1.0.3
+  codecov: codecov/codecov@1.0.5
 jobs:
   build:
     docker:
@@ -30,8 +30,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            python -m pytest --cov-report xml
-
+            python -m pytest --cov-report=xml:coverage.xml --cov=`pwd`
 
       - codecov/upload:
           file: coverage.xml
