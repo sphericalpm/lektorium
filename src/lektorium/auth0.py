@@ -154,6 +154,9 @@ class Auth0Client:
             return await resp.json()
 
     async def set_user_permissions(self, user_id, permissions):
+        available_permissions = [x['value'] for x in await self.get_api_permissions()]
+        for permission in set(permissions).difference(available_permissions):
+            await self.add_api_permission(permission, permission)
         data = {'permissions': []}
         for permission in permissions:
             data['permissions'].append({

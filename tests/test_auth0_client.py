@@ -94,9 +94,9 @@ async def test_get_user_permissions(auth0_client, mocked):
 
 @pytest.mark.asyncio
 async def test_set_user_permissions(auth0_client, mocked):
-    url = f'{auth0_client.audience}/resource-servers'
+    api_permissions_url = f'{auth0_client.audience}/resource-servers'
     mocked.get(
-        url,
+        api_permissions_url,
         status=200,
         payload=[{
             'identifier': auth0_client.api_id,
@@ -106,18 +106,11 @@ async def test_set_user_permissions(auth0_client, mocked):
             }],
         }]
     )
-
+    url = f'{auth0_client.audience}/resource-servers/{auth0_client.api_id}'
+    mocked.patch(url, status=200)
     url = f'{auth0_client.audience}/users/user_id/permissions'
-    call = functools.partial(
-        auth0_client.set_user_permissions,
-        'user_id',
-        ['permission'],
-    )
     mocked.post(url, status=201)
-    assert await call()
-    mocked.post(url, status=400)
-    with pytest.raises(Auth0Error):
-        await call()
+    assert await auth0_client.set_user_permissions('user_id', ['permission'])
 
 
 @pytest.mark.asyncio
