@@ -200,22 +200,17 @@ class MutationBase(Mutation):
     TARGET = 'repo'
 
     @classmethod
-    def has_permission(cls, root, info, **kwargs):
-        if skip_permissions_check(info):
-            return True
-        permissions = get_user_permissions(info)
-        if ADMIN in permissions:
-            return True
-        return cls.mutate_allowed(permissions, **kwargs)
-
-    @classmethod
     def mutate_allowed(cls, permissions, **kwargs):
         return False
 
     @classmethod
     async def mutate(cls, root, info, **kwargs):
-        if not cls.has_permission(root, info, **kwargs):
-            raise PermissionError()
+        if not skip_permissions_check(info):
+            permissions = get_user_permissions(info)
+            if ADMIN not in permissions:
+                if not cls.mutate_allowed(permissions, **kwargs):
+                    raise PermissionError()
+
         try:
             method = getattr(info.context[cls.TARGET], cls.REPO_METHOD)
             result = method(**kwargs)
@@ -223,6 +218,7 @@ class MutationBase(Mutation):
                 await result
         except (Auth0Error, lektorium.repo.ExceptionBase):
             return MutationResult(ok=False)
+
         return MutationResult(ok=True)
 
 
