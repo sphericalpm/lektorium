@@ -99,12 +99,14 @@ class Auth0Client:
     def __init__(self, auth):
         self._cache = dict()
         self.session = ThrottledClientSession()
-        self.url = 'https://{0}/oauth/token'.format(auth['data-auth0-domain'])
+        self.base_url = f'https://{auth["data-auth0-domain"]}'
+        self.token_url = f'{self.base_url}/oauth/token'
         self.api_id = auth['data-auth0-api']
+        self.audience = f'{self.base_url}/api/v2'
         self.data = {
             'client_id': auth['data-auth0-management-id'],
             'client_secret': auth['data-auth0-management-secret'],
-            'audience': 'https://{0}/api/v2/'.format(auth['data-auth0-domain']),
+            'audience': f'{self.audience}/',
             'grant_type': 'client_credentials',
         }
         self.token = None
@@ -115,11 +117,10 @@ class Auth0Client:
         if self.token is not None:
             if time.time() - self.token_time < self.CACHE_VALID_PERIOD:
                 return self.token
-        async with self.session.post(self.url, json=self.data) as resp:
-            resp_status = resp.status
-            if resp_status != 200:
+        async with self.session.post(self.token_url, json=self.data) as resp:
+            if resp.status != 200:
                 self.token = None
-                raise Auth0Error(f'Error {resp_status}')
+                raise Auth0Error(f'Error {resp.status}')
             result = await resp.json()
             self.token = result['access_token']
         self.token_time = time.time()
@@ -132,33 +133,34 @@ class Auth0Client:
 
     @cacher(CACHE_USERS_ALIAS)
     async def get_users(self):
-        url = self.data["audience"] + 'users'
         params = {'fields': 'name,nickname,email,user_id'}
+        url = f'{self.audience}/users'
         async with self.session.get(url, params=params, headers=await self.auth_headers) as resp:
-            if resp.status == 200:
-                users = await resp.json()
-                for user in users:
-                    if user.get('user_id'):
-                        permissions = await self.get_user_permissions(user['user_id'])
-                        user['permissions'] = [permission['permission_name'] for permission in permissions]
-                return users
-            else:
+            if resp.status != 200:
                 raise Auth0Error(f'Error {resp.status}')
+            users = await resp.json()
+            for user in users:
+                if user.get('user_id'):
+                    permissions = await self.get_user_permissions(user['user_id'])
+                    user['permissions'] = [permission['permission_name'] for permission in permissions]
+            return users
 
     @cacher(CACHE_USER_PERMISSIONS_ALIAS)
     async def get_user_permissions(self, user_id):
-        url = self.data['audience'] + f'users/{user_id}/permissions'
+        url = f'{self.audience}/users/{user_id}/permissions'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
-            if resp.status == 200:
-                return await resp.json()
-            else:
+            if resp.status != 200:
                 raise Auth0Error(f'Error {resp.status}')
+            return await resp.json()
 
     async def set_user_permissions(self, user_id, permissions):
         data = {'permissions': []}
         for permission in permissions:
-            data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
-        url = self.data['audience'] + f'users/{user_id}/permissions'
+            data['permissions'].append({
+                'resource_server_identifier': self.api_id,
+                'permission_name': permission
+            })
+        url = f'{self.audience}/users/{user_id}/permissions'
         async with self.session.post(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 201:
                 raise Auth0Error(f'Error {resp.status}')
@@ -170,8 +172,11 @@ class Auth0Client:
         self._cache.clear()
         data = {'permissions': []}
         for permission in permissions:
-            data['permissions'].append({'resource_server_identifier': self.api_id, 'permission_name': permission})
-        url = self.data['audience'] + f'users/{user_id}/permissions'
+            data['permissions'].append({
+                'resource_server_identifier': self.api_id,
+                'permission_name': permission
+            })
+        url = f'{self.audience}/users/{user_id}/permissions'
         async with self.session.delete(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 204:
                 raise Auth0Error(f'Error {resp.status}')
@@ -181,27 +186,27 @@ class Auth0Client:
 
     @cacher(CACHE_API_PERMISSIONS_ALIAS)
     async def get_api_permissions(self):
-        url = self.data['audience'] + 'resource-servers'
+        url = f'{self.audience}/resource-servers'
         async with self.session.get(url, headers=await self.auth_headers) as resp:
-            if resp.status == 200:
-                data = await resp.json()
-                data = list(filter(lambda x: x.get('identifier') == self.api_id, data))
-                if data:
-                    result = data[0]['scopes']
-                    return result
-                else:
-                    raise Auth0Error(f"'{self.api_id}' api was not found")
-            else:
+            if resp.status != 200:
                 raise Auth0Error(f'Error {resp.status}')
+            data = await resp.json()
+            data = [x for x in data if x.get('identifier') == self.api_id]
+            if not data:
+                raise Auth0Error(f"'{self.api_id}' api was not found")
+            result = data[0]['scopes']
+            return result
 
     async def add_api_permission(self, permission_name, description):
-        data = await self.get_api_permissions()
-        data.append({'value': permission_name, 'description': description})
-        data = {'scopes': data}
-        url = self.data['audience'] + 'resource-servers/' + self.api_id
+        data = {
+            'scopes': [
+                {'value': permission_name, 'description': description},
+                *(await self.get_api_permissions())
+            ]
+        }
+        url = f'{self.audience}/resource-servers/{self.api_id}'
         async with self.session.patch(url, headers=await self.auth_headers, json=data) as resp:
             if resp.status != 200:
-                print(await resp.text())
                 raise Auth0Error(f'Error {resp.status}')
             self._cache.pop((self.CACHE_API_PERMISSIONS_ALIAS,), None)
             return True
