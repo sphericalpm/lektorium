@@ -3,6 +3,7 @@ import time
 
 import wrapt
 from aiohttp import ClientSession
+from cached_property import cached_property
 
 
 def cacher(method_alias):
@@ -78,8 +79,11 @@ class ThrottledClientSession(ClientSession):
 
     def __init__(self, *args, **kwargs):
         self.last_request_time = time.time()
-        self.lock = asyncio.Lock()
         super().__init__(*args, **kwargs)
+
+    @cached_property
+    def lock(self):
+        return asyncio.Lock()
 
     async def _request(self, *args, **kwargs):
         async with self.lock:
@@ -98,7 +102,6 @@ class Auth0Client:
 
     def __init__(self, auth):
         self._cache = dict()
-        self.session = ThrottledClientSession()
         self.base_url = f'https://{auth["data-auth0-domain"]}'
         self.token_url = f'{self.base_url}/oauth/token'
         self.api_id = auth['data-auth0-api']
@@ -111,6 +114,10 @@ class Auth0Client:
         }
         self.token = None
         self.token_time = time.time() + self.CACHE_VALID_PERIOD
+
+    @cached_property
+    def session(self):
+        return ThrottledClientSession()
 
     @property
     async def auth_token(self):

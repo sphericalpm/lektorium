@@ -9,10 +9,9 @@ import aiohttp.web
 import aiohttp_graphql
 from graphql.execution.executors.asyncio import AsyncioExecutor
 from graphql.error import format_error as format_graphql_error
-import bs4
 import graphene
 
-from . import install as client, schema, repo
+from . import schema, repo
 from .auth0 import Auth0Client, FakeAuth0Client
 from .jwt import JWTMiddleware, GraphExecutionError
 from .repo.local import (
@@ -25,19 +24,8 @@ from .repo.local import (
     LocalLektor,
 )
 from .utils import closer
-
-
-async def index(request, app_path, auth0_options=None):
-    index = app_path / 'index.html'
-    data = index.resolve().read_bytes()
-    data = bs4.BeautifulSoup(data, 'html.parser')
-    if auth0_options is not None:
-        for k, v in auth0_options.items():
-            data.find('body')[k] = v
-    return aiohttp.web.Response(
-        body=str(data).encode('utf-8'),
-        content_type='text/html',
-    )
+import pkg_resources
+import json
 
 
 class BaseEnum(enum.Enum):
@@ -151,24 +139,32 @@ def error_formatter(error):
 
 
 def init_app(repo, auth0_options=None, auth0_client=None):
-    app = aiohttp.web.Application()
-    app_path = client.install()
+    app = aiohttp.web.Application(handler_args={'max_field_size': 16394})
 
-    app.router.add_static('/css', (app_path / 'css').resolve())
-    app.router.add_static('/img', (app_path / 'img').resolve())
-    app.router.add_static('/js', (app_path / 'js').resolve())
+    client_dir = pkg_resources.resource_filename(__name__, 'client')
+    client_dir = pathlib.Path(client_dir).resolve()
 
-    async def index_handler(*args, **kwargs):
-        return await index(
-            *args,
-            **kwargs,
-            app_path=app_path,
-            auth0_options=auth0_options
+    async def index(request):
+        return aiohttp.web.FileResponse(client_dir / 'public' / 'index.html')
+
+    async def auth0_config(request):
+        options = {
+            x: auth0_options.get(f'data-auth0-{x}', None)
+            for x in ['domain', 'id', 'api']
+        } if auth0_options else {}
+        options = json.dumps(options)
+        return aiohttp.web.Response(
+            text=f'let lektoriumAuth0Config={options};',
+            content_type='application/javascript',
         )
 
-    app.router.add_route('*', '/', index_handler)
-    app.router.add_route('*', '/callback', index_handler)
-    app.router.add_route('*', '/profile', index_handler)
+    app.router.add_route('*', '/', index)
+    app.router.add_route('GET', '/auth0-config', auth0_config)
+    app.router.add_route('*', '/callback', index)
+    app.router.add_route('*', '/profile', index)
+    app.router.add_static('/images', client_dir / 'images')
+    app.router.add_static('/scripts', client_dir / 'scripts')
+    app.router.add_static('/components', client_dir / 'components')
 
     middleware = []
     if auth0_options is not None:
