@@ -8,7 +8,7 @@ import requests
 import shutil
 import subprocess
 import tempfile
-from os import environ
+import os
 from uuid import uuid4
 from time import sleep
 from asyncio import get_event_loop
@@ -29,6 +29,23 @@ from .templates import (
 from ...utils import closer
 
 
+LFS_MASKS = (
+    '*.doc*',
+    '*.xls*',
+    '*.gif',
+    '*.png',
+    '*.svg',
+    '*.jpeg',
+    '*.webp',
+    '*.pdf',
+    '*.zip',
+    '*.avi',
+    '*.mov',
+    '*.mp*',
+    '*.webm',
+    '*.ttf',
+    '*.woff',
+)
 run = functools.partial(subprocess.check_call, shell=True)
 
 
@@ -367,8 +384,8 @@ class GitLab:
                 'variable_type': 'file',
                 'key': self.AWS_CREDENTIALS_VARIABLE_NAME,
                 'value': AWS_SHARED_CREDENTIALS_FILE_TEMPLATE.format(
-                    aws_key_id=environ['AWS_ACCESS_KEY_ID'],
-                    aws_secret_key=environ['AWS_SECRET_ACCESS_KEY'],
+                    aws_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                    aws_secret_key=os.environ['AWS_SECRET_ACCESS_KEY'],
                 ),
             },
             headers=self.headers,
@@ -479,6 +496,12 @@ class GitStorage(FileStorageMixin, Storage):
         await async_run(run_local, f'git remote add origin {site_repo}')
         await async_run(run_local, 'git fetch')
         await async_run(run_local, 'git reset origin/master')
+        (site_workdir / '.gitattributes').write_text(
+            os.linesep.join(
+                f'{m} filter=lfs diff=lfs merge=lfs -text'
+                for m in LFS_MASKS
+            )
+        )
         await async_run(run_local, 'git add .')
         await async_run(run_local, 'git commit -m quickstart')
         await async_run(run_local, 'git push --set-upstream origin master')
