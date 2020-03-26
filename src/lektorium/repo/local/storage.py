@@ -525,7 +525,7 @@ class GitlabStorage(GitStorage):
         self.protocol = protocol
         head, _, tail = git.partition('@')
         self.repo, _, path = tail.partition(':')
-        self.namespace, _, _ = path.partition('/')
+        self.namespace, _, _ = path.rpartition('/')
 
     async def create_site(self, lektor, name, owner, site_id):
         site_workdir, options = await super().create_site(lektor, name, owner, site_id)
