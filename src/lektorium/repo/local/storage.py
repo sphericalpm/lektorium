@@ -306,13 +306,12 @@ class GitLab:
     def namespace_id(self):
         namespace_name = self.options['namespace']
         response = requests.get(
-            '{repo_url}/namespaces'.format(repo_url=self.repo_url),
-            params={'search': namespace_name},
+            '{repo_url}/groups'.format(repo_url=self.repo_url),
             headers=self.headers,
         )
         response.raise_for_status()
         namespaces = response.json()
-        return one(x for x in namespaces if x['path'] == namespace_name)['id']
+        return one(x for x in namespaces if x['full_path'] == namespace_name)['id']
 
     def init_project(self):
         if self.path in (x['path_with_namespace'] for x in self.projects):
