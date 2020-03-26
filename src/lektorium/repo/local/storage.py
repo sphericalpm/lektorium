@@ -302,16 +302,28 @@ class GitLab:
     def path(self):
         return '{namespace}/{project}'.format(**self.options)
 
-    @cached_property
-    def namespace_id(self):
-        namespace_name = self.options['namespace']
+    def lookup_parent_id(self, objects_type, path_attribute):
         response = requests.get(
-            '{repo_url}/groups'.format(repo_url=self.repo_url),
+            f'{self.repo_url}/{objects_type}',
             headers=self.headers,
         )
         response.raise_for_status()
-        namespaces = response.json()
-        return one(x for x in namespaces if x['full_path'] == namespace_name)['id']
+        objects = [
+            x for x in response.json()
+            if x[path_attribute] == self.options['namespace']
+        ]
+        if objects:
+            return one(objects)['id']
+        return None
+
+    @cached_property
+    def namespace_id(self):
+        parent_id = self.lookup_parent_id('groups', 'full_path')
+        if parent_id is None:
+            parent_id = self.lookup_parent_id('namespaces', 'path')
+        if parent_id is None:
+            raise RuntimeError('parent namespace and/or gorup is not found')
+        return parent_id
 
     def init_project(self):
         if self.path in (x['path_with_namespace'] for x in self.projects):

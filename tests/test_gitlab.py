@@ -12,7 +12,12 @@ from lektorium.repo.local.templates import (
 def mock_namespaces(mocker, gitlab_instance):
     namespace_id = '2'
     mocker.get(
-        f'{gitlab_instance.repo_url}/namespaces?search={gitlab_instance.options["namespace"]}',
+        f'{gitlab_instance.repo_url}/groups',
+        request_headers=gitlab_instance.headers,
+        json=[],
+    )
+    mocker.get(
+        f'{gitlab_instance.repo_url}/namespaces',
         request_headers=gitlab_instance.headers,
         json=[
             {'path': 'fizzle', 'id': '1'},
