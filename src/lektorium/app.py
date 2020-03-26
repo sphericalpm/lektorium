@@ -144,12 +144,13 @@ def init_app(repo, auth0_options=None, auth0_client=None):
         )
 
     app.router.add_route('*', '/', index)
-    app.router.add_route('GET', '/auth0-config', auth0_config)
     app.router.add_route('*', '/callback', index)
+    app.router.add_route('*', '/logs', index)
     app.router.add_route('*', '/profile', index)
+    app.router.add_route('GET', '/auth0-config', auth0_config)
+    app.router.add_static('/components', client_dir / 'components')
     app.router.add_static('/images', client_dir / 'images')
     app.router.add_static('/scripts', client_dir / 'scripts')
-    app.router.add_static('/components', client_dir / 'components')
 
     middleware = []
     if auth0_options is not None:
