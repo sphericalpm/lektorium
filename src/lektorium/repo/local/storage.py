@@ -349,6 +349,7 @@ class GitLab:
                 'default_branch': self.options['branch'],
                 'tag_list': 'lektorium',
                 'shared_runners_enabled': 'true',
+                'lfs_enabled': 'true',
             },
             headers=self.headers,
         )
