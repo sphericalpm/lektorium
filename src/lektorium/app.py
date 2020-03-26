@@ -24,6 +24,7 @@ from .repo.local import (
     LocalLektor,
 )
 from .utils import closer
+from spherical_dev.log import init_logging
 import pkg_resources
 import json
 
@@ -114,22 +115,6 @@ async def log_application_ready(app):
     logging.getLogger('lektorium').info('Lektorium started')
 
 
-def init_logging(stream=sys.stderr, level=logging.DEBUG):
-    stderr_handler = logging.StreamHandler(stream)
-    stderr_handler.setFormatter(
-        logging.Formatter(
-            fmt='%(asctime)s.%(msecs)03d [%(name)s] %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-    )
-    logging.basicConfig(
-        level=level,
-        handlers=[
-            stderr_handler
-        ],
-    )
-
-
 def error_formatter(error):
     formatted = format_graphql_error(error)
     if hasattr(error, 'original_error'):
@@ -182,7 +167,7 @@ def init_app(repo, auth0_options=None, auth0_client=None):
         executor=AsyncioExecutor(),
         context=dict(
             repo=repo,
-            auth0_client=auth0_client
+            auth0_client=auth0_client,
         ),
         error_formatter=error_formatter,
     )
