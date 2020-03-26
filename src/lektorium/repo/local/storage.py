@@ -479,9 +479,9 @@ class GitStorage(FileStorageMixin, Storage):
         branch = self.config[site_id].get('branch', '')
         if branch:
             branch = f'-b {branch}'
-        run(f'git clone {repo} {branch} {session_dir}')
+        run(f'git clone --recurse-submodules {repo} {branch} {session_dir}')
         run_local = functools.partial(run, cwd=session_dir)
-        run_local(f'git checkout -b session-{session_id}')
+        run_local(f'git checkout --recurse-submodules -b session-{session_id}')
         run_local(f'git push --set-upstream origin session-{session_id}')
 
     async def create_site(self, lektor, name, owner, site_id):
@@ -502,6 +502,14 @@ class GitStorage(FileStorageMixin, Storage):
                 for m in LFS_MASKS
             )
         )
+        theme_repo = os.environ.get('LEKTORIUM_LEKTOR_THEME', None)
+        if theme_repo is not None:
+            shutil.rmtree(site_workdir / 'templates')
+            shutil.rmtree(site_workdir / 'models')
+            await async_run(
+                run_local,
+                f'git submodule add {theme_repo} themes/iarcrp-lektor-theme'
+            )
         await async_run(run_local, 'git add .')
         await async_run(run_local, 'git commit -m quickstart')
         await async_run(run_local, 'git push --set-upstream origin master')
