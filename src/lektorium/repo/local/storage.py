@@ -524,7 +524,6 @@ class GitlabStorage(GitStorage):
         self.token = token
         self.protocol = protocol
         head, _, tail = git.partition('@')
-        git = tail or head
         self.repo, _, path = tail.partition(':')
         self.namespace, _, _ = path.partition('/')
 
