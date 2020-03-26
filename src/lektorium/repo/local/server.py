@@ -245,11 +245,6 @@ class AsyncDockerServer(AsyncServer):
                     'tls.certresolver': 'le',
                     'tls.domains[0].main': f'*.{self.sessions_domain}',
                 },
-                f'{route_name}-redir': {
-                    'entrypoints': 'web',
-                    'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
-                    'middlewares': 'lektorium-redir',
-                },
             },
             f'http.services.{route_name}.loadbalancer.server.port': f'{self.LEKTOR_PORT}',
         }
