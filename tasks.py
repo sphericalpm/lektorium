@@ -159,8 +159,9 @@ def build_server_image(ctx):
     ctx.run(f'rm {server_dir}/lektorium*.whl', warn=True)
     ctx.run(f'pip wheel -w {server_dir} --no-deps .')
     ctx.run((
-        f'docker build '
-        f'--tag {IMAGE} {server_dir}'
+        f'docker build --tag {IMAGE} '
+        f'-f {server_dir}/Dockerfile.ubuntu '
+        f'{server_dir}'
     ))
 
 
