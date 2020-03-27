@@ -493,24 +493,21 @@ class GitStorage(FileStorageMixin, Storage):
         run_local = functools.partial(run, cwd=site_workdir)
         theme_repo = os.environ.get('LEKTORIUM_LEKTOR_THEME', None)
         if theme_repo is not None:
-            site_workdir.mkdir()
-            await async_run(run_local, f'git clone {theme_repo} themes/iarcrp-lektor-theme')
-            example_site = site_workdir / 'themes' / 'iarcrp-lektor-theme' / 'example-site'
-            if example_site.exists():
-                await async_run(run_local, f'tar -C {example_site} -c . | tar x')
-                shutil.rmtree(site_workdir / 'themes')
-                site_config = list(site_workdir.glob('*.lektorproject'))
-                if site_config:
-                    site_config = one(site_config)
-                    config_data = inifile.IniFile(site_config)
-                    config_data['project.name'] = name
-                    del config_data['project.url']
-                    config_data.save()
-                    site_config.rename(site_workdir / f'{name}.lektorproject')
-                else:
-                    shutil.rmtree(site_workdir)
+            with tempfile.TemporaryDirectory() as theme_dir:
+                await async_run(run, f'git clone {theme_repo} {theme_dir}')
+                example_site = pathlib.Path(theme_dir) / 'example-site'
+                if example_site.exists():
+                    shutil.copytree(example_site, site_workdir)
+            site_config = list(site_workdir.glob('*.lektorproject'))
+            if site_config:
+                site_config = one(site_config)
+                config_data = inifile.IniFile(site_config)
+                config_data['project.name'] = name
+                del config_data['project.url']
+                config_data.save()
+                site_config.rename(site_workdir / f'{name}.lektorproject')
             else:
-                shutil.rmtree(site_workdir)
+                shutil.rmtree(site_workdir, ignore_errors=True)
         if theme_repo is None or not site_workdir.exists():
             lektor.quickstart(name, owner, site_workdir)
             if theme_repo is not None:
