@@ -515,6 +515,7 @@ class GitStorage(FileStorageMixin, Storage):
                 shutil.rmtree(site_workdir / 'templates')
                 shutil.rmtree(site_workdir / 'models')
         await async_run(run_local, 'git init')
+        await async_run(run_local, 'git lfs install')
         await async_run(run_local, f'git remote add origin {site_repo}')
         await async_run(run_local, 'git fetch')
         await async_run(run_local, 'git reset origin/master')
