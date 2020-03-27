@@ -3,6 +3,9 @@
 </template>
 <script>
 module.exports = {
+    computed: {
+        container: () => new URLSearchParams(window.location.search).get('container'),
+    },
     asyncComputed: {
         async headers() {
             if (this.$auth === undefined) return {};
@@ -12,12 +15,13 @@ module.exports = {
 
         async logs() {
             if (!_.isNil(this.headers)) {
+                let container = this.container || 'lektorium';
                 var result = await axios({
                     method: "POST",
                     url: "/graphql",
                     headers: await this.headers,
                     data: {
-                        query: '{logs}'
+                        query: `{logs(container: "${container}")}`
                     }
                 });
                 if (_.isEmpty(result.data.data.logs)) {
