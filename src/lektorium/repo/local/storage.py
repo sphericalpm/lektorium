@@ -497,6 +497,7 @@ class GitStorage(FileStorageMixin, Storage):
                 await async_run(run, f'git clone {theme_repo} {theme_dir}')
                 example_site = pathlib.Path(theme_dir) / 'example-site'
                 if example_site.exists():
+                    shutil.rmtree(example_site / 'themes', ignore_errors=True)
                     shutil.copytree(example_site, site_workdir)
             site_config = list(site_workdir.glob('*.lektorproject'))
             if site_config:
