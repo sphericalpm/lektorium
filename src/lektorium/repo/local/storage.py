@@ -11,7 +11,7 @@ import tempfile
 import os
 from uuid import uuid4
 from time import sleep
-from asyncio import get_event_loop
+import asyncio
 
 from cached_property import cached_property
 from more_itertools import one
@@ -50,7 +50,7 @@ run = functools.partial(subprocess.check_call, shell=True)
 
 
 def async_run(func, *args, **kwargs):
-    return get_event_loop().run_in_executor(
+    return asyncio.get_event_loop().run_in_executor(
         None,
         functools.partial(func, *args, **kwargs),
     )
@@ -174,7 +174,7 @@ class FileStorage(FileStorageMixin, Storage):
         site_root = self._site_dir(site_id)
         config = list(site_root.glob('*.lektorproject'))
         if config:
-            return inifile.IniFile(config[0])
+            return inifile.IniFile(one(config))
         return collections.defaultdict(type(None))
 
     def get_merge_requests(self, site_id):
@@ -490,8 +490,32 @@ class GitStorage(FileStorageMixin, Storage):
             raise ValueError('workdir for such site-id already exists')
 
         site_repo = await self.create_site_repo(site_id)
-        lektor.quickstart(name, owner, site_workdir)
         run_local = functools.partial(run, cwd=site_workdir)
+        theme_repo = os.environ.get('LEKTORIUM_LEKTOR_THEME', None)
+        if theme_repo is not None:
+            site_workdir.mkdir()
+            await async_run(run_local, f'git clone {theme_repo} themes/iarcrp-lektor-theme')
+            example_site = site_workdir / 'themes' / 'iarcrp-lektor-theme' / 'example-site'
+            if example_site.exists():
+                await async_run(run_local, f'tar -C {example_site} -c . | tar x')
+                shutil.rmtree(site_workdir / 'themes')
+                site_config = list(site_workdir.glob('*.lektorproject'))
+                if site_config:
+                    site_config = one(site_config)
+                    config_data = inifile.IniFile(site_config)
+                    config_data['project.name'] = name
+                    del config_data['project.url']
+                    config_data.save()
+                    site_config.rename(site_workdir / f'{name}.lektorproject')
+                else:
+                    shutil.rmtree(site_workdir)
+            else:
+                shutil.rmtree(site_workdir)
+        if theme_repo is None or not site_workdir.exists():
+            lektor.quickstart(name, owner, site_workdir)
+            if theme_repo is not None:
+                shutil.rmtree(site_workdir / 'templates')
+                shutil.rmtree(site_workdir / 'models')
         await async_run(run_local, 'git init')
         await async_run(run_local, f'git remote add origin {site_repo}')
         await async_run(run_local, 'git fetch')
@@ -504,8 +528,6 @@ class GitStorage(FileStorageMixin, Storage):
         )
         theme_repo = os.environ.get('LEKTORIUM_LEKTOR_THEME', None)
         if theme_repo is not None:
-            shutil.rmtree(site_workdir / 'templates')
-            shutil.rmtree(site_workdir / 'models')
             await async_run(
                 run_local,
                 f'git submodule add {theme_repo} themes/iarcrp-lektor-theme'

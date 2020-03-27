@@ -200,8 +200,9 @@ class AsyncDockerServer(AsyncServer):
                         Image='lektorium-lektor',
                     ),
                 )
-                stream = container.log(stdout=True, follow=True)
+                stream = container.log(stdout=True, stderr=True, follow=True)
                 async for line in stream:
+                    logging.debug(line.strip())
                     if line.strip().startswith('Finished prune'):
                         break
                 else:
