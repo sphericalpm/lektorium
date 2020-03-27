@@ -198,8 +198,8 @@ class Query(ObjectType):
             raise PermissionError()
         docker = aiodocker.Docker()
         lektorium = [
-            container for container in await docker.containers.list()
-            if (await container.show())['Name'] == f'/{container}'
+            c for c in await docker.containers.list()
+            if (await c.show())['Name'] == f'/{container}'
         ]
         log = await lektorium[0].log(stdout=True, stderr=True, tail=200)
         return ''.join(log)
