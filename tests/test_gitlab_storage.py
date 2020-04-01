@@ -48,13 +48,6 @@ async def test_gitlabstorage(tmpdir):
                 assert options == {
                     'cloudfront_domain_name': 'domain_name',
                     'production_url': 'https://domain_name',
-                    'gitlab': {
-                        'scheme': 'protocol',
-                        'host': 'server.domain',
-                        'namespace': 'namespace',
-                        'project': 'bar',
-                        'token': 'token'
-                    }
                 }
 
                 assert await storage.create_site_repo('') == 'site_repo'

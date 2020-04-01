@@ -615,13 +615,6 @@ class GitlabStorage(GitStorage):
         options.update({
             'cloudfront_domain_name': domain_name,
             'production_url': f'https://{domain_name}',
-            self.GITLAB_SECTION_NAME: {
-                'scheme': self.protocol,
-                'host': self.repo,
-                'namespace': self.namespace,
-                'project': site_id,
-                'token': self.token,
-            },
         })
 
         return site_workdir, options
