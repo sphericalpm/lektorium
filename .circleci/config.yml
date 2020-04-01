@@ -4,7 +4,7 @@ orbs:
 jobs:
   build:
     docker:
-      - image: circleci/python:3.7.2-stretch-node-browsers
+      - image: circleci/python:3.8.2-buster
 
     working_directory: ~/repo
 
@@ -16,6 +16,8 @@ jobs:
           command: |
             git config --global user.email "circle@ci.example.com"
             git config --global user.name "Circle Ci"
+            apt-get update
+            apt-get -y install git-lfs
             python3 -m venv venv
             . venv/bin/activate
             pip install -Ue .[dev]
