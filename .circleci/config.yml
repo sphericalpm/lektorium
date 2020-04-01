@@ -16,8 +16,8 @@ jobs:
           command: |
             git config --global user.email "circle@ci.example.com"
             git config --global user.name "Circle Ci"
-            apt-get update
-            apt-get -y install git-lfs
+            sudo apt-get update
+            sudo apt-get -y install git-lfs
             python3 -m venv venv
             . venv/bin/activate
             pip install -Ue .[dev]
