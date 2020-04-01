@@ -483,6 +483,7 @@ class GitStorage(FileStorageMixin, Storage):
         run_local = functools.partial(run, cwd=session_dir)
         run_local(f'git checkout --recurse-submodules -b session-{session_id}')
         run_local(f'git push --set-upstream origin session-{session_id}')
+        run_local('git submodule update --remote')
 
     async def create_site(self, lektor, name, owner, site_id):
         site_workdir = self.workdir / site_id
