@@ -77,6 +77,7 @@ setuptools.setup(
             'pydocstyle',
             'pytest-aiohttp',
             'pytest-asyncio',
+            'pytest-cov',
             'requests-mock',
             'spherical-dev[dev]',
             'wheel',
