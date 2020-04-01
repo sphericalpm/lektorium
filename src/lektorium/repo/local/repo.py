@@ -15,6 +15,7 @@ from ..interface import (
     SessionNotFound,
 )
 from .objects import Session, Site
+import logging
 
 
 class FilteredDict(collections.abc.Mapping):
@@ -66,8 +67,11 @@ class Repo(BaseRepo):
         for site_id, site in self.config.items():
             if site.production_url is None:
                 session_dir = self.sessions_root / site_id / 'production'
-                self.storage.create_session(site_id, 'production', session_dir)
-                site.production_url = self.server.serve_static(session_dir)
+                if session_dir.exists():
+                    logging.warn(f'production session already exists for site {site_id}')
+                else:
+                    self.storage.create_session(site_id, 'production', session_dir)
+                    site.production_url = self.server.serve_static(session_dir)
 
     @cached_property
     def config(self):
