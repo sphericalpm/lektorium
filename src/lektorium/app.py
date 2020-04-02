@@ -76,8 +76,10 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
         server_type, _, storage_config = repo_args.partition(',')
         storage_config, _, params = storage_config.partition(',')
         token, _, protocol = params.partition(',')
+        server_type, _, options = server_type.partition(':')
+        options = {k: v for k, v in (x.split('=') for x in options.split(':') if x)}
         server_type = ServerType.get(server_type or 'FAKE')
-        server = server_type.value()
+        server = server_type.value(**options)
 
         protocol = protocol or 'https'
         storage_config = storage_config or 'FILE'

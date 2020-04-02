@@ -144,16 +144,18 @@ class AsyncDockerServer(AsyncServer):
         self,
         *,
         auto_remove=True,
-        image='lektorium-lektor',
+        lektor_image='lektorium-lektor',
         network=None,
+        lektorium_container='lektorium',
     ):
         super().__init__()
         if not pathlib.Path('/var/run/docker.sock').exists():
             raise RuntimeError('/var/run/docker.sock not exists')
         self.auto_remove = auto_remove
-        self.image = image
+        self.lektor_image = lektor_image
         self.network = network
         self.sessions_domain = os.environ.get('LEKTORIUM_SESSIONS_DOMAIN', None)
+        self.lektorium_container = lektorium_container
 
     @property
     async def network_mode(self):
@@ -188,7 +190,7 @@ class AsyncDockerServer(AsyncServer):
                             AutoRemove=self.auto_remove,
                             NetworkMode=await self.network_mode,
                             VolumesFrom=[
-                                'lektorium',
+                                self.lektorium_container,
                             ],
                         ),
                         Cmd=[
@@ -197,7 +199,7 @@ class AsyncDockerServer(AsyncServer):
                             '--host', '0.0.0.0',
                         ],
                         Labels=labels,
-                        Image='lektorium-lektor',
+                        Image=self.lektor_image,
                     ),
                 )
                 stream = container.log(stdout=True, stderr=True, follow=True)
