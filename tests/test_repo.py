@@ -135,6 +135,7 @@ async def test_create_site(repo):
     assert len(list(repo.sites)) == site_count_before + 1
 
 
+@pytest.mark.skip(reason='too wide test')
 def test_releasing(repo, merge_requests):
     result = list(repo.releasing)
     request = {

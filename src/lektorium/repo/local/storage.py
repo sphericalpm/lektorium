@@ -115,7 +115,7 @@ class FileConfig(dict):
             sk: sv
             for sk, sv in site_config.data.items()
             if sk not in ('site_id', 'staging_url') and (
-                sk != 'repo' or GitStorage.GITLAB_SECTION_NAME not in site_config.data
+                sk != 'repo' or GitlabStorage.GITLAB_SECTION_NAME not in site_config.data
             ) and (sk != 'name' or sv != site_config['site_id'])
         }
 
@@ -145,6 +145,9 @@ class FileStorageMixin:
                 sites = (Site(**props) for props in iter_sites(config_file))
                 config = {s['site_id']: s for s in sites}
         return cls.CONFIG_CLASS(path, config)
+
+    def get_merge_requests(self, site_id):
+        raise RuntimeError('no merge requests for this type of storage')
 
     @cached_property
     def config(self):
@@ -177,10 +180,6 @@ class FileStorage(FileStorageMixin, Storage):
             return inifile.IniFile(one(config))
         return collections.defaultdict(type(None))
 
-    def get_merge_requests(self, site_id):
-        logging.warn('get_merge_requests: site has no gitlab option')
-        return []
-
     def _site_dir(self, site_id):
         return self.root / site_id / 'master'
 
@@ -202,7 +201,7 @@ class GitConfig(FileConfig):
     @classmethod
     def prepare(cls, site_config):
         repo = site_config.get('repo', None)
-        gitlab = site_config.get(GitStorage.GITLAB_SECTION_NAME, None)
+        gitlab = site_config.get(GitlabStorage.GITLAB_SECTION_NAME, None)
         if repo is None:
             if gitlab is None:
                 raise ValueError('repo/gitlab site config values not found')
@@ -456,7 +455,6 @@ class GitLab:
 
 class GitStorage(FileStorageMixin, Storage):
     CONFIG_CLASS = GitConfig
-    GITLAB_SECTION_NAME = 'gitlab'
 
     def __init__(self, git):
         self.git = git
@@ -558,22 +556,6 @@ class GitStorage(FileStorageMixin, Storage):
         run_local('git add -A .')
         run_local('git commit -m autosave')
         run_local('git push')
-        site = self.config[site_id]
-        session = site.sessions[session_id]
-        title_template = 'Request from: "{custodian}" <{custodian_email}>'
-        return GitLab(site[self.GITLAB_SECTION_NAME]).create_merge_request(
-            source_branch=f'session-{session_id}',
-            target_branch=site.get('branch', 'master'),
-            title=title_template.format(**session),
-        )
-
-    def get_merge_requests(self, site_id):
-        site = self.config[site_id]
-        gitlab_options = site.get(self.GITLAB_SECTION_NAME, None)
-        if not gitlab_options:
-            logging.warn('get_merge_requests: empty gitlab options')
-            return []
-        return GitLab(gitlab_options).merge_requests
 
     def site_config(self, site_id):
         return collections.defaultdict(type(None))
@@ -584,8 +566,11 @@ class GitStorage(FileStorageMixin, Storage):
 
 
 class GitlabStorage(GitStorage):
+    GITLAB_SECTION_NAME = 'gitlab'
+
     def __init__(self, git, token, protocol):
         super().__init__(git)
+        git = str(git)
         self.token = token
         self.protocol = protocol
         head, _, tail = git.partition('@')
@@ -620,13 +605,29 @@ class GitlabStorage(GitStorage):
 
         return site_workdir, options
 
+    def request_release(self, site_id, session_id, session_dir):
+        super().request_release(site_id, session_id, session_dir)
+        site = self.config[site_id]
+        session = site.sessions[session_id]
+        title_template = 'Request from: "{custodian}" <{custodian_email}>'
+        return self.gitlab(site_id).create_merge_request(
+            source_branch=f'session-{session_id}',
+            target_branch=site.get('branch', 'master'),
+            title=title_template.format(**session),
+        )
+
+    def get_merge_requests(self, site_id):
+        return self.gitlab(site_id).merge_requests
+
     async def create_site_repo(self, site_id):
-        site_repo = GitLab(dict(
+        return self.gitlab(site_id).init_project()
+
+    def gitlab(self, project, branch='master'):
+        return GitLab(dict(
             scheme=self.protocol,
             host=self.repo,
             namespace=self.namespace,
-            project=site_id,
-            branch='master',
             token=self.token,
-        )).init_project()
-        return site_repo
+            project=project,
+            branch=branch,
+        ))

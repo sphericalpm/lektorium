@@ -8,6 +8,7 @@ from lektorium.repo import LocalRepo
 from lektorium.repo.local import (
     FileStorage,
     GitStorage,
+    GitlabStorage,
     FakeServer,
     FakeLektor,
 )
@@ -39,7 +40,7 @@ def local_repo(root_dir, storage_factory=FileStorage):
 
 def git_repo(root_dir):
     repo = local_repo(root_dir, git_prepare(GitStorage))
-    repo.config['bow'].data[GitStorage.GITLAB_SECTION_NAME] = {
+    repo.config['bow'].data[GitlabStorage.GITLAB_SECTION_NAME] = {
         'scheme': 'https',
         'host': 'server',
         'token': '123token456',
