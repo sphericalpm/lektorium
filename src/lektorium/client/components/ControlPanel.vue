@@ -32,7 +32,7 @@
                                     <td>{{ site.siteName }}</td>
                                     <td>
                                         <a
-                                            v-if="site.productionUrl.startsWith('http')"
+                                            v-if="site.productionUrl && site.productionUrl.startsWith('http')"
                                             :href="site.productionUrl"
                                             target="_blank"
                                         >{{ site.productionUrl }}</a>
@@ -90,7 +90,7 @@
                                     <!-- <td>{{ session.stagingUrl }}</td> -->
                                     <td>
                                         <a
-                                            v-if="session.editUrl.startsWith('http')"
+                                            v-if="session.editUrl && session.editUrl.startsWith('http')"
                                             :href="session.editUrl"
                                             target="_blank"
                                         >{{ session.editUrl }}</a>
@@ -179,7 +179,7 @@
                                     <td>{{ release.sourceBranch }}</td>
                                     <td>{{ release.siteName }}</td>
                                     <td>
-                                        <a v-if="release.webUrl.startsWith('http')"
+                                        <a v-if="release.webUrl && release.webUrl.startsWith('http')"
                                             :href="release.webUrl"
                                             target="_blank"
                                         >{{ release.title }}</a>
