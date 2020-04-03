@@ -13,6 +13,7 @@ lektorium-aws-deploy:
     LC_ALL: C.UTF-8
     LANG: C.UTF-8
     AWS_PROFILE: {AWS_PROFILE_NAME}
+    GIT_SUBMODULE_STRATEGY: recursive
   script:
     - apk add --update python3 python3-dev libffi-dev openssl-dev build-base
     - pip3 install --upgrade lektor
