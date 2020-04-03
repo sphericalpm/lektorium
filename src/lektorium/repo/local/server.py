@@ -9,8 +9,12 @@ import subprocess
 import aiodocker
 from more_itertools import one
 from datetime import datetime
+from types import MappingProxyType
 
 from spherical_dev.utils import flatten_options
+
+
+EMPTY_DICT = MappingProxyType({})
 
 
 class Server(metaclass=abc.ABCMeta):
@@ -31,7 +35,7 @@ class Server(metaclass=abc.ABCMeta):
         raise RuntimeError('sessions tracking not implemented')
 
     @abc.abstractmethod
-    def serve_lektor(self, path, session):
+    def serve_lektor(self, path, session=EMPTY_DICT):
         pass
 
     @abc.abstractmethod
@@ -50,7 +54,7 @@ class FakeServer(Server):
     def __init__(self):
         self.serves = {}
 
-    def serve_lektor(self, path, session):
+    def serve_lektor(self, path, session=EMPTY_DICT):
         if path in self.serves:
             raise RuntimeError()
         port = self.generate_port(list(self.serves.values()))
@@ -70,7 +74,7 @@ class AsyncServer(Server):
     def __init__(self):
         self.serves = {}
 
-    def serve_lektor(self, path, session):
+    def serve_lektor(self, path, session=EMPTY_DICT):
         def resolver(started):
             if started.done():
                 if started.exception() is not None:
