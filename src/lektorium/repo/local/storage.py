@@ -525,6 +525,12 @@ class GitStorage(FileStorageMixin, Storage):
         )
         theme_repo = os.environ.get('LEKTORIUM_LEKTOR_THEME', None)
         if theme_repo is not None:
+            site_repo_host, _, site_repo_path = str(site_repo).partition(':')
+            theme_repo_host, _, theme_repo_path = str(theme_repo).partition(':')
+            if site_repo_host == theme_repo_host:
+                site_repo_path = len(pathlib.Path(site_repo_path).parts)
+                site_repo_path = ('..',) * site_repo_path
+                theme_repo = pathlib.Path(*site_repo_path) / theme_repo_path
             await async_run(
                 run_local,
                 f'git submodule add {theme_repo} themes/iarcrp-lektor-theme'
