@@ -178,9 +178,10 @@ class AsyncDockerServer(AsyncServer):
                     for k, v in x['Config']['Labels'].items()
                     if k.startswith(self.LABEL_PREFIX)
                 }
-                creation_time = float(session['creation_time'])
-                creation_time = datetime.fromtimestamp(creation_time)
-                session['creation_time'] = creation_time
+                if 'creation_time' in session:
+                    creation_time = float(session['creation_time'])
+                    creation_time = datetime.fromtimestamp(creation_time)
+                    session['creation_time'] = creation_time
                 yield session
         docker = aiodocker.Docker()
         containers = (
@@ -218,8 +219,9 @@ class AsyncDockerServer(AsyncServer):
                 session = {
                     **session,
                     'edit_url': session_address,
-                    'creation_time': str(session['creation_time'].timestamp()),
                 }
+                if 'creation_time' in session:
+                    session['creation_time'] = str(session['creation_time'].timestamp())
                 session.pop('parked_time', None)
                 labels.update(flatten_options(session, self.LABEL_PREFIX))
                 docker = aiodocker.Docker()
