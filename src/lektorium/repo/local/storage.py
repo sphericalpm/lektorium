@@ -2,7 +2,6 @@ import abc
 import collections
 import functools
 import inifile
-import logging
 import pathlib
 import requests
 import shutil

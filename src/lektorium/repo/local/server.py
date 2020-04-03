@@ -8,8 +8,13 @@ import random
 import subprocess
 import aiodocker
 from more_itertools import one
+from datetime import datetime
+from types import MappingProxyType
 
 from spherical_dev.utils import flatten_options
+
+
+EMPTY_DICT = MappingProxyType({})
 
 
 class Server(metaclass=abc.ABCMeta):
@@ -25,8 +30,12 @@ class Server(metaclass=abc.ABCMeta):
             port = random.randint(cls.START_PORT, cls.END_PORT)
         return port
 
+    @property
+    def sessions(self):
+        raise RuntimeError('sessions tracking not implemented')
+
     @abc.abstractmethod
-    def serve_lektor(self, path):
+    def serve_lektor(self, path, session=EMPTY_DICT):
         pass
 
     @abc.abstractmethod
@@ -45,7 +54,7 @@ class FakeServer(Server):
     def __init__(self):
         self.serves = {}
 
-    def serve_lektor(self, path):
+    def serve_lektor(self, path, session=EMPTY_DICT):
         if path in self.serves:
             raise RuntimeError()
         port = self.generate_port(list(self.serves.values()))
@@ -65,7 +74,7 @@ class AsyncServer(Server):
     def __init__(self):
         self.serves = {}
 
-    def serve_lektor(self, path):
+    def serve_lektor(self, path, session=EMPTY_DICT):
         def resolver(started):
             if started.done():
                 if started.exception() is not None:
@@ -77,7 +86,7 @@ class AsyncServer(Server):
                 return (started.result(),) * 2
             return (functools.partial(resolver, started), 'Starting')
         started = asyncio.Future()
-        task = asyncio.ensure_future(self.start(path, started))
+        task = asyncio.ensure_future(self.start(path, started, dict(session)))
         self.serves[path] = [lambda: task if task.cancel() else task, started]
         return functools.partial(resolver, started)
 
@@ -88,7 +97,7 @@ class AsyncServer(Server):
         result.add_done_callback(lambda _: result.result())
 
     @abc.abstractmethod
-    async def start(self, path, started):
+    async def start(self, path, started, session):
         pass
 
     async def stop(self, path, finalizer=None):
@@ -103,7 +112,7 @@ class AsyncServer(Server):
 class AsyncLocalServer(AsyncServer):
     COMMAND = 'lektor server -h 0.0.0.0 -p {port}'
 
-    async def start(self, path, started):
+    async def start(self, path, started, session):
         log = logging.getLogger(f'Server({path})')
         log.info('starting')
         try:
@@ -139,6 +148,7 @@ class AsyncLocalServer(AsyncServer):
 
 class AsyncDockerServer(AsyncServer):
     LEKTOR_PORT = 5000
+    LABEL_PREFIX = 'lektorium'
 
     def __init__(
         self,
@@ -146,7 +156,7 @@ class AsyncDockerServer(AsyncServer):
         auto_remove=True,
         lektor_image='lektorium-lektor',
         network=None,
-        lektorium_container='lektorium',
+        server_container='lektorium',
     ):
         super().__init__()
         if not pathlib.Path('/var/run/docker.sock').exists():
@@ -155,7 +165,29 @@ class AsyncDockerServer(AsyncServer):
         self.lektor_image = lektor_image
         self.network = network
         self.sessions_domain = os.environ.get('LEKTORIUM_SESSIONS_DOMAIN', None)
-        self.lektorium_container = lektorium_container
+        self.server_container = server_container
+
+    @property
+    async def sessions(self):
+        def parse(containers):
+            for x in containers:
+                if f'{self.LABEL_PREFIX}.edit_url' not in x['Config']['Labels']:
+                    continue
+                session = {
+                    k[len(self.LABEL_PREFIX) + 1:]: v
+                    for k, v in x['Config']['Labels'].items()
+                    if k.startswith(self.LABEL_PREFIX)
+                }
+                creation_time = float(session['creation_time'])
+                creation_time = datetime.fromtimestamp(creation_time)
+                session['creation_time'] = creation_time
+                yield session
+        docker = aiodocker.Docker()
+        containers = (
+            await c.show()
+            for c in await docker.containers.list()
+        )
+        return list(parse([x async for x in containers]))
 
     @property
     async def network_mode(self):
@@ -168,20 +200,28 @@ class AsyncDockerServer(AsyncServer):
             networks = [
                 c['HostConfig']['NetworkMode']
                 async for c in containers
-                if c['Name'] == '/lektorium'
+                if c['Name'] == f'/{self.server_container}'
             ]
             self.network = one(networks)
         return self.network
 
-    async def start(self, path, started):
+    async def start(self, path, started, session):
         log = logging.getLogger(f'Server({path})')
         log.info('starting')
         container, stream = None, None
         try:
             try:
                 session_id = pathlib.Path(path).name
-                container_name = f'lektorium-lektor-{session_id}'
-                labels = flatten_options(self.lektor_labels(session_id), "traefik")
+                container_name = f'{self.lektor_image}-{session_id}'
+                session_address = self.session_address(session_id, container_name)
+                labels = flatten_options(self.lektor_labels(session_id), 'traefik')
+                session = {
+                    **session,
+                    'edit_url': session_address,
+                    'creation_time': str(session['creation_time'].timestamp()),
+                }
+                session.pop('parked_time', None)
+                labels.update(flatten_options(session, self.LABEL_PREFIX))
                 docker = aiodocker.Docker()
                 container = await docker.containers.run(
                     name=container_name,
@@ -190,7 +230,7 @@ class AsyncDockerServer(AsyncServer):
                             AutoRemove=self.auto_remove,
                             NetworkMode=await self.network_mode,
                             VolumesFrom=[
-                                self.lektorium_container,
+                                self.server_container,
                             ],
                         ),
                         Cmd=[
@@ -219,7 +259,7 @@ class AsyncDockerServer(AsyncServer):
                     )
             else:
                 log.info('started')
-                started.set_result(self.session_address(session_id, container_name))
+                started.set_result(session_address)
                 self.serves[path][0] = container.kill
             finally:
                 if stream is not None:
@@ -230,6 +270,17 @@ class AsyncDockerServer(AsyncServer):
         finally:
             log.info('start ended')
 
+    async def stop(self, path, finalizer=None):
+        if path in self.serves:
+            return await super().stop(path, finalizer)
+        session_id = path.name
+        container_name = f'{self.lektor_image}-{session_id}'
+        for container in await aiodocker.Docker().containers.list():
+            info = await container.show()
+            if info['Name'] == f'/{container_name}':
+                await container.kill()
+        callable(finalizer) and finalizer()
+
     def session_address(self, session_id, container_name):
         if self.sessions_domain is None:
             return f'http://{container_name}:{self.LEKTOR_PORT}/'
@@ -238,7 +289,7 @@ class AsyncDockerServer(AsyncServer):
     def lektor_labels(self, session_id):
         if self.sessions_domain is None:
             return {}
-        route_name = f'lektorium-lektor-{session_id}'
+        route_name = f'{self.lektor_image}-{session_id}'
         return {
             'enable': 'true',
             f'http.routers': {

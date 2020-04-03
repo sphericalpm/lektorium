@@ -69,3 +69,7 @@ class Repo(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def unpark_session(self, session_id: str) -> None:
         pass
+
+    @abc.abstractmethod
+    async def init_sessions(self):
+        pass

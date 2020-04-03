@@ -45,7 +45,6 @@ def test_session_attributes(repo):
         'edit_url',
         'parked_time',
         'session_id',
-        'view_url',
     }
 
 

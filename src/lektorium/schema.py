@@ -40,7 +40,6 @@ class Session(ObjectType):
     session_id = String()
     site_name = String()
     edit_url = String()
-    view_url = String()
     creation_time = DateTime()
     custodian = String()
     custodian_email = String()
@@ -155,6 +154,7 @@ class Query(ObjectType):
     @inject_permissions
     async def resolve_sessions(self, info, parked, permissions):
         repo = info.context['repo']
+        await repo.init_sessions()
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [
             x for x in sessions

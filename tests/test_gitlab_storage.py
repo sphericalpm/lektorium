@@ -47,7 +47,7 @@ async def test_gitlabstorage(tmpdir):
                 assert site_workdir == local_dir
                 assert options == {
                     'cloudfront_domain_name': 'domain_name',
-                    'production_url': 'https://domain_name',
+                    'url': 'https://domain_name',
                 }
 
                 assert await storage.create_site_repo('') == 'site_repo'
