@@ -164,11 +164,6 @@ class AsyncDockerServer(AsyncServer):
 
     @property
     async def sessions(self):
-        docker = aiodocker.Docker()
-        containers = (
-            await c.show()
-            for c in await docker.containers.list()
-        )
         def parse(containers):
             for x in containers:
                 if 'lektorium.edit_url' not in x['Config']['Labels']:
@@ -182,6 +177,11 @@ class AsyncDockerServer(AsyncServer):
                 creation_time = datetime.fromtimestamp(creation_time)
                 session['creation_time'] = creation_time
                 yield session
+        docker = aiodocker.Docker()
+        containers = (
+            await c.show()
+            for c in await docker.containers.list()
+        )
         return list(parse([x async for x in containers]))
 
     @property
