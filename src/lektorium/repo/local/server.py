@@ -148,6 +148,7 @@ class AsyncLocalServer(AsyncServer):
 
 class AsyncDockerServer(AsyncServer):
     LEKTOR_PORT = 5000
+    LABEL_PREFIX = 'lektorium'
 
     def __init__(
         self,
@@ -155,7 +156,7 @@ class AsyncDockerServer(AsyncServer):
         auto_remove=True,
         lektor_image='lektorium-lektor',
         network=None,
-        lektorium_container='lektorium',
+        server_container='lektorium',
     ):
         super().__init__()
         if not pathlib.Path('/var/run/docker.sock').exists():
@@ -164,18 +165,18 @@ class AsyncDockerServer(AsyncServer):
         self.lektor_image = lektor_image
         self.network = network
         self.sessions_domain = os.environ.get('LEKTORIUM_SESSIONS_DOMAIN', None)
-        self.lektorium_container = lektorium_container
+        self.server_container = server_container
 
     @property
     async def sessions(self):
         def parse(containers):
             for x in containers:
-                if 'lektorium.edit_url' not in x['Config']['Labels']:
+                if f'{self.LABEL_PREFIX}.edit_url' not in x['Config']['Labels']:
                     continue
                 session = {
-                    k[10:]: v
+                    k[len(self.LABEL_PREFIX)+1:]: v
                     for k, v in x['Config']['Labels'].items()
-                    if k.startswith('lektorium')
+                    if k.startswith(self.LABEL_PREFIX)
                 }
                 creation_time = float(session['creation_time'])
                 creation_time = datetime.fromtimestamp(creation_time)
@@ -199,7 +200,7 @@ class AsyncDockerServer(AsyncServer):
             networks = [
                 c['HostConfig']['NetworkMode']
                 async for c in containers
-                if c['Name'] == '/lektorium'
+                if c['Name'] == f'/{self.server_container}'
             ]
             self.network = one(networks)
         return self.network
@@ -211,7 +212,7 @@ class AsyncDockerServer(AsyncServer):
         try:
             try:
                 session_id = pathlib.Path(path).name
-                container_name = f'lektorium-lektor-{session_id}'
+                container_name = f'{self.lektor_image}-{session_id}'
                 session_address = self.session_address(session_id, container_name)
                 labels = flatten_options(self.lektor_labels(session_id), 'traefik')
                 session = {
@@ -220,7 +221,7 @@ class AsyncDockerServer(AsyncServer):
                     'creation_time': str(session['creation_time'].timestamp()),
                 }
                 session.pop('parked_time', None)
-                labels.update(flatten_options(session, 'lektorium'))
+                labels.update(flatten_options(session, self.LABEL_PREFIX))
                 docker = aiodocker.Docker()
                 container = await docker.containers.run(
                     name=container_name,
@@ -229,7 +230,7 @@ class AsyncDockerServer(AsyncServer):
                             AutoRemove=self.auto_remove,
                             NetworkMode=await self.network_mode,
                             VolumesFrom=[
-                                self.lektorium_container,
+                                self.server_container,
                             ],
                         ),
                         Cmd=[
@@ -273,7 +274,7 @@ class AsyncDockerServer(AsyncServer):
         if path in self.serves:
             return await super().stop(path, finalizer)
         session_id = path.name
-        container_name = f'lektorium-lektor-{session_id}'
+        container_name = f'{self.lektor_image}-{session_id}'
         for container in await aiodocker.Docker().containers.list():
             info = await container.show()
             if info['Name'] == f'/{container_name}':
@@ -288,7 +289,7 @@ class AsyncDockerServer(AsyncServer):
     def lektor_labels(self, session_id):
         if self.sessions_domain is None:
             return {}
-        route_name = f'lektorium-lektor-{session_id}'
+        route_name = f'{self.lektor_image}-{session_id}'
         return {
             'enable': 'true',
             f'http.routers': {
