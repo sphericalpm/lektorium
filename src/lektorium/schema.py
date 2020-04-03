@@ -155,6 +155,7 @@ class Query(ObjectType):
     @inject_permissions
     async def resolve_sessions(self, info, parked, permissions):
         repo = info.context['repo']
+        await repo.init_sessions()
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [
             x for x in sessions

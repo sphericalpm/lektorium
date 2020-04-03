@@ -1,5 +1,6 @@
+import asyncio
 import collections.abc
-import datetime
+from datetime import datetime
 import functools
 import pathlib
 import shutil
@@ -61,10 +62,23 @@ class Repo(BaseRepo):
         if sessions_root is None:
             sessions_root = closer(tempfile.TemporaryDirectory())
         self.sessions_root = pathlib.Path(sessions_root)
+        self.sessions_initialized = False
         self.init_sites()
 
     def init_sites(self):
         for site_id, site in self.config.items():
+            site_dir = (self.sessions_root / site_id)
+            if site_dir.exists():
+                for session_dir in site_dir.iterdir():
+                    session = Session(
+                        session_id=session_dir.name,
+                        creation_time=datetime.fromtimestamp(session_dir.lstat().st_ctime),
+                        custodian=site['owner'],
+                        custodian_email=site['email'],
+                        parked_time=datetime.fromtimestamp(session_dir.lstat().st_mtime),
+                        edit_url=None,
+                    )
+                    site.sessions[session['session_id']] = session
             if site.production_url is None:
                 session_dir = self.sessions_root / site_id / 'production'
                 if session_dir.exists():
@@ -72,6 +86,21 @@ class Repo(BaseRepo):
                 else:
                     self.storage.create_session(site_id, 'production', session_dir)
                     site.production_url = self.server.serve_static(session_dir)
+    
+    async def init_sessions(self):
+        if not self.sessions_initialized:
+            sessions = self.server.sessions
+            if asyncio.iscoroutine(sessions):
+                sessions = await sessions
+            for session in sessions:
+                session = dict(session)
+                site_id = session.pop('site_id', None)
+                if site_id is None or site_id not in self.config:
+                    continue
+                session = Session(session)
+                session_id = session['session_id']
+                self.config[site_id].sessions[session_id] = session
+            self.sessions_initialized = True
 
     @cached_property
     def config(self):
@@ -116,12 +145,13 @@ class Repo(BaseRepo):
         self.storage.create_session(site_id, session_id, session_dir)
         session_object = Session(
             session_id=session_id,
-            creation_time=datetime.datetime.now(),
-            view_url=None,
-            edit_url=self.server.serve_lektor(session_dir),
+            site_id=site_id,
+            creation_time=datetime.now(),
             custodian=custodian,
             custodian_email=custodian_email,
         )
+        session_object['edit_url'] = self.server.serve_lektor(session_dir, session_object)
+        session_object.pop('site_id', None)
         self.config[site_id].sessions[session_id] = session_object
         return session_id
 
@@ -145,18 +175,24 @@ class Repo(BaseRepo):
             raise InvalidSessionState()
         self.server.stop_server(session_dir)
         session['edit_url'] = None
-        session['parked_time'] = datetime.datetime.now()
+        session['parked_time'] = datetime.now()
 
     def unpark_session(self, session_id):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]
-        session_dir = self.sessions_root / site['site_id'] / session_id
+        site_id = site['site_id']
+        session_dir = self.sessions_root / site_id / session_id
         if not session.parked:
             raise InvalidSessionState()
         if any(not s.parked for s in site.sessions.values()):
             raise DuplicateEditSession()
-        session['edit_url'] = self.server.serve_lektor(session_dir)
+        session['edit_url'] = self.server.serve_lektor(
+            session_dir, {
+                **session,
+                'site_id': site_id
+            }
+        )
         session.pop('parked_time', None)
 
     async def create_site(self, site_id, name, owner=None):
