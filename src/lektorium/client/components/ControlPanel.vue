@@ -96,7 +96,6 @@
                                         >{{ session.editUrl }}</a>
                                         <span v-else>{{ session.editUrl }}</span>
                                     </td>
-                                    <td>{{ session.viewUrl }}</td>
                                     <td>
                                         <b-button-group>
                                             <b-button
@@ -414,7 +413,6 @@ module.exports = {
                     productionUrl
                     stagingUrl
                     editUrl
-                    viewUrl
                     site {
                         siteId
                     }
@@ -703,8 +701,7 @@ module.exports = {
         checkStarting() {
             let production_result = this.available_sites.find(item => item.productionUrl == "Starting");
             let admin_result = this.edit_sessions.find(item => item.editUrl == "Starting");
-            let view_result = this.edit_sessions.find(item => item.viewUrl == "Starting");
-            if(admin_result || production_result || view_result){
+            if (admin_result || production_result) {
                 setTimeout(this.getPanelData,5000);
             }
         },
