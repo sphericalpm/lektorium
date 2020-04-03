@@ -18,11 +18,11 @@ def repo(request, tmpdir):
 
 def test_fake_server():
     server = FakeServer()
-    assert server.serve_lektor('/tmp')
+    assert server.serve_lektor('/tmp', {})
     with pytest.raises(RuntimeError):
-        assert server.serve_lektor('/tmp')
-    server.stop_server('/tmp')
-    assert server.serve_lektor('/tmp')
+        assert server.serve_lektor('/tmp', {})
+    server.stop_server('/tmp', {})
+    assert server.serve_lektor('/tmp', {})
 
 
 @pytest.mark.asyncio

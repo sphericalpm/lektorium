@@ -17,7 +17,7 @@ class AsyncTestServer(AsyncLocalServer):
 
 @pytest.mark.asyncio
 async def test_start_server_failed():
-    result = AsyncTestServer('echo').serve_lektor('/tmp')
+    result = AsyncTestServer('echo').serve_lektor('/tmp', {})
     while callable(result):
         await asyncio.sleep(0.1)
         result = result()[0]
@@ -29,7 +29,7 @@ async def test_start_stop_server():
     with tempfile.TemporaryDirectory() as tmp:
         cmd = 'echo "Finished prune"; sleep 1'
         server = AsyncTestServer(cmd)
-        result = server.serve_lektor(tmp)
+        result = server.serve_lektor(tmp, {})
         while callable(result):
             await asyncio.sleep(0.1)
             result = result()[0]
@@ -46,7 +46,7 @@ async def test_start_stop_server():
 async def test_start_stop_lektor(tmpdir):
     LocalLektor.quickstart('a', 'b', tmpdir / 'c')
     server = AsyncLocalServer()
-    result = server.serve_lektor(tmpdir / 'c')
+    result = server.serve_lektor(tmpdir / 'c', {})
     while callable(result):
         await asyncio.sleep(0.1)
         result = result()[0]

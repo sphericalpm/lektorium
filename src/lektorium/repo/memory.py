@@ -87,6 +87,9 @@ class Repo(BaseRepo):
     def __init__(self, data: Mapping) -> None:
         self.data = data
 
+    async def init_sessions(self):
+        pass
+
     @property
     def sites(self) -> Iterable:
         yield from self.data

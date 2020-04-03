@@ -85,8 +85,8 @@ class Repo(BaseRepo):
                     logging.warn(f'production session already exists for site {site_id}')
                 else:
                     self.storage.create_session(site_id, 'production', session_dir)
-                    site.production_url = self.server.serve_static(session_dir)
-    
+                    site.production_url = self.server.serve_static(session_dir, {})
+
     async def init_sessions(self):
         if not self.sessions_initialized:
             sessions = self.server.sessions
@@ -208,7 +208,7 @@ class Repo(BaseRepo):
         if production_url is None:
             production_url = site_options.get('url', None)
         if production_url is None:
-            production_url = self.server.serve_static(site_root)
+            production_url = self.server.serve_static(site_root, {})
 
         self.config[site_id] = Site(site_id, production_url, **dict(
             name=name,
