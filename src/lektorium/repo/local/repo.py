@@ -79,13 +79,6 @@ class Repo(BaseRepo):
                         edit_url=None,
                     )
                     site.sessions[session['session_id']] = session
-            if site.production_url is None:
-                session_dir = self.sessions_root / site_id / 'production'
-                if session_dir.exists():
-                    logging.warn(f'production session already exists for site {site_id}')
-                else:
-                    self.storage.create_session(site_id, 'production', session_dir)
-                    site.production_url = self.server.serve_static(session_dir)
 
     async def init_sessions(self):
         if not self.sessions_initialized:
