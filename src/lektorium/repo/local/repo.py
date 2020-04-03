@@ -145,13 +145,16 @@ class Repo(BaseRepo):
         self.storage.create_session(site_id, session_id, session_dir)
         session_object = Session(
             session_id=session_id,
-            site_id=site_id,
             creation_time=datetime.now(),
             custodian=custodian,
             custodian_email=custodian_email,
         )
-        session_object['edit_url'] = self.server.serve_lektor(session_dir, session_object)
-        session_object.pop('site_id', None)
+        session_object['edit_url'] = self.server.serve_lektor(
+            session_dir, {
+                **session_object,
+                'site_id': site_id
+            }
+        )
         self.config[site_id].sessions[session_id] = session_object
         return session_id
 
