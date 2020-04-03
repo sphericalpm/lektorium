@@ -174,7 +174,7 @@ class AsyncDockerServer(AsyncServer):
                 if f'{self.LABEL_PREFIX}.edit_url' not in x['Config']['Labels']:
                     continue
                 session = {
-                    k[len(self.LABEL_PREFIX)+1:]: v
+                    k[len(self.LABEL_PREFIX) + 1:]: v
                     for k, v in x['Config']['Labels'].items()
                     if k.startswith(self.LABEL_PREFIX)
                 }

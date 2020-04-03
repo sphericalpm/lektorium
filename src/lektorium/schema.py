@@ -40,7 +40,6 @@ class Session(ObjectType):
     session_id = String()
     site_name = String()
     edit_url = String()
-    view_url = String()
     creation_time = DateTime()
     custodian = String()
     custodian_email = String()

@@ -42,7 +42,6 @@ SITES = [{
     'sessions': [Session(x) for x in [{
         'session_id': 'widgets-1',
         'edit_url': 'https://cmsdciks.cms.acme.com',
-        'view_url': 'https://cmsdciks.build.acme.com',
         'creation_time': dateutil.parser.parse('2019-07-19 10:18 UTC'),
         'custodian': 'Max Jekov',
         'custodian_email': 'mj@acme.com',
@@ -60,14 +59,12 @@ SITES = [{
     'custodian_email': 'mv@acme.com',
     'sessions': [Session(x) for x in [{
         'session_id': 'pantssss',
-        'view_url': 'https://smthng.uci.com',
         'creation_time': dateutil.parser.parse('2019-07-18 11:33 UTC'),
         'custodian': 'Brian',
         'custodian_email': 'brian@splitter.il',
         'parked_time': dateutil.parser.parse('2019-07-18 11:53 UTC'),
     }, {
         'session_id': 'pantss1',
-        'view_url': 'https://smthng-mu.uci.com',
         'creation_time': dateutil.parser.parse('2019-07-18 11:34 UTC'),
         'custodian': 'Muen',
         'custodian_email': 'muen@flicker.tr',
@@ -126,7 +123,6 @@ class Repo(BaseRepo):
         session_id = self.generate_session_id()
         site.setdefault('sessions', []).append(Session(
             session_id=session_id,
-            view_url=f'https://{session_id}-created.example.com',
             edit_url=f'https://edit.{session_id}-created.example.com',
             creation_time=datetime.datetime.now(),
             custodian=custodian_name,
