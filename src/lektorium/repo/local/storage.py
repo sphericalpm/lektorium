@@ -411,6 +411,7 @@ class GitLab:
         response = requests.get(
             '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
             headers=self.headers,
+            params=dict(simple=True, per_page=100),
         )
         response.raise_for_status()
         return response.json()
