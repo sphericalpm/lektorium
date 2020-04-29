@@ -16,7 +16,6 @@ from ..interface import (
     SessionNotFound,
 )
 from .objects import Session, Site
-import logging
 
 
 class FilteredDict(collections.abc.Mapping):
