@@ -140,7 +140,7 @@ class Auth0Client:
 
     @cacher(CACHE_USERS_ALIAS)
     async def get_users(self):
-        params = {'fields': 'name,nickname,email,user_id'}
+        params = {'fields': 'name,nickname,email,user_id', 'per_page': 100}
         url = f'{self.audience}/users'
         async with self.session.get(url, params=params, headers=await self.auth_headers) as resp:
             if resp.status != 200:
@@ -154,8 +154,9 @@ class Auth0Client:
 
     @cacher(CACHE_USER_PERMISSIONS_ALIAS)
     async def get_user_permissions(self, user_id):
+        params = {'per_page': 100}
         url = f'{self.audience}/users/{user_id}/permissions'
-        async with self.session.get(url, headers=await self.auth_headers) as resp:
+        async with self.session.get(url, params=params, headers=await self.auth_headers) as resp:
             if resp.status != 200:
                 raise Auth0Error(f'Error {resp.status}')
             return await resp.json()
@@ -196,8 +197,9 @@ class Auth0Client:
 
     @cacher(CACHE_API_PERMISSIONS_ALIAS)
     async def get_api_permissions(self):
+        params = {'per_page': 100}
         url = f'{self.audience}/resource-servers'
-        async with self.session.get(url, headers=await self.auth_headers) as resp:
+        async with self.session.get(url, params=params, headers=await self.auth_headers) as resp:
             if resp.status != 200:
                 raise Auth0Error(f'Error {resp.status}')
             data = await resp.json()
