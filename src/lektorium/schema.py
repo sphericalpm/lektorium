@@ -92,6 +92,7 @@ class Releasing(ObjectType):
     source_branch = String()
     state = String()
     web_url = String()
+    created_at = DateTime()
 
 
 def skip_permissions_check(info):

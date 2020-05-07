@@ -29,6 +29,7 @@ VALID_MERGE_REQUEST = {
     'target_branch': 'master',
     'title': 'Request from "MJ" <mj@spherical.pm>',
     'web_url': 'http://example.com/some/merge/request',
+    'created_at': dateutil.parser.parse('2020-04-22T06:39:54.918Z'),
 }
 
 

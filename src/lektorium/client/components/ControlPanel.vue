@@ -170,6 +170,7 @@
                                     <th scope="col">Session ID</th>
                                     <th scope="col">Site Name</th>
                                     <th scope="col">Merge Request</th>
+                                    <th scope="col">Creation Time</th>
                                     <th scope="col">State</th>
                                     <th></th>
                                 </tr>
@@ -184,6 +185,7 @@
                                             target="_blank"
                                         >{{ release.title }}</a>
                                     </td>
+                                    <td>{{ convertTime(release.creationTime) }}</td>
                                     <td>{{ release.state }}</td>
                                 </tr>
                             </tbody>
@@ -439,6 +441,7 @@ module.exports = {
                     siteName
                     sourceBranch
                     webUrl
+                    creationTime:createdAt
                 }
             }`;
             let result = await this.makeRequest(query);

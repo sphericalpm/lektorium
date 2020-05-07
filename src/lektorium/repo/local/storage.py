@@ -23,6 +23,7 @@ from .templates import (
 )
 from ...aws import AWS
 from ...utils import closer
+import dateutil
 
 
 LFS_MASKS = (
@@ -335,7 +336,11 @@ class GitLab:
             headers=self.headers,
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        for r in result:
+            if 'created_at' in r:
+                r['created_at'] = dateutil.parser.parse(r['created_at'])
+        return result
 
     @cached_property
     def project_id(self):
