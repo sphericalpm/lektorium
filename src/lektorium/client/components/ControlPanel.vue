@@ -362,6 +362,8 @@ module.exports = {
                     this.create_site_btn_visible = true;
                     this.manage_users_visible = true;
                 };
+            } else {
+                this.create_site_btn_visible = true;
             };
         },
 
