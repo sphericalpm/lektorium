@@ -364,6 +364,7 @@ module.exports = {
                 };
             } else {
                 this.create_site_btn_visible = true;
+                this.manage_users_visible = true;
             };
         },
 
