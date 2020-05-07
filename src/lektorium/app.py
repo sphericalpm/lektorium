@@ -170,6 +170,11 @@ def init_app(repo, auth0_options=None, auth0_client=None):
         context=dict(
             repo=repo,
             auth0_client=auth0_client,
+            **(
+                {'user_permissions': ['admin']}
+                if auth0_options is None else
+                {}
+            )
         ),
         error_formatter=error_formatter,
     )

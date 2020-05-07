@@ -18,9 +18,11 @@ module.exports = {
         'error': window.httpVueLoader('/components/Error.vue')
     },
     created() {
-        return this.$auth
-        .handleAuthentication()
-        .catch(() => this.$auth.login());
+        if (!_.isNil(this.$auth)) {
+            return this.$auth
+            .handleAuthentication()
+            .catch(() => this.$auth.login());
+        };
     },
 };
 </script>
