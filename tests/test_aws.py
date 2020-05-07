@@ -108,6 +108,15 @@ def test_create_cloudfront_distribution():
                 },
                 'Comment': '',
                 'Enabled': True,
+                'CustomErrorResponses': {
+                    'Quantity': 1,
+                    'Items': [{
+                        'ErrorCode': 404,
+                        'ResponsePagePath': '/404.html',
+                        'ResponseCode': '404',
+                        'ErrorCachingMinTTL': 60,
+                    }],
+                },
             },
         },
     }
@@ -138,7 +147,17 @@ def test_create_cloudfront_distribution():
                 ),
                 MinTTL=ANY,
             ),
-        ))
+            CustomErrorResponses=dict(
+                Quantity=1,
+                Items=[dict(
+                    ErrorCode=404,
+                    ResponsePagePath='/404.html',
+                    ResponseCode='404',
+                    ErrorCachingMinTTL=60,
+                )],
+            ),
+        )
+    )
 
     client = boto3.client('cloudfront')
     stubber = Stubber(client)
