@@ -47,6 +47,7 @@ class FilteredMergeRequestData(FilteredDict):
         'target_branch',
         'title',
         'web_url',
+        'created_at',
     ]
 
     def __init__(self, dct):
