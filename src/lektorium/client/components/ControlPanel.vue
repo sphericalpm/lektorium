@@ -238,21 +238,28 @@
             @hidden="onReset"
             hide-footer>
             <b-form @submit="onSubmit" @reset="onReset" class="w-100">
-                <b-form-group
-                    label="Title:">
+                <b-form-group label="Title:">
                     <b-form-input
                         type="text"
                         v-model="add_site_form.title"
                         required
                         placeholder="Enter title"></b-form-input>
                 </b-form-group>
-                <b-form-group
-                    label="Site id:">
+                <b-form-group label="Site id:">
                     <b-form-input
                         type="text"
                         v-model="add_site_form.site_id"
                         required
                         placeholder="Enter site id"></b-form-input>
+                </b-form-group>
+                <b-form-group label="Owner:">
+                    <b-form-input
+                        list="owner-list"
+                        v-model="add_site_form.owner"
+                        placeholder="Select owner or leave empty to be an owner"></b-form-input>
+                    <datalist id="owner-list">
+                        <option v-for="u in users" :key="u" :value="`${u.email},${u.name}`">{{ u.name }}</option>
+                    </datalist>
                 </b-form-group>
                 <b-button-group>
                     <b-button class="rounded mb-1 mr-1" type="submit" variant="primary">OK</b-button>
@@ -307,6 +314,7 @@ module.exports = {
             releasing: [],
 
             add_site_form: {
+                owner: '',
                 title: '',
                 site_id: '',
             },
@@ -556,9 +564,9 @@ module.exports = {
 
         async addSite(payload) {
             const site_name = payload.title;
-            const site_id = payload.site_id;
+            const owner = _.isEmpty(payload.owner) ? '' : payload.owner;
             let query = `
-                createSite(siteId: "${site_id}", siteName: "${site_name}") {
+                createSite(siteId: "${payload.site_id}", siteName: "${site_name}", owner: "${owner}") {
                     ok
                 }
             `;
@@ -677,6 +685,7 @@ module.exports = {
         },
 
         initForm() {
+            this.add_site_form.owner = '';
             this.add_site_form.title = '';
             this.add_site_form.site_id = '';
         },
@@ -684,12 +693,12 @@ module.exports = {
         onSubmit(evt) {
             evt.preventDefault();
             this.$refs.addSiteModal.hide();
-            const payload = {
+            this.addSite({
                 title: this.add_site_form.title,
                 site_id: this.add_site_form.site_id,
-            };
-            this.addSite(payload);
-            this.initForm
+                owner: this.add_site_form.owner,
+            });
+            this.initForm();
         },
 
         onReset(evt) {

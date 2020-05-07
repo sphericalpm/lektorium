@@ -305,11 +305,17 @@ class CreateSite(MutationBase):
     class Arguments:
         site_id = String()
         name = String(name='siteName')
+        owner = String()
 
     @classmethod
     async def mutate(cls, root, info, **kwargs):
-        jwt_user = info.context.get('userdata')
-        return super().mutate(root, info, owner=jwt_user, **kwargs)
+        owner = kwargs.pop('owner', None)
+        if not owner:
+            owner = info.context.get('userdata')
+        else:
+            email, _, name = owner.partition(',')
+            owner = (name, email)
+        return super().mutate(root, info, owner=owner, **kwargs)
 
 
 MutationQuery = type(
