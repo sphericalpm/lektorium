@@ -4,8 +4,7 @@ from datetime import datetime
 import boto3
 from botocore.stub import Stubber, ANY
 
-from lektorium.repo.local.storage import AWS
-from lektorium.repo.local.templates import BUCKET_POLICY_TEMPLATE
+from lektorium.aws import AWS, BUCKET_POLICY_TEMPLATE
 
 
 def test_create_s3_bucket():

@@ -2,7 +2,19 @@ from time import sleep
 from uuid import uuid4
 import boto3
 from cached_property import cached_property
-from .repo.local.templates import BUCKET_POLICY_TEMPLATE
+
+
+BUCKET_POLICY_TEMPLATE = '''{{
+    "Version": "2012-10-17",
+    "Statement": [{{
+        "Sid": "PublicReadGetObject",
+        "Effect": "Allow",
+        "Principal": "*",
+        "Action": "s3:GetObject",
+        "Resource": "arn:aws:s3:::{bucket_name}/*"
+    }}]
+}}
+'''
 
 
 class AWS:
