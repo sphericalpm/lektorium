@@ -37,7 +37,7 @@ setuptools.setup(
     },
     install_requires=[
         'aiodocker',
-        'aiohttp-graphql',
+        'aiohttp-graphql<1.1',
         'aiohttp!=3.6.0',
         'appdirs',
         'authlib',
