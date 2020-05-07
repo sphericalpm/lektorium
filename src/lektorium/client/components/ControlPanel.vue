@@ -310,7 +310,6 @@ module.exports = {
             selectedUserId: '',
             userPermissions: [],
             selectedUserPermissions: [],
-            availablePermissions: [],
             releasing: [],
 
             add_site_form: {
@@ -642,18 +641,6 @@ module.exports = {
             this.$bvModal.hide(`user-modal`);
         },
 
-        async getAvailablePermissions() {
-            let query = `
-                {
-                    availablePermissions {
-                        value
-                    }
-                }
-            `;
-            let result = await this.makeRequest(query);
-            this.availablePermissions = result.data.data.availablePermissions;
-        },
-
         showMessage(text, type) {
             this.message = text;
             this.message_type = type;
@@ -664,7 +651,6 @@ module.exports = {
             this.initUserModal();
             this.selectedUserId = userId;
             this.getUserPermissions(userId);
-            this.getAvailablePermissions();
             this.$bvModal.show(`user-modal`);
         },
 
@@ -672,16 +658,12 @@ module.exports = {
             this.selectedUserId = '';
             this.selectedUserPermissions = [];
             this.userPermissions = [];
-            this.availablePermissions = [];
-
         },
 
         refreshUserModal(userId) {
             this.selectedUserPermissions = [];
             this.userPermissions = [];
-            this.availablePermissions = [];
             this.getUserPermissions(userId);
-            this.getAvailablePermissions();
         },
 
         initForm() {
@@ -722,6 +704,17 @@ module.exports = {
             return user_time;
         },
 
+    },
+
+    asyncComputed: {
+        async availablePermissions() {
+            let query = `{
+                availablePermissions {
+                    value
+                }
+            }`;
+            return (await this.makeRequest(query)).data.data.availablePermissions;
+        },
     },
 
     created() {
