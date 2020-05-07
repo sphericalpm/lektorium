@@ -292,6 +292,15 @@ class AWS:
                     ),
                     MinTTL=1000,
                 ),
+                CustomErrorResponses=dict(
+                    Quantity=1,
+                    Items=[dict(
+                        ErrorCode=404,
+                        ResponsePagePath='/404.html',
+                        ResponseCode=404,
+                        ErrorCachingMinTTL=60,
+                    )],
+                ),
             ))
         self._raise_if_not_status(
             response, 201,
