@@ -64,7 +64,7 @@ async def test_auth_token(auth0_client, mocked):
 
 @pytest.mark.asyncio
 async def test_get_users(auth0_client, mocked):
-    url = f'{auth0_client.audience}/users?fields=name,nickname,email,user_id'
+    url = f'{auth0_client.audience}/users?fields=name,nickname,email,user_id&per_page=100'
     users_response = [{
         'username': 'mjekov'
     }]
@@ -78,7 +78,7 @@ async def test_get_users(auth0_client, mocked):
 
 @pytest.mark.asyncio
 async def test_get_user_permissions(auth0_client, mocked):
-    url = f'{auth0_client.audience}/users/user_id/permissions'
+    url = f'{auth0_client.audience}/users/user_id/permissions?per_page=100'
     permissions_response = [{
         'permission_name': 'read:projects'
     }]
@@ -93,7 +93,7 @@ async def test_get_user_permissions(auth0_client, mocked):
 
 @pytest.mark.asyncio
 async def test_set_user_permissions(auth0_client, mocked):
-    api_permissions_url = f'{auth0_client.audience}/resource-servers'
+    api_permissions_url = f'{auth0_client.audience}/resource-servers?per_page=100'
     mocked.get(
         api_permissions_url,
         status=200,
@@ -129,7 +129,7 @@ async def test_delete_user_permissions(auth0_client, mocked):
 
 @pytest.mark.asyncio
 async def test_get_api_permissions(auth0_client, mocked):
-    url = f'{auth0_client.audience}/resource-servers'
+    url = f'{auth0_client.audience}/resource-servers?per_page=100'
     permissions = [{
         'value': 'perm-id',
         'description': 'perm description'
