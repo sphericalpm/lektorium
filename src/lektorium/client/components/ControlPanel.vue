@@ -239,22 +239,16 @@
             hide-footer>
             <b-form @submit="onSubmit" @reset="onReset" class="w-100">
                 <b-form-group
-                    id="form-title-group"
-                    label="Title:"
-                    label-for="form-title-input">
+                    label="Title:">
                     <b-form-input
-                        id="form-title-input"
                         type="text"
                         v-model="add_site_form.title"
                         required
                         placeholder="Enter title"></b-form-input>
                 </b-form-group>
                 <b-form-group
-                    id="form-id-group"
-                    label="Site id:"
-                    label-for="form-id-input">
+                    label="Site id:">
                     <b-form-input
-                        id="form-id-input"
                         type="text"
                         v-model="add_site_form.site_id"
                         required
