@@ -278,7 +278,7 @@
                     <b-form-checkbox-group id="checkbox-group-permissions" v-model="selectedUserPermissions" name="permissions-2">
                         <templeate v-for="(permission, index) in availablePermissions" :key="index">
                             <b-form-checkbox :value="permission.value">
-                                {{permission.value}}
+                                {{ getPermissionDescription(permission.value) }}
                             </b-form-checkbox>
                             <br>
                         </templeate>
@@ -643,6 +643,14 @@ module.exports = {
                 this.setUserPermissions(this.selectedUser.userId, permissionsToSet);
             }
             this.$bvModal.hide(`user-modal`);
+        },
+
+        getPermissionDescription(value) {
+            if (!value.startsWith('user:')) {
+                return value;
+            };
+            let site = _(this.available_sites).filter(x => x.siteId == value.slice(5)).head();
+            return _.isNil(site) ? value : site.siteName;
         },
 
         showMessage(text, type) {
