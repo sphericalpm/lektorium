@@ -276,9 +276,12 @@
             <b-form class="mb-3">
                 <b-form-group label="Permissions:">
                     <b-form-checkbox-group id="checkbox-group-permissions" v-model="selectedUserPermissions" name="permissions-2">
-                        <b-form-checkbox v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
-                            {{permission.value}}
-                        </b-form-checkbox>
+                        <templeate v-for="(permission, index) in availablePermissions" :key="index">
+                            <b-form-checkbox :value="permission.value">
+                                {{permission.value}}
+                            </b-form-checkbox>
+                            <br>
+                        </templeate>
                     </b-form-checkbox-group>
                 </b-form-group>
             </b-form>
