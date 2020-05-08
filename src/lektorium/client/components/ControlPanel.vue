@@ -222,7 +222,7 @@
                                         </ul>
                                     </td>
                                     <td>
-                                        <b-button v-b-modal.user-modal @click="showUserModal(user.userId)">Edit Permissions</b-button>
+                                        <b-button v-b-modal.user-modal @click="showUserModal(user)">Edit Permissions</b-button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -269,7 +269,8 @@
         </b-modal>
         <b-modal
         id="user-modal"
-        :title="selectedUserId"
+        v-if="!_.isNil(selectedUser)"
+        :title="selectedUser.name"
         hide-footer
         @hidden="initUserModal">
             <b-form class="mb-3">
@@ -307,7 +308,7 @@ module.exports = {
             edit_sessions: [],
             parked_sessions: [],
             users: [],
-            selectedUserId: '',
+            selectedUser: undefined,
             userPermissions: [],
             selectedUserPermissions: [],
             releasing: [],
@@ -633,10 +634,10 @@ module.exports = {
             let userPermissionsPlate = this.userPermissions.map(function(perm){return perm.permissionName});
             let permissionsToSet = this.selectedUserPermissions.filter(element => !(userPermissionsPlate.includes(element)));
             if (permissionsToDelete.length>0) {
-                this.deleteUserPermissions(this.selectedUserId, permissionsToDelete);
+                this.deleteUserPermissions(this.selectedUser.userId, permissionsToDelete);
             }
             if (permissionsToSet.length>0){
-                this.setUserPermissions(this.selectedUserId, permissionsToSet);
+                this.setUserPermissions(this.selectedUser.userId, permissionsToSet);
             }
             this.$bvModal.hide(`user-modal`);
         },
@@ -647,15 +648,15 @@ module.exports = {
             this.message_visible = true;
         },
 
-        showUserModal(userId) {
+        showUserModal(user) {
             this.initUserModal();
-            this.selectedUserId = userId;
-            this.getUserPermissions(userId);
+            this.selectedUser = user;
+            this.getUserPermissions(user.userId);
             this.$bvModal.show(`user-modal`);
         },
 
         initUserModal() {
-            this.selectedUserId = '';
+            this.selectedUser = undefined;
             this.selectedUserPermissions = [];
             this.userPermissions = [];
         },
