@@ -222,7 +222,7 @@
                                         </ul>
                                     </td>
                                     <td>
-                                        <b-button v-b-modal.user-modal @click="showUserModal(user.userId)">Edit Permissions</b-button>
+                                        <b-button v-b-modal.user-modal @click="showUserModal(user)">Edit Permissions</b-button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -269,15 +269,19 @@
         </b-modal>
         <b-modal
         id="user-modal"
-        :title="selectedUserId"
+        v-if="!_.isNil(selectedUser)"
+        :title="selectedUser.name"
         hide-footer
         @hidden="initUserModal">
             <b-form class="mb-3">
                 <b-form-group label="Permissions:">
                     <b-form-checkbox-group id="checkbox-group-permissions" v-model="selectedUserPermissions" name="permissions-2">
-                        <b-form-checkbox v-for="(permission, index) in availablePermissions" :key="index" :value="permission.value">
-                            {{permission.value}}
-                        </b-form-checkbox>
+                        <templeate v-for="(permission, index) in availablePermissions" :key="index">
+                            <b-form-checkbox :value="permission.value">
+                                {{ getPermissionDescription(permission.value) }}
+                            </b-form-checkbox>
+                            <br>
+                        </templeate>
                     </b-form-checkbox-group>
                 </b-form-group>
             </b-form>
@@ -307,10 +311,9 @@ module.exports = {
             edit_sessions: [],
             parked_sessions: [],
             users: [],
-            selectedUserId: '',
+            selectedUser: undefined,
             userPermissions: [],
             selectedUserPermissions: [],
-            availablePermissions: [],
             releasing: [],
 
             add_site_form: {
@@ -634,24 +637,20 @@ module.exports = {
             let userPermissionsPlate = this.userPermissions.map(function(perm){return perm.permissionName});
             let permissionsToSet = this.selectedUserPermissions.filter(element => !(userPermissionsPlate.includes(element)));
             if (permissionsToDelete.length>0) {
-                this.deleteUserPermissions(this.selectedUserId, permissionsToDelete);
+                this.deleteUserPermissions(this.selectedUser.userId, permissionsToDelete);
             }
             if (permissionsToSet.length>0){
-                this.setUserPermissions(this.selectedUserId, permissionsToSet);
+                this.setUserPermissions(this.selectedUser.userId, permissionsToSet);
             }
             this.$bvModal.hide(`user-modal`);
         },
 
-        async getAvailablePermissions() {
-            let query = `
-                {
-                    availablePermissions {
-                        value
-                    }
-                }
-            `;
-            let result = await this.makeRequest(query);
-            this.availablePermissions = result.data.data.availablePermissions;
+        getPermissionDescription(value) {
+            if (!value.startsWith('user:')) {
+                return value;
+            };
+            let site = _(this.available_sites).filter(x => x.siteId == value.slice(5)).head();
+            return _.isNil(site) ? value : site.siteName;
         },
 
         showMessage(text, type) {
@@ -660,28 +659,23 @@ module.exports = {
             this.message_visible = true;
         },
 
-        showUserModal(userId) {
+        showUserModal(user) {
             this.initUserModal();
-            this.selectedUserId = userId;
-            this.getUserPermissions(userId);
-            this.getAvailablePermissions();
+            this.selectedUser = user;
+            this.getUserPermissions(user.userId);
             this.$bvModal.show(`user-modal`);
         },
 
         initUserModal() {
-            this.selectedUserId = '';
+            this.selectedUser = undefined;
             this.selectedUserPermissions = [];
             this.userPermissions = [];
-            this.availablePermissions = [];
-
         },
 
         refreshUserModal(userId) {
             this.selectedUserPermissions = [];
             this.userPermissions = [];
-            this.availablePermissions = [];
             this.getUserPermissions(userId);
-            this.getAvailablePermissions();
         },
 
         initForm() {
@@ -722,6 +716,17 @@ module.exports = {
             return user_time;
         },
 
+    },
+
+    asyncComputed: {
+        async availablePermissions() {
+            let query = `{
+                availablePermissions {
+                    value
+                }
+            }`;
+            return (await this.makeRequest(query)).data.data.availablePermissions;
+        },
     },
 
     created() {
