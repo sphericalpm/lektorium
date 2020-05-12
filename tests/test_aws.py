@@ -52,7 +52,7 @@ def test_open_bucket_access():
             Bucket=bucket_name,
             WebsiteConfiguration=dict(
                 ErrorDocument=dict(
-                    Key='error.html',
+                    Key='404.html',
                 ),
                 IndexDocument=dict(
                     Suffix='index.html',
@@ -107,7 +107,7 @@ def test_create_cloudfront_distribution():
             'DistributionConfig': {
                 'CallerReference': '',
                 'Origins': {'Quantity': 1, 'Items': [{
-                    'Id': 'target',
+                    'Id': '',
                     'DomainName': '',
                     'S3OriginConfig': {'OriginAccessIdentity': ''},
                 }]},
@@ -123,15 +123,6 @@ def test_create_cloudfront_distribution():
                 },
                 'Comment': '',
                 'Enabled': True,
-                'CustomErrorResponses': {
-                    'Quantity': 1,
-                    'Items': [{
-                        'ErrorCode': 404,
-                        'ResponsePagePath': '/404.html',
-                        'ResponseCode': '404',
-                        'ErrorCachingMinTTL': 60,
-                    }],
-                },
             },
         },
     }
@@ -141,13 +132,16 @@ def test_create_cloudfront_distribution():
             CallerReference=ANY,
             Comment=ANY,
             Enabled=True,
-            DefaultRootObject='index.html',
             Origins=dict(
                 Quantity=1,
                 Items=[dict(
                     Id=ANY,
                     DomainName=origin_domain,
-                    S3OriginConfig=dict(OriginAccessIdentity=ANY),
+                    CustomOriginConfig=dict(
+                        HTTPPort=80,
+                        HTTPSPort=443,
+                        OriginProtocolPolicy='http-only',
+                    ),
                 )]
             ),
             DefaultCacheBehavior=dict(
@@ -161,15 +155,6 @@ def test_create_cloudfront_distribution():
                     QueryStringCacheKeys=dict(Quantity=0),
                 ),
                 MinTTL=ANY,
-            ),
-            CustomErrorResponses=dict(
-                Quantity=1,
-                Items=[dict(
-                    ErrorCode=404,
-                    ResponsePagePath='/404.html',
-                    ResponseCode='404',
-                    ErrorCachingMinTTL=60,
-                )],
             ),
         )
     )
