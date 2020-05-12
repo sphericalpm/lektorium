@@ -76,7 +76,7 @@ class AWS:
             Bucket=bucket_name,
             WebsiteConfiguration=dict(
                 ErrorDocument=dict(
-                    Key='error.html',
+                    Key='404.html',
                 ),
                 IndexDocument=dict(
                     Suffix='index.html',
