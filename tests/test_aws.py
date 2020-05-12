@@ -45,6 +45,21 @@ def test_open_bucket_access():
         stub_response,
         expected_params_2,
     )
+    stubber.add_response(
+        'put_bucket_website',
+        {'ResponseMetadata': {'HTTPStatusCode': 200}},
+        dict(
+            Bucket=bucket_name,
+            WebsiteConfiguration=dict(
+                ErrorDocument=dict(
+                    Key='error.html',
+                ),
+                IndexDocument=dict(
+                    Suffix='index.html',
+                ),
+            )
+        )
+    )
 
     aws = AWS()
     aws.s3_client = client
@@ -75,7 +90,8 @@ def test_open_bucket_access_timeout():
 
 def test_create_cloudfront_distribution():
     bucket_name = AWS.S3_PREFIX + 'foo'
-    bucket_origin_name = bucket_name + AWS.S3_SUFFIX
+    region = boto3.client('s3').meta.region_name
+    origin_domain = f'{bucket_name}.s3-website-{region}.{AWS.S3_SUFFIX}'
     distribution_id = 'bar'
     domain_name = 'buzz'
     stub_response = {
@@ -130,7 +146,7 @@ def test_create_cloudfront_distribution():
                 Quantity=1,
                 Items=[dict(
                     Id=ANY,
-                    DomainName=bucket_origin_name,
+                    DomainName=origin_domain,
                     S3OriginConfig=dict(OriginAccessIdentity=ANY),
                 )]
             ),

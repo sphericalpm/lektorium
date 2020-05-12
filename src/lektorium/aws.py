@@ -20,7 +20,7 @@ BUCKET_POLICY_TEMPLATE = '''{{
 
 class AWS:
     S3_PREFIX = 'lektorium-'
-    S3_SUFFIX = '.s3.amazonaws.com'
+    S3_SUFFIX = 'amazonaws.com'
     SLEEP_TIMEOUT = 2
 
     @cached_property
@@ -72,9 +72,25 @@ class AWS:
             'Failed to set bucket access policy',
         )
 
-    def create_cloudfront_distribution(self, bucket_name, suffix=''):
-        suffix = suffix or self.S3_SUFFIX
-        bucket_origin_name = bucket_name + suffix
+        response = self.s3_client.put_bucket_website(
+            Bucket=bucket_name,
+            WebsiteConfiguration=dict(
+                ErrorDocument=dict(
+                    Key='error.html',
+                ),
+                IndexDocument=dict(
+                    Suffix='index.html',
+                ),
+            )
+        )
+        self._raise_if_not_status(
+            response, 200,
+            'Failed to make S3 bucket website',
+        )
+
+    def create_cloudfront_distribution(self, bucket_name):
+        region = self.s3_client.meta.region_name
+        domain = f'{bucket_name}.s3-website-{region}.{self.S3_SUFFIX}'
         response = self.cloudfront_client.create_distribution(
             DistributionConfig=dict(
                 CallerReference=str(uuid4()),
@@ -85,7 +101,7 @@ class AWS:
                     Quantity=1,
                     Items=[dict(
                         Id='1',
-                        DomainName=bucket_origin_name,
+                        DomainName=domain,
                         S3OriginConfig=dict(OriginAccessIdentity=''),
                     )]
                 ),
