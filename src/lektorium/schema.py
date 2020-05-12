@@ -1,5 +1,5 @@
-from asyncio import Future, iscoroutine
 import functools
+from asyncio import Future, iscoroutine
 
 import wrapt
 from graphene import (
@@ -12,9 +12,10 @@ from graphene import (
     String,
 )
 
-from .jwt import GraphExecutionError
 import lektorium.repo
 from lektorium.auth0 import Auth0Error
+
+from .jwt import GraphExecutionError
 
 
 ADMIN = 'admin'

@@ -1,5 +1,6 @@
-import bidict
 import collections
+
+import bidict
 
 
 class Site(collections.abc.Mapping):

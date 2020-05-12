@@ -1,19 +1,11 @@
 import datetime
-from typing import (
-    Generator,
-    Iterable,
-    Mapping,
-    Optional,
-    Tuple,
-)
+from typing import Generator, Iterable, Mapping, Optional, Tuple
 
 import dateutil.parser
-from .interface import (
-    DuplicateEditSession,
-    Repo as BaseRepo,
-    SessionNotFound,
-    InvalidSessionState,
-)
+
+from .interface import DuplicateEditSession, InvalidSessionState
+from .interface import Repo as BaseRepo
+from .interface import SessionNotFound
 
 
 class Session(dict):

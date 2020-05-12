@@ -1,16 +1,18 @@
+import asyncio
 import pathlib
 import subprocess
+
 import pytest
 import requests_mock
 import wrapt
-import asyncio
+
 from lektorium.repo import LocalRepo
 from lektorium.repo.local import (
-    FileStorage,
-    GitStorage,
-    GitlabStorage,
-    FakeServer,
     FakeLektor,
+    FakeServer,
+    FileStorage,
+    GitlabStorage,
+    GitStorage,
 )
 from lektorium.repo.memory import VALID_MERGE_REQUEST
 

@@ -1,6 +1,8 @@
-import pytest
 import functools
+
+import pytest
 from aioresponses import aioresponses
+
 from lektorium.auth0 import Auth0Client, Auth0Error, FakeAuth0Client
 
 

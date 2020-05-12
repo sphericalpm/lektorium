@@ -5,8 +5,7 @@ import webbrowser
 
 from invoke import task
 from invoke.tasks import call
-
-from spherical_dev.tasks import clean, flake, isort, test, dev  # noqa: F401
+from spherical_dev.tasks import clean, dev, flake, isort, test  # noqa: F401
 from spherical_dev.utils import flatten_options, named_args
 
 

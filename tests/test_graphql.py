@@ -1,11 +1,12 @@
-import copy
-import pytest
 import collections
+import copy
 
 import graphene.test
+import pytest
 from graphql.execution.executors.asyncio import AsyncioExecutor
-import lektorium.schema
+
 import lektorium.repo
+import lektorium.schema
 from lektorium.auth0 import FakeAuth0Client
 
 

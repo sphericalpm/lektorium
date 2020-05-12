@@ -1,12 +1,19 @@
 import collections
 import os
-import shutil
 import pathlib
+import shutil
+
 import pytest
-from lektorium.repo.local.objects import Site
-from lektorium.repo.local import FileStorage, GitStorage, GitlabStorage, LocalLektor
 import requests_mock
+
 from conftest import git_prepare
+from lektorium.repo.local import (
+    FileStorage,
+    GitlabStorage,
+    GitStorage,
+    LocalLektor,
+)
+from lektorium.repo.local.objects import Site
 
 
 @pytest.fixture(

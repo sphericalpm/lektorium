@@ -1,8 +1,10 @@
 import asyncio
 import tempfile
+from unittest.mock import MagicMock
+
 import async_timeout
 import pytest
-from unittest.mock import MagicMock
+
 from lektorium.repo.local import AsyncLocalServer, LocalLektor
 
 

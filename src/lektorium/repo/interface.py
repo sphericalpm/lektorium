@@ -1,13 +1,7 @@
 import abc
 import random
 import string
-from typing import (
-    Generator,
-    Iterable,
-    Mapping,
-    Optional,
-    Tuple,
-)
+from typing import Generator, Iterable, Mapping, Optional, Tuple
 
 
 class ExceptionBase(Exception):

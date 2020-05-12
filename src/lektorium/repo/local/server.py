@@ -6,11 +6,11 @@ import os
 import pathlib
 import random
 import subprocess
-import aiodocker
-from more_itertools import one
 from datetime import datetime
 from types import MappingProxyType
 
+import aiodocker
+from more_itertools import one
 from spherical_dev.utils import flatten_options
 
 
@@ -294,7 +294,7 @@ class AsyncDockerServer(AsyncServer):
         route_name = f'{self.lektor_image}-{session_id}'
         return {
             'enable': 'true',
-            f'http.routers': {
+            'http.routers': {
                 route_name: {
                     'entrypoints': 'websecure',
                     'rule': f'Host(`{session_id}.{self.sessions_domain}`)',

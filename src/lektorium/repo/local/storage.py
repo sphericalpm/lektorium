@@ -1,29 +1,29 @@
 import abc
+import asyncio
 import collections
 import functools
-import inifile
+import os
 import pathlib
-import requests
 import shutil
 import subprocess
 import tempfile
-import os
-import asyncio
 
+import dateutil
+import inifile
+import requests
+import yaml
 from cached_property import cached_property
 from more_itertools import one
-import yaml
 
+from ...aws import AWS
+from ...utils import closer
 from .objects import Site
 from .templates import (
     AWS_SHARED_CREDENTIALS_FILE_TEMPLATE,
-    LECTOR_S3_SERVER_TEMPLATE,
-    GITLAB_CI_TEMPLATE,
     EMPTY_COMMIT_PAYLOAD,
+    GITLAB_CI_TEMPLATE,
+    LECTOR_S3_SERVER_TEMPLATE,
 )
-from ...aws import AWS
-from ...utils import closer
-import dateutil
 
 
 LFS_MASKS = (
@@ -377,7 +377,7 @@ class GitStorage(FileStorageMixin, Storage):
     def init(path):
         lektorium = (path / 'lektorium')
         lektorium.mkdir(parents=True, exist_ok=True)
-        run(f'git init --bare .', cwd=lektorium)
+        run('git init --bare .', cwd=lektorium)
         return lektorium
 
     def create_session(self, site_id, session_id, session_dir):

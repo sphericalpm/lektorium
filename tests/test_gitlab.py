@@ -1,6 +1,7 @@
-import pytest
 from os import environ
 from unittest import mock
+
+import pytest
 
 from lektorium.repo.local.storage import GitLab
 from lektorium.repo.local.templates import (
@@ -46,7 +47,7 @@ def test_repo_url():
     assert repo_url == f'http://foo/api/{GitLab.DEFAULT_API_VERSION}'
 
     repo_url = GitLab(dict(scheme='https', host='bar', api_version='v2')).repo_url
-    assert repo_url == f'https://bar/api/v2'
+    assert repo_url == 'https://bar/api/v2'
 
 
 def test_path():

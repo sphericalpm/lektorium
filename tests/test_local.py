@@ -1,5 +1,8 @@
-import pytest
 import unittest.mock
+
+import pytest
+
+from conftest import git_repo, local_repo
 from lektorium.repo import LocalRepo
 from lektorium.repo.local import (
     FakeLektor,
@@ -7,8 +10,7 @@ from lektorium.repo.local import (
     FileStorage,
     LocalLektor,
 )
-from lektorium.repo.local.repo import Site, Session
-from conftest import local_repo, git_repo
+from lektorium.repo.local.repo import Session, Site
 
 
 @pytest.fixture(scope='function', params=[local_repo, git_repo])

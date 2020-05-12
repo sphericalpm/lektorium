@@ -1,8 +1,8 @@
 import aiohttp
-from graphql import GraphQLError
 from authlib.jose import JsonWebToken
 from authlib.jose.errors import JoseError
 from cached_property import cached_property
+from graphql import GraphQLError
 
 
 class JWTMiddleware:

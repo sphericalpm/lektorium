@@ -1,31 +1,30 @@
 import enum
+import json
 import logging
 import pathlib
 import tempfile
 
-
 import aiohttp.web
 import aiohttp_graphql
-from graphql.execution.executors.asyncio import AsyncioExecutor
-from graphql.error import format_error as format_graphql_error
 import graphene
+import pkg_resources
+from graphql.error import format_error as format_graphql_error
+from graphql.execution.executors.asyncio import AsyncioExecutor
+from spherical_dev.log import init_logging
 
-from . import schema, repo
+from . import repo, schema
 from .auth0 import Auth0Client, FakeAuth0Client
-from .jwt import JWTMiddleware, GraphExecutionError
+from .jwt import GraphExecutionError, JWTMiddleware
 from .repo.local import (
-    AsyncLocalServer,
     AsyncDockerServer,
+    AsyncLocalServer,
     FakeServer,
     FileStorage,
-    GitStorage,
     GitlabStorage,
+    GitStorage,
     LocalLektor,
 )
 from .utils import closer
-from spherical_dev.log import init_logging
-import pkg_resources
-import json
 
 
 class BaseEnum(enum.Enum):

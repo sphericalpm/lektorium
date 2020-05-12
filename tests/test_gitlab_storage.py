@@ -1,8 +1,9 @@
-import pytest
 import subprocess
 from unittest import mock
 
-from lektorium.repo.local.storage import GitlabStorage, GitStorage, GitLab, AWS
+import pytest
+
+from lektorium.repo.local.storage import AWS, GitLab, GitlabStorage, GitStorage
 
 
 @pytest.mark.asyncio

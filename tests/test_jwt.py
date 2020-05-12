@@ -1,8 +1,10 @@
+import json
 from collections import namedtuple
 
 import pytest
-import json
-from lektorium.jwt import JWTMiddleware, GraphExecutionError
+
+from lektorium.jwt import GraphExecutionError, JWTMiddleware
+
 
 TEST_TOKEN = (
     'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJuaWNrbmFtZSI6Ik1heCBKZWtvdiIsI'

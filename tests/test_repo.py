@@ -1,14 +1,16 @@
 import copy
+
 import pytest
+
+from conftest import git_repo, local_repo
 from lektorium.repo import (
+    SITES,
     DuplicateEditSession,
     InvalidSessionState,
     ListRepo,
     SessionNotFound,
-    SITES,
 )
 from lektorium.repo.local import FileStorage, GitStorage
-from conftest import local_repo, git_repo
 from lektorium.repo.memory import VALID_MERGE_REQUEST
 
 

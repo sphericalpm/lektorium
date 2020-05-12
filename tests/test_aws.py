@@ -1,8 +1,8 @@
-import pytest
 from datetime import datetime
 
 import boto3
-from botocore.stub import Stubber, ANY
+import pytest
+from botocore.stub import ANY, Stubber
 
 from lektorium.aws import AWS, BUCKET_POLICY_TEMPLATE
 
