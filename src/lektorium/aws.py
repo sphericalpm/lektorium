@@ -96,13 +96,17 @@ class AWS:
                 CallerReference=str(uuid4()),
                 Comment='Lektorium',
                 Enabled=True,
-                DefaultRootObject='index.html',
                 Origins=dict(
                     Quantity=1,
                     Items=[dict(
                         Id='1',
                         DomainName=domain,
-                    )]
+                        CustomOriginConfig=dict(
+                            HTTPPort=80,
+                            HTTPSPort=443,
+                            OriginProtocolPolicy='http-only',
+                        ),
+                    )],
                 ),
                 DefaultCacheBehavior=dict(
                     TargetOriginId='1',
@@ -116,16 +120,8 @@ class AWS:
                     ),
                     MinTTL=1000,
                 ),
-                CustomErrorResponses=dict(
-                    Quantity=1,
-                    Items=[dict(
-                        ErrorCode=404,
-                        ResponsePagePath='/404.html',
-                        ResponseCode='404',
-                        ErrorCachingMinTTL=60,
-                    )],
-                ),
-            ))
+            ),
+        )
         self._raise_if_not_status(
             response, 201,
             'Failed to create CloudFront distribution',
