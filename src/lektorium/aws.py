@@ -102,7 +102,6 @@ class AWS:
                     Items=[dict(
                         Id='1',
                         DomainName=domain,
-                        S3OriginConfig=dict(OriginAccessIdentity=''),
                     )]
                 ),
                 DefaultCacheBehavior=dict(
