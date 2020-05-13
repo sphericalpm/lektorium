@@ -1,11 +1,13 @@
 import functools
 from asyncio import Future, iscoroutine
 
+import aiodocker
 import wrapt
 from graphene import (
     Boolean,
     DateTime,
     Field,
+    Int,
     List,
     Mutation,
     ObjectType,
@@ -136,7 +138,10 @@ class Query(ObjectType):
     user_permissions = List(Permission, user_id=String())
     available_permissions = List(ApiPermission)
     releasing = List(Releasing)
-    logs = String(container=String())
+    logs = String(
+        container=String(default_value='lektorium'),
+        tail=Int(default_value=200)
+    )
 
     @staticmethod
     def sessions_list(repo):
@@ -194,8 +199,7 @@ class Query(ObjectType):
         return [Releasing(**x) for x in repo.releasing]
 
     @inject_permissions(admin=True)
-    async def resolve_logs(self, info, permissions, container='lektorium'):
-        import aiodocker
+    async def resolve_logs(self, info, permissions, container, tail):
         if container not in ('lektorium', 'lektorium-proxy', 'traefik'):
             raise PermissionError()
         docker = aiodocker.Docker()
@@ -203,7 +207,7 @@ class Query(ObjectType):
             c for c in await docker.containers.list()
             if (await c.show())['Name'] == f'/{container}'
         ]
-        log = await lektorium[0].log(stdout=True, stderr=True, tail=200)
+        log = await lektorium[0].log(stdout=True, stderr=True, tail=tail)
         return ''.join(log)
 
 
