@@ -199,7 +199,8 @@ def test_create_initial_commit(requests_mock):
     assert response.status_code == 200
 
 
-def test_init_project(requests_mock):
+@pytest.mark.asyncio
+async def test_init_project(requests_mock):
     new_proj_url = 'git@foo.bar:fizz/new_proj'
 
     def create_project():
@@ -220,7 +221,7 @@ def test_init_project(requests_mock):
     mock_projects(requests_mock, gitlab)
 
     with pytest.raises(Exception):
-        gitlab.init_project()
+        await gitlab.init_project()
 
     options['project'] = 'new_proj'
     gitlab = GitLab(options)
@@ -231,7 +232,7 @@ def test_init_project(requests_mock):
         _create_aws_project_variable=lambda: None,
         _create_initial_commit=lambda: None,
     ):
-        pp = gitlab.init_project()
+        pp = await gitlab.init_project()
 
         assert pp == new_proj_url
 

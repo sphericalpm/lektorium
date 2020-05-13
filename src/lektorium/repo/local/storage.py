@@ -246,7 +246,7 @@ class GitLab:
             raise RuntimeError('parent namespace and/or gorup is not found')
         return parent_id
 
-    def init_project(self):
+    async def init_project(self):
         if self.path in (x['path_with_namespace'] for x in self.projects):
             raise Exception(f'Project {self.path} already exists')
 
@@ -255,6 +255,7 @@ class GitLab:
                 del self.__dict__[item]
 
         ssh_repo_url = self._create_new_project().json()['ssh_url_to_repo']
+        await asyncio.sleep(1)
         self._create_aws_project_variable()
         self._create_initial_commit()
 
@@ -536,7 +537,7 @@ class GitlabStorage(GitStorage):
         return self.gitlab(site_id).merge_requests
 
     async def create_site_repo(self, site_id):
-        return self.gitlab(site_id).init_project()
+        return await self.gitlab(site_id).init_project()
 
     def gitlab(self, project, branch='master'):
         return GitLab(dict(
