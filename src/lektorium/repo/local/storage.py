@@ -498,8 +498,8 @@ class GitlabStorage(GitStorage):
 
         aws = AWS()
         bucket_name = aws.create_s3_bucket(site_id)
-        distribution_id, domain_name = aws.create_cloudfront_distribution(bucket_name)
         aws.open_bucket_access(bucket_name)
+        distribution_id, domain_name = aws.create_cloudfront_distribution(bucket_name)
 
         with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
             fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
