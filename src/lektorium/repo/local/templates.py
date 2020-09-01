@@ -16,6 +16,7 @@ lektorium-aws-deploy:
     GIT_SUBMODULE_STRATEGY: recursive
   script:
     - apk add --update python3 python3-dev libffi-dev openssl-dev build-base
+    - apk add --update py3-pip || true
     - pip3 install --upgrade lektor
     - lektor plugins add lektor-s3
     - lektor build
