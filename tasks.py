@@ -12,7 +12,7 @@ from spherical_dev.utils import flatten_options, named_args
 CONTAINERS_BASE = 'containers'
 IMAGE = 'lektorium'
 CONTAINER = IMAGE
-LEKTOR_BASE = PROXY_BASE = 'alpine:3.11'
+LEKTOR_BASE = PROXY_BASE = 'alpine'
 LEKTOR_IMAGE = f'{IMAGE}-lektor'
 PROXY_IMAGE = f'{IMAGE}-proxy'
 PROXY_CONTAINER = PROXY_IMAGE
