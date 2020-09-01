@@ -7,6 +7,7 @@ lektorium-deploy:
   script:
     - cat /etc/alpine-release
     - apk add --update python3 git docker-cli bash
+    - apk add --update py3-pip || true
     - python3 -m pip install -U pip
     - git tag && git status && git describe
     - pip install 'spherical-dev[dev]>0.0.2,<0.1' wheel
