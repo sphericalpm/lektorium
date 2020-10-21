@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/sphericalpm/lektorium/branch/master/graph/badge.svg)](https://codecov.io/gh/sphericalpm/lektorium)
 
 # What is Lektorium? 
-Lektorium _will be_ a web content management solution for those with many little and/or similar websites. 
+Lektorium is a web content management solution for those with many little and/or similar websites. 
 A typical user would be a large and loosely governed organisation with departments having a strong mandate to 
 communicate externally and independently publish on the web. 
 
