@@ -5,8 +5,8 @@ import shutil
 
 import pytest
 import requests_mock
-
 from conftest import git_prepare
+
 from lektorium.repo.local import (
     FileStorage,
     GitlabStorage,

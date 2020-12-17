@@ -10,7 +10,7 @@ import graphene
 import pkg_resources
 from graphql.error import format_error as format_graphql_error
 from graphql.execution.executors.asyncio import AsyncioExecutor
-from spherical_dev.log import init_logging
+from spherical.dev.log import init_logging
 
 from . import repo, schema
 from .auth0 import Auth0Client, FakeAuth0Client

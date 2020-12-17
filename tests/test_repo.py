@@ -1,8 +1,8 @@
 import copy
 
 import pytest
-
 from conftest import git_repo, local_repo
+
 from lektorium.repo import (
     SITES,
     DuplicateEditSession,

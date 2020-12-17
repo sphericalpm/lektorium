@@ -53,7 +53,7 @@ setuptools.setup(
         'more-itertools',
         'python-dateutil<2.8.1',
         'pyyaml',
-        'spherical-dev>0.0.2,<0.1',
+        'spherical-dev>=0.2.2,<0.3.0',
         'wrapt',
     ],
     extras_require={
@@ -70,7 +70,7 @@ setuptools.setup(
             'pytest-asyncio',
             'pytest-cov',
             'requests-mock',
-            'spherical-dev[dev]',
+            'spherical-dev[dev]>=0.2.2,<0.3.0',
             'wheel',
         ]
     },
