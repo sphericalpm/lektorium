@@ -12,7 +12,7 @@ class AsyncTestServer(AsyncLocalServer):
     START_PORT = 5000
     END_PORT = 5000
 
-    def __init__(self, command, ):
+    def __init__(self, command):
         super().__init__()
         self.COMMAND = command
 

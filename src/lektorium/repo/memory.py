@@ -41,7 +41,7 @@ SITES = [{
     }]],
     'releasing': [{
         'site_name': 'Buy Our Widgets',
-        **VALID_MERGE_REQUEST
+        **VALID_MERGE_REQUEST,
     }],
 }, {
     'site_id': 'uci',
@@ -69,7 +69,7 @@ SITES = [{
     'production_url': 'https://liver.do',
     'staging_url': 'https://pancreas.acme.com',
     'custodian': 'Brian',
-    'custodian_email': 'brian@splitter.il'
+    'custodian_email': 'brian@splitter.il',
 }]
 
 
@@ -96,7 +96,7 @@ class Repo(BaseRepo):
     def parked_sessions(self) -> Generator:
         yield from filter(
             lambda s: not bool(s[0].get('edit_url', None)),
-            self.sessions.values()
+            self.sessions.values(),
         )
 
     @property
@@ -174,7 +174,7 @@ class Repo(BaseRepo):
             if session['session_id'] in site_sessions:
                 release = {
                     'site_name': site['site_name'],
-                    **VALID_MERGE_REQUEST
+                    **VALID_MERGE_REQUEST,
                 }
                 release['source_branch'] = session_id
                 site.setdefault('releasing', []).append(release)

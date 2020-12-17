@@ -102,7 +102,7 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
             storage,
             server,
             LocalLektor,
-            sessions_root=sessions_root
+            sessions_root=sessions_root,
         )
     else:
         raise ValueError(f'repo_type not supported {repo_type}')
@@ -173,7 +173,7 @@ def init_app(repo, auth0_options=None, auth0_client=None):
                 {'user_permissions': ['admin']}
                 if auth0_options is None else
                 {}
-            )
+            ),
         ),
         error_formatter=error_formatter,
     )
@@ -189,7 +189,7 @@ def main(repo_type='', auth=''):
         create_app(
             RepoType.get(repo_type),
             auth,
-            repo_args
+            repo_args,
         ),
-        port=8000
+        port=8000,
     )

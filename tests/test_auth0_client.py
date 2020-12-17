@@ -68,7 +68,7 @@ async def test_auth_token(auth0_client, mocked):
 async def test_get_users(auth0_client, mocked):
     url = f'{auth0_client.audience}/users?fields=name,nickname,email,user_id&per_page=100'
     users_response = [{
-        'username': 'mjekov'
+        'username': 'mjekov',
     }]
     mocked.get(url, status=200, payload=users_response)
     assert (await auth0_client.get_users()) == users_response
@@ -82,7 +82,7 @@ async def test_get_users(auth0_client, mocked):
 async def test_get_user_permissions(auth0_client, mocked):
     url = f'{auth0_client.audience}/users/user_id/permissions?per_page=100'
     permissions_response = [{
-        'permission_name': 'read:projects'
+        'permission_name': 'read:projects',
     }]
     mocked.get(url, status=200, payload=permissions_response)
     response = await auth0_client.get_user_permissions('user_id')
@@ -103,9 +103,9 @@ async def test_set_user_permissions(auth0_client, mocked):
             'identifier': auth0_client.api_id,
             'scopes': [{
                 'value': 'perm-id',
-                'description': 'perm description'
+                'description': 'perm description',
             }],
-        }]
+        }],
     )
     url = f'{auth0_client.audience}/resource-servers/{auth0_client.api_id}'
     mocked.patch(url, status=200)
@@ -134,7 +134,7 @@ async def test_get_api_permissions(auth0_client, mocked):
     url = f'{auth0_client.audience}/resource-servers?per_page=100'
     permissions = [{
         'value': 'perm-id',
-        'description': 'perm description'
+        'description': 'perm description',
     }]
     mocked.get(
         url,
@@ -142,7 +142,7 @@ async def test_get_api_permissions(auth0_client, mocked):
         payload=[{
             'identifier': auth0_client.api_id,
             'scopes': permissions,
-        }]
+        }],
     )
     assert (await auth0_client.get_api_permissions()) == permissions
     mocked.get(url, status=400)

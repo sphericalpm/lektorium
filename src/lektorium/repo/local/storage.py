@@ -332,7 +332,7 @@ class GitLab:
         response = requests.get(
             '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
                 **self.options,
-                pid=self.project_id
+                pid=self.project_id,
             ),
             headers=self.headers,
         )
@@ -433,7 +433,7 @@ class GitStorage(FileStorageMixin, Storage):
             os.linesep.join(
                 f'{m} filter=lfs diff=lfs merge=lfs -text'
                 for m in LFS_MASKS
-            )
+            ),
         )
         theme_repo = os.environ.get('LEKTORIUM_LEKTOR_THEME', None)
         if theme_repo is not None:
@@ -445,7 +445,7 @@ class GitStorage(FileStorageMixin, Storage):
                 theme_repo = pathlib.Path(*site_repo_path) / theme_repo_path
             await async_run(
                 run_local,
-                f'git submodule add {theme_repo} themes/iarcrp-lektor-theme'
+                f'git submodule add {theme_repo} themes/iarcrp-lektor-theme',
             )
         await async_run(run_local, 'git add .')
         await async_run(run_local, 'git commit -m quickstart')

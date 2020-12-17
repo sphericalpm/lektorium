@@ -32,8 +32,8 @@ setuptools.setup(
         'lektorium': [
             'client/*',
             'client/*/*',
-            'client/*/*/*'
-        ]
+            'client/*/*/*',
+        ],
     },
     install_requires=[
         'aiodocker',
@@ -72,7 +72,7 @@ setuptools.setup(
             'requests-mock',
             'spherical-dev[dev]>=0.2.2,<0.3.0',
             'wheel',
-        ]
+        ],
     },
     zip_safe=False,
 )

@@ -81,7 +81,7 @@ class AWS:
                 IndexDocument=dict(
                     Suffix='index.html',
                 ),
-            )
+            ),
         )
         self._raise_if_not_status(
             response, 200,

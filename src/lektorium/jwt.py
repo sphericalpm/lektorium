@@ -28,7 +28,7 @@ class JWTMiddleware:
         if auth is None:
             raise GraphExecutionError(
                 'Authorization header is expected',
-                code=401
+                code=401,
             )
 
         parts = auth.split()
@@ -36,7 +36,7 @@ class JWTMiddleware:
         if len(parts) != 2 or parts[0].lower() != 'bearer':
             raise GraphExecutionError(
                 'Authorization header must be Bearer token',
-                code=401
+                code=401,
             )
 
         split = parts[1].split('.')
@@ -61,7 +61,7 @@ class JWTMiddleware:
         except JoseError as e:
             raise GraphExecutionError(
                 f'Unable to decode token: {e.error}',
-                code=401
+                code=401,
             )
 
 

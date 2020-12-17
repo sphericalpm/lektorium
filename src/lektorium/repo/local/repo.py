@@ -122,7 +122,7 @@ class Repo(BaseRepo):
                 if merge_request_data['source_branch'].startswith('session-'):
                     yield {
                         'site_name': site['name'],
-                        **FilteredMergeRequestData(merge_request_data)
+                        **FilteredMergeRequestData(merge_request_data),
                     }
 
     def create_session(self, site_id, custodian=None):
@@ -142,8 +142,8 @@ class Repo(BaseRepo):
         session_object['edit_url'] = self.server.serve_lektor(
             session_dir, {
                 **session_object,
-                'site_id': site_id
-            }
+                'site_id': site_id,
+            },
         )
         self.config[site_id].sessions[session_id] = session_object
         return session_id
@@ -155,7 +155,7 @@ class Repo(BaseRepo):
         session_dir = self.sessions_root / site['site_id'] / session_id
         self.server.stop_server(
             session_dir,
-            functools.partial(shutil.rmtree, session_dir)
+            functools.partial(shutil.rmtree, session_dir),
         )
         site.sessions.pop(session_id)
 
@@ -191,7 +191,7 @@ class Repo(BaseRepo):
             self.lektor,
             name,
             owner,
-            site_id
+            site_id,
         )
 
         production_url = site_options.pop('production_url', None)

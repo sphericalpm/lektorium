@@ -30,7 +30,7 @@ def client():
         ),
         context={
             'repo': lektorium.repo.ListRepo(
-                copy.deepcopy(lektorium.repo.SITES)
+                copy.deepcopy(lektorium.repo.SITES),
             ),
             'user_permissions': ['fake:permission'],
             'auth0_client': FakeAuth0Client(),
@@ -52,8 +52,8 @@ def test_query_sites(client):
                 {'siteId': 'bow'},
                 {'siteId': 'uci'},
                 {'siteId': 'ldi'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -67,8 +67,8 @@ def test_query_edit_session(client):
         'data': {
             'sessions': [
                 {'sessionId': 'widgets-1'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -82,8 +82,8 @@ def test_session_edit_url(client):
         'data': {
             'sessions': [
                 {'editUrl': 'https://cmsdciks.cms.acme.com'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -98,8 +98,8 @@ def test_query_parked_session(client):
             'sessions': [
                 {'sessionId': 'pantssss'},
                 {'sessionId': 'pantss1'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -114,7 +114,7 @@ def test_create_session(client):
             'createSession': {
                 'ok': True,
             },
-        }
+        },
     }
     result = client.execute(r'''{
         sessions {
@@ -126,8 +126,8 @@ def test_create_session(client):
             'sessions': [
                 {'siteName': 'Buy Our Widgets'},
                 {'siteName': 'Underpants Collectors International'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -142,7 +142,7 @@ def test_create_session_other_exist(client):
             'createSession': {
                 'ok': False,
             },
-        }
+        },
     }, 'Server should fail to create session if another already exists'
 
 
@@ -157,7 +157,7 @@ def test_park_session(client):
             'parkSession': {
                 'ok': True,
             },
-        }
+        },
     }
     result = client.execute(r'''{
         sessions(parked: true) {
@@ -170,8 +170,8 @@ def test_park_session(client):
                 {'sessionId': 'widgets-1'},
                 {'sessionId': 'pantssss'},
                 {'sessionId': 'pantss1'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -186,7 +186,7 @@ def test_park_unknown_session(client):
             'parkSession': {
                 'ok': False,
             },
-        }
+        },
     }, 'Server should fail to park unknown session'
 
 
@@ -206,7 +206,7 @@ def test_park_parked_session(client):
             'parkSession': {
                 'ok': False,
             },
-        }
+        },
     }, 'Server should fail to park parked session'
 
 
@@ -221,7 +221,7 @@ def test_unpark_session(client):
             'unparkSession': {
                 'ok': True,
             },
-        }
+        },
     }
     result = client.execute(r'''{
         editSessions: sessions(parked: false) {
@@ -239,8 +239,8 @@ def test_unpark_session(client):
             ],
             'parkedSessions': [
                 {'sessionId': 'pantss1'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -260,7 +260,7 @@ def test_unpark_session_another_exist(client):
             'unparkSession': {
                 'ok': False,
             },
-        }
+        },
     }, (
         'Server should fail to unpark session when there is an active session '
         'for same website'
@@ -278,7 +278,7 @@ def test_unpark_unknown_session(client):
             'unparkSession': {
                 'ok': False,
             },
-        }
+        },
     }, 'Server should fail to unpark unknown session'
 
 
@@ -293,7 +293,7 @@ def test_unpark_unkparked_session(client):
             'unparkSession': {
                 'ok': False,
             },
-        }
+        },
     }, 'Server should fail to unpark session that was not parked'
 
 
@@ -308,7 +308,7 @@ def test_request_release(client):
             'requestRelease': {
                 'ok': True,
             },
-        }
+        },
     }
 
 
@@ -323,7 +323,7 @@ def test_destroy_session(client):
             'destroySession': {
                 'ok': True,
             },
-        }
+        },
     }
     result = client.execute(r'''{
         sessions(parked: true) {
@@ -334,8 +334,8 @@ def test_destroy_session(client):
         'data': {
             'sessions': [
                 {'sessionId': 'pantssss'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -350,7 +350,7 @@ def test_destroy_unknown_session(client):
             'destroySession': {
                 'ok': False,
             },
-        }
+        },
     }, 'Server should fail to destroy unknown session'
 
 
@@ -368,8 +368,8 @@ def test_resolve_funcs(client):
                 'productionUrl': 'https://bow.acme.com',
                 'stagingUrl': 'https://bow-test.acme.com',
                 'parked': False,
-            }]
-        }
+            }],
+        },
     }
 
 
@@ -386,9 +386,9 @@ def test_broken_parked_resolve(client):
             'sites': [
                 {'sessions': [{'parked': False}]},
                 {'sessions': [{'parked': True}, {'parked': True}]},
-                {'sessions': None}
-            ]
-        }
+                {'sessions': None},
+            ],
+        },
     }
 
 
@@ -403,7 +403,7 @@ def test_create_site(client):
             'createSite': {
                 'ok': True,
             },
-        }
+        },
     }
     result = client.execute(r'''{
             sites {
@@ -417,8 +417,8 @@ def test_create_site(client):
                 {'siteId': 'uci'},
                 {'siteId': 'ldi'},
                 {'siteId': 'test'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -442,11 +442,11 @@ def test_parked_resolve(client):
                 {'sessions': [
                     {'parked': True},
                     {'parked': True},
-                    {'parked': False}
+                    {'parked': False},
                 ]},
                 {'sessions': None},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -459,9 +459,9 @@ def test_get_users(client):
     assert deorder(result) == {
         'data': {
             'users': [
-                {'userId': 'test_id'}
-            ]
-        }
+                {'userId': 'test_id'},
+            ],
+        },
     }
 
 
@@ -474,9 +474,9 @@ def test_get_user_permissions(client):
     assert deorder(result) == {
         'data': {
             'userPermissions': [
-                {'permissionName': 'Test Permission1'}
-            ]
-        }
+                {'permissionName': 'Test Permission1'},
+            ],
+        },
     }
 
 
@@ -492,9 +492,9 @@ def test_get_api_permissions(client):
                 {'value': 'admin'},
                 {'value': 'user:bow'},
                 {'value': 'user:uci'},
-                {'value': 'user:ldi'}
-            ]
-        }
+                {'value': 'user:ldi'},
+            ],
+        },
     }
 
 
@@ -509,7 +509,7 @@ def test_set_permissions(client):
             'setUserPermissions': {
                 'ok': True,
             },
-        }
+        },
     }
     result = client.execute(r''' {
         userPermissions(userId: "test_id") {
@@ -521,8 +521,8 @@ def test_set_permissions(client):
             'userPermissions': [
                 {'permissionName': 'Test Permission1'},
                 {'permissionName': 'Test Permission2'},
-            ]
-        }
+            ],
+        },
     }
     result = client.execute(r'''mutation {
         setUserPermissions(userId:"wrong_id", permissions:["Test Permission2"]) {
@@ -534,7 +534,7 @@ def test_set_permissions(client):
             'setUserPermissions': {
                 'ok': False,
             },
-        }
+        },
     }
 
 
@@ -555,7 +555,7 @@ def test_delete_permissions(client):
             'deleteUserPermissions': {
                 'ok': True,
             },
-        }
+        },
     }
     result = client.execute(r''' {
         userPermissions(userId: "test_id") {
@@ -566,8 +566,8 @@ def test_delete_permissions(client):
         'data': {
             'userPermissions': [
                 {'permissionName': 'Test Permission2'},
-            ]
-        }
+            ],
+        },
     }
 
     result = client.execute(r'''mutation {
@@ -580,7 +580,7 @@ def test_delete_permissions(client):
             'deleteUserPermissions': {
                 'ok': False,
             },
-        }
+        },
     }
 
 
