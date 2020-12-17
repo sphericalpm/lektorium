@@ -81,13 +81,13 @@ async def test_public_key(aresponses, jwt_middleware):
         return aresponses.Response(
             status=200,
             headers={'Content-Type': 'application/json'},
-            body=b'{"public_key": "somekey"}'
+            body=b'{"public_key": "somekey"}',
         )
     aresponses.add(
         jwt_middleware.auth0_domain,
         '/.well-known/jwks.json',
         'get',
-        response_handler
+        response_handler,
     )
     key = await jwt_middleware.public_key
     assert key == {'public_key': 'somekey'}
@@ -113,14 +113,14 @@ async def test_jwt_resolve(aresponses, jwt_middleware, monkeypatch):
         return aresponses.Response(
             status=200,
             headers={'Content-Type': 'application/json'},
-            body=bytes(json.dumps(TEST_JWK), encoding='utf-8')
+            body=bytes(json.dumps(TEST_JWK), encoding='utf-8'),
         )
 
     aresponses.add(
         jwt_middleware.auth0_domain,
         '/.well-known/jwks.json',
         'get',
-        response_handler
+        response_handler,
     )
     resolve = await jwt_middleware.resolve(test_next, None, info)
     assert resolve.context['userdata'] == ('Max Jekov', 'mj@mail.me')

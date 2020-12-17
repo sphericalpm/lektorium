@@ -68,16 +68,16 @@ def merge_requests():
                 'source_branch': 'test2',
                 'state': '2',
                 'web_url': 'url124',
-            }
+            },
         ]
         m.get(
             'https://server/api/v4/projects',
             json=[
-                project
-            ]
+                project,
+            ],
         )
         m.get(
             f'https://server/api/v4/projects/{project["id"]}/merge_requests',
-            json=merge_requests
+            json=merge_requests,
         )
         yield merge_requests

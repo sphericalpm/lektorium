@@ -104,7 +104,7 @@ class AsyncServer(Server):
         task_cancel, _ = self.serves[path]
         finalize = asyncio.gather(task_cancel(), return_exceptions=True)
         finalize.add_done_callback(
-            lambda _: callable(finalizer) and finalizer()
+            lambda _: callable(finalizer) and finalizer(),
         )
         await finalize
 
@@ -257,7 +257,7 @@ class AsyncDockerServer(AsyncServer):
                 if container is not None:
                     await asyncio.gather(
                         container.kill(),
-                        return_exceptions=True
+                        return_exceptions=True,
                     )
             else:
                 log.info('started')
@@ -267,7 +267,7 @@ class AsyncDockerServer(AsyncServer):
                 if stream is not None:
                     await asyncio.gather(
                         stream.aclose(),
-                        return_exceptions=True
+                        return_exceptions=True,
                     )
         finally:
             log.info('start ended')

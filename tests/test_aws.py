@@ -57,8 +57,8 @@ def test_open_bucket_access():
                 IndexDocument=dict(
                     Suffix='index.html',
                 ),
-            )
-        )
+            ),
+        ),
     )
 
     aws = AWS()
@@ -142,7 +142,7 @@ def test_create_cloudfront_distribution():
                         HTTPSPort=443,
                         OriginProtocolPolicy='http-only',
                     ),
-                )]
+                )],
             ),
             DefaultCacheBehavior=dict(
                 TargetOriginId=ANY,
@@ -156,7 +156,7 @@ def test_create_cloudfront_distribution():
                 ),
                 MinTTL=ANY,
             ),
-        )
+        ),
     )
 
     client = boto3.client('cloudfront')

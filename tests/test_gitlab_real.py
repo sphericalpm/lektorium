@@ -11,7 +11,7 @@ from lektorium.repo.local.storage import GitLab, GitStorage
 
 @pytest.mark.skipif(
     'LEKTORIUM_GITLAB_TEST' not in os.environ,
-    reason='no LEKTORIUM_GITLAB_TEST in env'
+    reason='no LEKTORIUM_GITLAB_TEST in env',
 )
 def test_gitlab_real():
     gitlab = os.environ['LEKTORIUM_GITLAB_TEST']
@@ -24,7 +24,7 @@ def test_gitlab_real():
             '/{config}/repository/files/{filename}'
         ).format(
             filename=GitStorage.CONFIG_FILENAME,
-            **gitlab.options
+            **gitlab.options,
         ),
         headers=gitlab.headers,
         params=dict(ref='master'),

@@ -140,7 +140,7 @@ class Query(ObjectType):
     releasing = List(Releasing)
     logs = String(
         container=String(default_value='lektorium'),
-        tail=Int(default_value=200)
+        tail=Int(default_value=200),
     )
 
     @staticmethod
@@ -189,7 +189,7 @@ class Query(ObjectType):
             ApiPermission(v, v)
             for v in (
                 'admin',
-                *(f'user:{x["site_id"]}' for x in repo.sites)
+                *(f'user:{x["site_id"]}' for x in repo.sites),
             )
         ]
 

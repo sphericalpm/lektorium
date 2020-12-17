@@ -22,10 +22,10 @@ class FakeAuth0Client:
     def __init__(self):
         self.token = 'test_token'
         self.users = [
-            {'user_id': 'test_id', 'name': 'Max Jekov', 'nickname': 'mj', 'email': 'mj@mail.m'}
+            {'user_id': 'test_id', 'name': 'Max Jekov', 'nickname': 'mj', 'email': 'mj@mail.m'},
         ]
         self.users_permissions = {
-            'test_id': [{'permission_name': 'Test Permission1', 'description': ''}]
+            'test_id': [{'permission_name': 'Test Permission1', 'description': ''}],
         }
         self.api_permissions = [
             {'value': 'Test Permission1', 'description': ''},
@@ -169,7 +169,7 @@ class Auth0Client:
         for permission in permissions:
             data['permissions'].append({
                 'resource_server_identifier': self.api_id,
-                'permission_name': permission
+                'permission_name': permission,
             })
         url = f'{self.audience}/users/{user_id}/permissions'
         async with self.session.post(url, json=data, headers=await self.auth_headers) as resp:
@@ -185,7 +185,7 @@ class Auth0Client:
         for permission in permissions:
             data['permissions'].append({
                 'resource_server_identifier': self.api_id,
-                'permission_name': permission
+                'permission_name': permission,
             })
         url = f'{self.audience}/users/{user_id}/permissions'
         async with self.session.delete(url, json=data, headers=await self.auth_headers) as resp:
@@ -213,8 +213,8 @@ class Auth0Client:
         data = {
             'scopes': [
                 {'value': permission_name, 'description': description},
-                *(await self.get_api_permissions())
-            ]
+                *(await self.get_api_permissions()),
+            ],
         }
         url = f'{self.audience}/resource-servers/{self.api_id}'
         async with self.session.patch(url, headers=await self.auth_headers, json=data) as resp:

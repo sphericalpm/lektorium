@@ -29,7 +29,7 @@ async def test_gitlabstorage(tmpdir):
             with mock.patch.multiple(
                 GitStorage,
                 __init__=lambda *args, **kwargs: None,
-                create_site=mock_create_site
+                create_site=mock_create_site,
             ):
                 storage = GitlabStorage(
                     'git@server.domain:namespace/reponame.git',

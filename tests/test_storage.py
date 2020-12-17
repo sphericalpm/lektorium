@@ -20,8 +20,8 @@ from lektorium.repo.local.objects import Site
     scope='function',
     params=[
         FileStorage,
-        git_prepare(GitStorage)
-    ]
+        git_prepare(GitStorage),
+    ],
 )
 def storage_factory(request):
     return request.param

@@ -263,7 +263,7 @@ def test_merge_requests(requests_mock):
     requests_mock.get(
         f'{gitlab.repo_url}/projects/{project_id}/merge_requests',
         request_headers=gitlab.headers,
-        json=['a', 'b', 'c']
+        json=['a', 'b', 'c'],
     )
 
     response = gitlab.merge_requests

@@ -95,7 +95,7 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
     ctx.run(f'docker rm {PROXY_CONTAINER}', warn=True)
     resolver = flatten_options(
         ctx['certificate-resolver'],
-        'certificatesresolvers.le.acme'
+        'certificatesresolvers.le.acme',
     )
     resolver = named_args('--', resolver)
 
@@ -112,7 +112,7 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
                     'middlewares': 'redirect-to-https',
                 },
             },
-        }
+        },
     }
     labels = named_args('--label ', flatten_options(labels, 'traefik'))
 

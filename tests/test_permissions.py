@@ -28,11 +28,11 @@ def client_with_permissions():
         ),
         context={
             'repo': lektorium.repo.ListRepo(
-                copy.deepcopy(lektorium.repo.SITES)
+                copy.deepcopy(lektorium.repo.SITES),
             ),
             'user_permissions': [
                 'user:ldi',
-            ]
+            ],
         },
         executor=AsyncioExecutor(),
     )
@@ -47,7 +47,7 @@ def client_without_permissions():
         ),
         context={
             'repo': lektorium.repo.ListRepo(
-                copy.deepcopy(lektorium.repo.SITES)
+                copy.deepcopy(lektorium.repo.SITES),
             ),
             'user_permissions': ['fake:permission'],
         },
@@ -65,7 +65,7 @@ def client_admin():
         ),
         context={
             'repo': lektorium.repo.ListRepo(
-                copy.deepcopy(lektorium.repo.SITES)
+                copy.deepcopy(lektorium.repo.SITES),
             ),
             'user_permissions': [lektorium.schema.ADMIN],
         },
@@ -85,8 +85,8 @@ def test_admin_query(client_admin):
                 {'siteId': 'bow'},
                 {'siteId': 'uci'},
                 {'siteId': 'ldi'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -101,7 +101,7 @@ def test_admin_mutation(client_admin):
             'createSite': {
                 'ok': True,
             },
-        }
+        },
     }
 
 
@@ -114,7 +114,7 @@ def anonymous_client():
         ),
         context={
             'repo': lektorium.repo.ListRepo(
-                copy.deepcopy(lektorium.repo.SITES)
+                copy.deepcopy(lektorium.repo.SITES),
             ),
             'user_permissions': [],
         },
@@ -153,8 +153,8 @@ def test_query_with_permissions(client_with_permissions):
         'data': {
             'sites': [
                 {'siteId': 'ldi'},
-            ]
-        }
+            ],
+        },
     }
 
 
@@ -166,10 +166,8 @@ def test_query_without_permissions(client_without_permissions):
     }''')
     assert deorder(result) == {
         'data': {
-            'sites': [
-
-            ]
-        }
+            'sites': [],
+        },
     }
 
 
@@ -184,7 +182,7 @@ def test_mutation_with_permissions(client_with_permissions):
             'createSession': {
                 'ok': True,
             },
-        }
+        },
     }
 
 
