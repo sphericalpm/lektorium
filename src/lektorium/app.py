@@ -1,4 +1,5 @@
 import enum
+import functools
 import json
 import logging
 import pathlib
@@ -12,7 +13,7 @@ from graphql.error import format_error as format_graphql_error
 from graphql.execution.executors.asyncio import AsyncioExecutor
 from spherical.dev.log import init_logging
 
-from . import repo, schema
+from . import proxy, repo, schema
 from .auth0 import Auth0Client, FakeAuth0Client
 from .jwt import GraphExecutionError, JWTMiddleware
 from .repo.local import (
@@ -123,6 +124,13 @@ def error_formatter(error):
     return formatted
 
 
+async def docker_handler(authorizer, request):
+    _, permissions = await authorizer.info(request)
+    if schema.ADMIN not in permissions:
+        raise aiohttp.web.HTTPUnauthorized()
+    await proxy.handler('/var/run/docker.sock', request)
+
+
 def init_app(repo, auth0_options=None, auth0_client=None):
     app = aiohttp.web.Application(handler_args={'max_field_size': 16394})
 
@@ -154,8 +162,13 @@ def init_app(repo, auth0_options=None, auth0_client=None):
 
     middleware = []
     if auth0_options is not None:
-        auth0_domain = auth0_options['data-auth0-domain']
-        middleware.append(JWTMiddleware(auth0_domain))
+        authorizer = JWTMiddleware(auth0_options['data-auth0-domain'])
+        middleware.append(authorizer)
+        app.router.add_route(
+            'GET',
+            '/docker',
+            functools.partial(docker_handler, authorizer),
+        )
 
     aiohttp_graphql.GraphQLView.attach(
         app,

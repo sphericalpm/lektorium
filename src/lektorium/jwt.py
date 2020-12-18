@@ -12,15 +12,21 @@ class JWTMiddleware:
         self.auth0_domain = auth0_domain
 
     async def resolve(self, next, root, info, **kwargs):
-        token, extra = self.get_token_auth(info.context['request'].headers)
-        key = await self.public_key
-        payload = self.decode_token(token, key)
-        permissions = self.decode_token(extra, key).get('permissions', [])
-        if payload:
-            userdata = (payload['nickname'], payload['email'])
+        userdata, permissions = await self.info(info.context['request'])
+        if userdata is not None:
             info.context['userdata'] = userdata
         info.context['user_permissions'] = permissions
         return next(root, info, **kwargs)
+
+    async def info(self, request):
+        token, extra = self.get_token_auth(request.headers)
+        key = await self.public_key
+        payload = self.decode_token(token, key)
+        permissions = self.decode_token(extra, key).get('permissions', [])
+        userdata = None
+        if payload:
+            userdata = (payload['nickname'], payload['email'])
+        return userdata, permissions
 
     def get_token_auth(self, headers):
         """Obtains the Access Token from the Authorization Header"""
