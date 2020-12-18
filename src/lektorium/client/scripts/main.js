@@ -7,7 +7,6 @@ let router = new VueRouter({
             {path: '', component: httpVueLoader('/components/ControlPanel.vue')},
             {path: 'profile', component: httpVueLoader('/components/Profile.vue')},
             {path: 'callback', component: httpVueLoader('/components/Callback.vue')},
-            {path: 'logs', component: httpVueLoader('/components/Logs.vue')},
         ],
     }],
 });

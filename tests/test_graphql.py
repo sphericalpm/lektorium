@@ -1,8 +1,6 @@
 import collections
 import copy
-from unittest import mock
 
-import aiodocker
 import graphene.test
 import pytest
 from graphql.execution.executors.asyncio import AsyncioExecutor
@@ -582,29 +580,3 @@ def test_delete_permissions(client):
             },
         },
     }
-
-
-def test_docker_logs(client):
-    log = mock.AsyncMock(return_value=['1', '2'])
-
-    def docker_mock_init(self, *args, **kwargs):
-        self.containers = mock.Mock(
-            list=mock.AsyncMock(
-                return_value=[
-                    mock.AsyncMock(
-                        show=mock.AsyncMock(return_value={
-                            'Name': '/lektorium',
-                        }),
-                        log=log,
-                    ),
-                ],
-            ),
-        )
-
-    with mock.patch.multiple(
-        aiodocker.Docker,
-        __init__=docker_mock_init,
-    ):
-        result = client.execute('{logs(tail: 400)}')
-        assert result == {'data': {'logs': '12'}}
-        assert log.call_args.kwargs['tail'] == 400
