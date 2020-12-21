@@ -6,7 +6,7 @@ import pytest
 import requests
 import yaml
 
-from lektorium.repo.local.storage import GitLab, GitStorage
+from lektorium.repo.local import storage
 
 
 @pytest.mark.skipif(
@@ -17,13 +17,13 @@ def test_gitlab_real():
     gitlab = os.environ['LEKTORIUM_GITLAB_TEST']
     options = gitlab.split(':')
     options = dict(x.split('=') for x in options)
-    gitlab = GitLab(options)
+    gitlab = storage.GitLab(options)
     response = requests.get(
         (
             '{scheme}://{host}/api/{api_version}/projects'
             '/{config}/repository/files/{filename}'
         ).format(
-            filename=GitStorage.CONFIG_FILENAME,
+            filename=storage.GitStorage.CONFIG_FILENAME,
             **gitlab.options,
         ),
         headers=gitlab.headers,
@@ -44,5 +44,25 @@ def test_gitlab_real():
     options['namespace'] = response.json()['namespace']['full_path']
     for name in config.keys():
         options['project'] = name
-        gitlab = GitLab(options)
+        gitlab = storage.GitLab(options)
         assert isinstance(gitlab.project_id, int)
+
+
+@pytest.mark.skipif(
+    'LEKTORIUM_GITLAB_TEST' not in os.environ,
+    reason='no LEKTORIUM_GITLAB_TEST in env',
+)
+def test_gitlab_merge_requests():
+    gitlab = os.environ['LEKTORIUM_GITLAB_TEST']
+    options = gitlab.split(':')
+    options = dict(x.split('=') for x in options)
+    options['protocol'] = options.pop('scheme')
+    host = options.pop('host')
+    config = options.pop('config')
+    storage.run = lambda *args, **kwargs: None
+    gitlab = storage.GitlabStorage(
+        git=f'git@{host}:{config}/{storage.GitStorage.CONFIG_FILENAME}',
+        **options,
+    )
+    gitlab.get_merge_requests('000')
+    gitlab.get_merge_requests('1111')

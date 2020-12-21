@@ -315,13 +315,20 @@ class GitLab:
 
     @cached_property
     def projects(self):
-        response = requests.get(
-            '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
-            headers=self.headers,
-            params=dict(simple=True, per_page=100),
-        )
-        response.raise_for_status()
-        return response.json()
+        projects, page = [], 1
+        while True:
+            response = requests.get(
+                '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
+                headers=self.headers,
+                params=dict(simple=True, page=page, per_page=100),
+            )
+            response.raise_for_status()
+            result = response.json()
+            projects.extend(result)
+            if len(result) != 50:
+                break
+            page += 1
+        return projects
 
     @cached_property
     def headers(self):
@@ -330,9 +337,13 @@ class GitLab:
     @cached_property
     def merge_requests(self):
         response = requests.get(
-            '{scheme}://{host}/api/{api_version}/projects/{pid}/merge_requests'.format(
+            '{scheme}://{host}/api/{api_version}/{scope}merge_requests'.format(
+                scope=(
+                    f'projects/{self.project_id}/'
+                    if 'project' in self.options else
+                    ''
+                ),
                 **self.options,
-                pid=self.project_id,
             ),
             headers=self.headers,
         )
@@ -533,8 +544,28 @@ class GitlabStorage(GitStorage):
             title=title_template.format(**session),
         )
 
+    @cached_property
+    def merge_requests(self):
+        return GitLab(dict(
+            scheme=self.protocol,
+            host=self.repo,
+            namespace=self.namespace,
+            token=self.token,
+        )).merge_requests
+
+    @cached_property
+    def projects(self):
+        gitlab = GitLab(dict(
+            scheme=self.protocol,
+            host=self.repo,
+            namespace=self.namespace,
+            token=self.token,
+        ))
+        return {x['path_with_namespace']: x for x in gitlab.projects}
+
     def get_merge_requests(self, site_id):
-        return self.gitlab(site_id).merge_requests
+        project_id = self.projects[f'{self.namespace}/{site_id}']['id']
+        return [x for x in self.merge_requests if x['project_id'] == project_id]
 
     async def create_site_repo(self, site_id):
         return await self.gitlab(site_id).init_project()

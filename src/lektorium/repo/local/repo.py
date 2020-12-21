@@ -117,6 +117,10 @@ class Repo(BaseRepo):
 
     @property
     def releasing(self):
+        if 'merge_requests' in self.storage.__dict__:
+            del self.storage.__dict__['merge_requests']
+        if 'projects' in self.storage.__dict__:
+            del self.storage.__dict__['projects']
         for site_id, site in self.config.items():
             for merge_request_data in self.storage.get_merge_requests(site_id):
                 if merge_request_data['source_branch'].startswith('session-'):
