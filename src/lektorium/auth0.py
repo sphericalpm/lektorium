@@ -6,15 +6,20 @@ from aiohttp import ClientSession
 from cached_property import cached_property
 
 
-def cacher(method_alias):
+def cacher(method_alias, timeout=None):
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
         if kwargs:
             raise Exception('Cannot use keyword args')
         key = (method_alias, *args)
+        if key in instance._cache:
+            _, cached_on = instance._cache[key]
+            if timeout is not None and time.time() - cached_on > timeout:
+                instance._cache.pop(key)
         if key not in instance._cache:
-            instance._cache.update({key: await wrapped(*args)})
-        return instance._cache[key]
+            instance._cache[key] = (await wrapped(*args), time.time())
+        result, _ = instance._cache[key]
+        return result
     return wrapper
 
 
@@ -138,7 +143,7 @@ class Auth0Client:
         headers = {'Authorization': 'Bearer {0}'.format(await self.auth_token)}
         return headers
 
-    @cacher(CACHE_USERS_ALIAS)
+    @cacher(CACHE_USERS_ALIAS, 300)
     async def get_users(self):
         params = {'fields': 'name,nickname,email,user_id', 'per_page': 100}
         url = f'{self.audience}/users'
