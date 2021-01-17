@@ -74,6 +74,22 @@ class Storage:
         """
 
     @abc.abstractmethod
+    def update_session(self, site_id, session_id, session_dir):
+        """Updates existing session.
+
+        This method mades any actions to update existing session in
+        session_dir but not in storage itself.
+        """
+
+    @abc.abstractmethod
+    def save_session(self, site_id, session_id, session_dir):
+        """Saves existing session.
+
+        This method mades any actions to save existing session from
+        session_dir to storage.
+        """
+
+    @abc.abstractmethod
     def create_site(self, lektor, name, owner, site_id):
         """Creates new site.
 
@@ -164,6 +180,12 @@ class FileStorage(FileStorageMixin, Storage):
     def create_session(self, site_id, session_id, session_dir):
         site_root = self._site_dir(site_id)
         shutil.copytree(site_root, session_dir)
+    
+    def update_session(self, site_id, session_id, session_dir):
+        pass
+
+    def save_session(self, site_id, session_id, session_dir):
+        pass
 
     async def create_site(self, lektor, name, owner, site_id):
         site_root = self._site_dir(site_id)
@@ -404,6 +426,21 @@ class GitStorage(FileStorageMixin, Storage):
         run_local(f'git checkout --recurse-submodules -b session-{session_id}')
         run_local(f'git push --set-upstream origin session-{session_id}')
         run_local('git submodule update --remote')
+    
+    def update_session(self, site_id, session_id, session_dir):
+        run_local = functools.partial(run, cwd=session_dir)
+        run_local('git pull')
+        run_local('git submodule update --remote')
+
+    def save_session(self, site_id, session_id, session_dir):
+        run_local = functools.partial(run, cwd=session_dir)
+        run_local('git add -A .')
+        try:
+            run_local('git diff --cached | grep .')
+        except subprocess.CalledProcessError:
+            return
+        run_local('git commit -m autosave')
+        run_local('git push')
 
     async def create_site(self, lektor, name, owner, site_id):
         site_workdir = self.workdir / site_id
@@ -480,10 +517,7 @@ class GitStorage(FileStorageMixin, Storage):
         return site_repo
 
     def request_release(self, site_id, session_id, session_dir):
-        run_local = functools.partial(run, cwd=session_dir)
-        run_local('git add -A .')
-        run_local('git commit -m autosave')
-        run_local('git push')
+        self.save_session(site_id, session_id, session_dir)
 
     def site_config(self, site_id):
         return collections.defaultdict(type(None))

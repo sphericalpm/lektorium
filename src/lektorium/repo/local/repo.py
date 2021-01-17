@@ -167,10 +167,12 @@ class Repo(BaseRepo):
         if session_id not in self.sessions:
             raise SessionNotFound()
         session, site = self.sessions[session_id]
-        session_dir = self.sessions_root / site['site_id'] / session_id
+        site_id = site['site_id']
+        session_dir = self.sessions_root / site_id / session_id
         if session.parked:
             raise InvalidSessionState()
         self.server.stop_server(session_dir)
+        self.storage.save_session(site_id, session_id, session_dir)
         session['edit_url'] = None
         session['parked_time'] = datetime.now()
 
@@ -183,8 +185,10 @@ class Repo(BaseRepo):
         if any(not s.parked for s in site.sessions.values()):
             raise DuplicateEditSession()
         site_id = site['site_id']
+        session_dir = self.sessions_root / site_id / session_id
+        self.storage.update_session(site_id, session_id, session_dir)
         session['edit_url'] = self.server.serve_lektor(
-            self.sessions_root / site_id / session_id,
+            session_dir,
             {**session, 'site_id': site_id},
         )
         session.pop('parked_time', None)
