@@ -4,6 +4,7 @@ import subprocess
 
 
 class Lektor(metaclass=abc.ABCMeta):
+    @classmethod
     @abc.abstractmethod
     def quickstart(cls, name, owner, folder):
         raise NotImplementedError()

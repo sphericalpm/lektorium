@@ -6,10 +6,10 @@ from lektorium import app
 
 
 def test_app():
-    with patch('lektorium.repo.LocalRepo') as LocalRepo:
+    with patch('lektorium.repo.LocalRepo') as local_repo:
         app.create_app(app.RepoType.LOCAL, '', '')
-        LocalRepo.assert_called_once()
-        (storage, *_), kwargs = LocalRepo.call_args
+        local_repo.assert_called_once()
+        (storage, *_), kwargs = local_repo.call_args
         assert kwargs == dict(sessions_root=None)
         assert hasattr(storage, 'config')
 
