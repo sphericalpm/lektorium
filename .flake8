@@ -1,5 +1,5 @@
 [flake8]
-exclude = .git, __pycache__, venv
+exclude = .git, __pycache__, venv, .eggs
 filename = *.py
 max-line-length = 120
 max-doc-length = 79

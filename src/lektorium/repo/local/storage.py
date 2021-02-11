@@ -180,7 +180,7 @@ class FileStorage(FileStorageMixin, Storage):
     def create_session(self, site_id, session_id, session_dir):
         site_root = self._site_dir(site_id)
         shutil.copytree(site_root, session_dir)
-    
+
     def update_session(self, site_id, session_id, session_dir):
         pass
 
@@ -426,7 +426,7 @@ class GitStorage(FileStorageMixin, Storage):
         run_local(f'git checkout --recurse-submodules -b session-{session_id}')
         run_local(f'git push --set-upstream origin session-{session_id}')
         run_local('git submodule update --remote')
-    
+
     def update_session(self, site_id, session_id, session_dir):
         run_local = functools.partial(run, cwd=session_dir)
         run_local('git pull')
