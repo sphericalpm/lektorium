@@ -18,8 +18,11 @@ RUN ( \
         gcc \
         python3-dev \
         libdpkg-perl \
+        libssl-dev \
+        curl \
     && locale-gen en_US.UTF-8 \
     && python3 -m venv env \
+    && (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y) \
     && rm -rf \
         /var/lib/apt/* \
         /var/log/apt/* \
@@ -30,7 +33,14 @@ ADD key /root/.ssh/id_rsa
 ADD entrypoint.sh /
 RUN chmod 700 /root/.ssh \
     && chmod 600 /root/.ssh/id_rsa \
-    && LC_ALL=en_US.UTF-8 PATH="/env/bin:$PATH" pip install --no-cache *whl \
+    && \
+    LC_ALL=en_US.UTF-8 \
+    PATH="$HOME/.cargo/bin:/env/bin:$PATH" \
+    pip install --no-cache setuptools-rust \
+    && \
+    LC_ALL=en_US.UTF-8 \
+    PATH="$HOME/.cargo/bin:/env/bin:$PATH" \
+    pip install --no-cache *whl \
     && rm -rf \
         /usr/lib/python3.6/__pycache__ \
         /root/.npm
