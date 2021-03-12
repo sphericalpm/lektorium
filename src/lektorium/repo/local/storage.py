@@ -232,6 +232,7 @@ class GitConfig(FileConfig):
 class GitLab:
     DEFAULT_API_VERSION = 'v4'
     AWS_CREDENTIALS_VARIABLE_NAME = 'AWS_SHARED_CREDENTIALS_FILE'
+    BATCH_SIZE = 100
 
     def __init__(self, options):
         self.options = options
@@ -342,13 +343,13 @@ class GitLab:
             response = requests.get(
                 '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
                 headers=self.headers,
-                params=dict(simple=True, page=page, per_page=100),
+                params=dict(simple=True, page=page, per_page=self.BATCH_SIZE),
             )
             response.raise_for_status()
             result = response.json()
-            projects.extend(result)
-            if len(result) != 50:
+            if not len(result):
                 break
+            projects.extend(result)
             page += 1
         return projects
 
