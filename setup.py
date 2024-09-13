@@ -49,7 +49,7 @@ setuptools.setup(
         'graphql-core<3',
         'graphql-server-core<1.1.2',
         'importlib-resources ; python_version < "3.7"',
-        'lektor==3.2.0',
+        'lektor==3.3.11',
         'markupsafe==2.0.1',
         'more-itertools',
         'python-dateutil<2.8.1',
