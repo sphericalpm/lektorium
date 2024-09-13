@@ -17,7 +17,7 @@ lektorium-aws-deploy:
   script:
     - apk add --update python3 python3-dev libffi-dev openssl-dev build-base cargo
     - apk add --update py3-pip || true
-    - pip3 install --upgrade lektor
+    - pip3 install --upgrade "lektor==3.2.0" "markupsafe==2.0.1" pytz
     - lektor plugins add lektor-s3
     - lektor build
     - lektor deploy "{LECTOR_AWS_SERVER_NAME}"

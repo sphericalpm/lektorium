@@ -20,6 +20,7 @@ RUN ( \
         libdpkg-perl \
         libssl-dev \
         curl \
+        pkg-config \
     && locale-gen en_US.UTF-8 \
     && python3 -m venv env \
     && (curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y) \
@@ -28,6 +29,7 @@ RUN ( \
         /var/log/apt/* \
         /var/cache/apt/* \
         /usr/lib/python3.6/__pycache__
+RUN git lfs install --force
 ADD lektorium*whl /
 ADD key /root/.ssh/id_rsa
 ADD entrypoint.sh /
