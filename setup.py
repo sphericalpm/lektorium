@@ -38,7 +38,7 @@ setuptools.setup(
     install_requires=[
         'aiodocker',
         'aiohttp-graphql<1.1',
-        'aiohttp==3.6.3',
+        'aiohttp==3.10.2',
         'appdirs',
         'authlib',
         'beautifulsoup4',
