@@ -1,11 +1,8 @@
 ARG BASE_IMAGE
 FROM $BASE_IMAGE
-RUN apk -U add --no-cache openssl-dev gcc musl-dev libffi-dev cargo \
-    && apk add --no-cache python3 python3-dev \
-    && (apk add py3-pip || true) \
-    && ln -s /usr/bin/python3 /usr/bin/python \
-    && (ln -s /usr/bin/pip3 /usr/bin/pip || true) \
-    && (ln -s /usr/bin/pip /usr/bin/pip3 || true) \
-    && pip --no-cache install --upgrade pip lektor \
+RUN apk -U add --no-cache python3 python3-dev openssl-dev gcc musl-dev libffi-dev cargo \
+    && python3 -m venv env \
+    && PATH="/env/bin:$PATH" pip install --no-cache "lektor==3.2.0" "markupsafe==2.0.1" pytz \
     && rm -rf /root/.cache
+ENV PATH "/env/bin:$PATH"
 ENTRYPOINT ["lektor"]

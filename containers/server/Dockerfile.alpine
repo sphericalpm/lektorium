@@ -1,6 +1,6 @@
 ARG BASE_IMAGE
 FROM $BASE_IMAGE
-RUN apk -U add python3 python3-dev openssh-client git gcc musl-dev libffi-dev openssl-dev cargo \
+RUN apk -U add python3 python3-dev openssh-client git git-lfs gcc musl-dev libffi-dev openssl-dev pkg-config cargo \
     && python3 -m venv env
 ADD lektorium*whl /
 ADD key /root/.ssh/id_rsa
