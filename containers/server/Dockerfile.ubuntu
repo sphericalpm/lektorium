@@ -10,6 +10,7 @@ RUN ( \
     && apt-get -y install \
         git \
         git-lfs \
+        libffi-dev \
         locales \
         openssh-client \
         python3 \
@@ -46,7 +47,9 @@ RUN chmod 700 /root/.ssh \
     && rm -rf \
         /usr/lib/python3.6/__pycache__ \
         /root/.npm
-ENV LC_ALL en_US.UTF-8
-ENV PATH "/env/bin:$PATH"
+ENV LC_ALL="en_US.UTF-8"
+ENV PATH="/env/bin:$PATH"
+ARG LEKTORIUM_LEKTOR_THEME
+ENV LEKTORIUM_LEKTOR_THEME="${LEKTORIUM_LEKTOR_THEME}"
 VOLUME /sessions
 ENTRYPOINT ["/entrypoint.sh"]

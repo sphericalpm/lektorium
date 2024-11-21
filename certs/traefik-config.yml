@@ -1,0 +1,16 @@
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/certs/cert.pem
+        keyFile: /etc/certs/key.pem
+  certificates:
+    - certFile: /etc/certs/cert.pem
+      keyFile: /etc/certs/key.pem
+      stores:
+        - default
+  options:
+    default:
+      minVersion: VersionTLS12
+    mintls13:
+      minVersion: VersionTLS13

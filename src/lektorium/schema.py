@@ -49,6 +49,7 @@ class Session(ObjectType):
     staging_url = String()
     site = Field(Site)
     parked = Boolean()
+    themes = List(String)
 
     def resolve_production_url(self, info):
         return self.site.production_url
@@ -69,6 +70,11 @@ class User(ObjectType):
     name = String()
     nickname = String()
     permissions = List(String)
+
+
+class Theme(ObjectType):
+    name = String()
+    active = Boolean()
 
 
 class Permission(ObjectType):
@@ -98,6 +104,13 @@ class Releasing(ObjectType):
 
 def skip_permissions_check(info):
     return info.context.get('skip_permissions_check', False)
+
+
+def repo(method):
+    def wrapper(self, info, *args, **kwargs):
+        repo = info.context['repo']
+        return method(self, info, *args, repo=repo, **kwargs)
+    return wrapper
 
 
 class PermissionError(GraphExecutionError):
@@ -133,6 +146,7 @@ class Query(ObjectType):
     sites = List(Site)
     sessions = List(Session, parked=Boolean(default_value=False))
     users = List(User)
+    themes = List(Theme, site_id=String(default_value=None))
     user_permissions = List(Permission, user_id=String())
     available_permissions = List(ApiPermission)
     releasing = List(Releasing)
@@ -142,19 +156,23 @@ class Query(ObjectType):
         for site in repo.sites:
             site = Site(**site)
             for session in site.sessions or ():
-                yield dict(**session, site=site)
+                themes = []
+                if bool(session.edit_url):
+                    session_dir = repo.sessions_root / site.site_id / session['session_id']
+                    themes = repo.storage.repo_themes(session_dir)
+                yield dict(**session, themes=themes, site=site)
 
     @inject_permissions
-    async def resolve_sites(self, info, permissions):
-        repo = info.context['repo']
+    @repo
+    async def resolve_sites(self, info, repo, permissions):
         return [
             Site(**x) for x in repo.sites
             if ADMIN in permissions or f'user:{x["site_id"]}' in permissions
         ]
 
     @inject_permissions
-    async def resolve_sessions(self, info, parked, permissions):
-        repo = info.context['repo']
+    @repo
+    async def resolve_sessions(self, info, parked, repo, permissions):
         await repo.init_sessions()
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [
@@ -171,14 +189,23 @@ class Query(ObjectType):
         auth0_client = info.context['auth0_client']
         return [User(**x) for x in await auth0_client.get_users()]
 
+    @repo
+    def resolve_themes(self, info, site_id, repo):
+        if site_id:
+            return repo.storage.site_themes(site_id)
+        return [
+            {'name': theme, 'active': True}
+            for theme in repo.storage.themes().values()
+        ]
+
     @inject_permissions(admin=True)
     async def resolve_user_permissions(self, info, user_id, permissions):
         auth0_client = info.context['auth0_client']
         return [Permission(**x) for x in await auth0_client.get_user_permissions(user_id)]
 
     @inject_permissions(admin=True)
-    async def resolve_available_permissions(self, info, permissions):
-        repo = info.context['repo']
+    @repo
+    async def resolve_available_permissions(self, info, repo, permissions):
         return [
             ApiPermission(v, v)
             for v in (
@@ -188,7 +215,8 @@ class Query(ObjectType):
         ]
 
     @inject_permissions
-    async def resolve_releasing(self, info, permissions):
+    @repo
+    async def resolve_releasing(self, info, repo, permissions):
         repo = info.context['repo']
         return [Releasing(**x) for x in repo.releasing]
 
@@ -279,6 +307,7 @@ class CreateSession(SitePermissionMixin, MutationBase):
 
     class Arguments:
         site_id = String()
+        themes = List(String, required=False)
 
     @classmethod
     async def mutate(cls, root, info, **kwargs):
@@ -293,6 +322,7 @@ class CreateSite(MutationBase):
         site_id = String()
         name = String(name='siteName')
         owner = String()
+        themes = List(String, required=False)
 
     @classmethod
     async def mutate(cls, root, info, **kwargs):

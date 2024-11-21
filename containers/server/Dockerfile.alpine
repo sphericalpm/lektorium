@@ -9,6 +9,6 @@ RUN chmod 700 /root/.ssh \
     && chmod 600 /root/.ssh/id_rsa \
     && PATH="/env/bin:$PATH" pip install --no-cache setuptools-rust \
     && PATH="/env/bin:$PATH" pip install --no-cache *whl
-ENV PATH "/env/bin:$PATH"
+ENV PATH="/env/bin:$PATH"
 VOLUME /sessions
 ENTRYPOINT ["/entrypoint.sh"]
