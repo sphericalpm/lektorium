@@ -50,6 +50,7 @@ setuptools.setup(
         'graphql-server-core<1.1.2',
         'importlib-resources ; python_version < "3.7"',
         'lektor==3.2.0',
+        'Flask==1.1.4',
         'markupsafe==2.0.1',
         'more-itertools',
         'python-dateutil<2.8.1',
@@ -59,6 +60,7 @@ setuptools.setup(
         'invoke',
         'decorator',
         'pytz',
+        'unsync',
     ],
     extras_require={
         'dev': [

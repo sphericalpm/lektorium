@@ -129,14 +129,14 @@ class Repo(BaseRepo):
                         **FilteredMergeRequestData(merge_request_data),
                     }
 
-    def create_session(self, site_id, custodian=None):
+    def create_session(self, site_id, themes=None, custodian=None):
         custodian, custodian_email = custodian or self.DEFAULT_USER
         site = self.config[site_id]
         if any(not s.parked for s in site.sessions.values()):
             raise DuplicateEditSession()
         session_id = self.generate_session_id()
         session_dir = self.sessions_root / site_id / session_id
-        self.storage.create_session(site_id, session_id, session_dir)
+        self.storage.create_session(site_id, session_id, session_dir, themes=themes)
         session_object = Session(
             session_id=session_id,
             creation_time=datetime.now(),
@@ -149,7 +149,7 @@ class Repo(BaseRepo):
                 'site_id': site_id,
             },
         )
-        self.config[site_id].sessions[session_id] = session_object
+        site.sessions[session_id] = session_object
         return session_id
 
     def destroy_session(self, session_id):
@@ -193,13 +193,14 @@ class Repo(BaseRepo):
         )
         session.pop('parked_time', None)
 
-    async def create_site(self, site_id, name, owner=None):
+    async def create_site(self, site_id, name, themes=None, owner=None):
         owner, email = owner or self.DEFAULT_USER
         site_root, site_options = await self.storage.create_site(
             self.lektor,
             name,
             owner,
             site_id,
+            themes,
         )
 
         production_url = site_options.pop('production_url', None)

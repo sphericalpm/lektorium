@@ -107,6 +107,7 @@ class Repo(BaseRepo):
     def create_session(
         self,
         site_id: str,
+        themes: Optional[Tuple[str]] = None,
         custodian: Optional[Tuple[str, str]] = None,
     ) -> str:
         custodian_name, custodian_email = custodian or self.DEFAULT_USER

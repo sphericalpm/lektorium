@@ -7,13 +7,15 @@ import pathlib
 import shutil
 import subprocess
 import tempfile
+from urllib.parse import quote_plus
 
 import dateutil
 import inifile
 import requests
+import unsync
 import yaml
 from cached_property import cached_property
-from more_itertools import one
+from more_itertools import one, only
 
 from ...aws import AWS
 from ...utils import closer
@@ -44,6 +46,7 @@ LFS_MASKS = (
     '*.woff',
 )
 run = functools.partial(subprocess.check_call, shell=True)
+run_out = functools.partial(subprocess.check_output, shell=True)
 
 
 def async_run(func, *args, **kwargs):
@@ -51,6 +54,120 @@ def async_run(func, *args, **kwargs):
         None,
         functools.partial(func, *args, **kwargs),
     )
+
+
+class ConfigGetter:
+    @staticmethod
+    def directory_config(dir):
+        config = only(dir.glob('*.lektorproject'))
+        if config:
+            return inifile.IniFile(config)
+        return collections.defaultdict(type(None))
+
+    def site_config(self, site_id):
+        workdir = self._site_dir(site_id)
+        return self.directory_config(workdir)
+
+
+class Themer:
+    @cached_property
+    def theme_repos(self):
+        return [
+            item.strip() for item in
+            os.environ.get('LEKTORIUM_LEKTOR_THEME', '').split(';')
+        ]
+
+    def themes(self, names=[]):
+        repos_dict = self.make_theme_dict(self.theme_repos)
+        repos = [repo for repo, name in repos_dict.items() if name in names]
+        if repos:
+            return self.make_theme_dict(repos)
+        return repos_dict
+
+    def sparce_repo_config(self, site_id):
+        sparce_site_id = f'{site_id}-sparce-clone'
+        dir = self._site_dir(sparce_site_id)
+        run_local = functools.partial(run, cwd=dir)
+
+        if dir.exists():
+            shutil.rmtree(dir, ignore_errors=True)
+        dir.mkdir()
+        run_local('git init .')
+        run_local(f'git remote add origin {self.config[site_id]["repo"]}')
+        run_local('git config core.sparseCheckout true')
+        run_local(f'echo "{site_id}.lektorproject" >> .git/info/sparse-checkout')
+        run_local('git pull --depth=1 origin master')
+        return self.site_config(sparce_site_id)
+
+    def site_themes(self, site_id):
+        config = self.site_config(site_id)
+        if not config:
+            config = self.sparce_repo_config(site_id)
+        all_themes = self.themes().values()
+        config_themes = [
+            theme.strip() for theme in
+            config.get('project.themes', '').split(',')
+            if theme.strip() in all_themes
+        ]
+
+        themes = config_themes[:]
+        for name in all_themes:
+            if name not in themes:
+                themes.append(name)
+
+        all_active = False if config_themes else True
+        themes = [
+            {'name': name, 'active': True if all_active or name in config_themes else False}
+            for name in themes
+        ]
+        return themes
+
+    def repo_themes(self, repo_dir):
+        theme_paths = run_out(
+            'git config --file .gitmodules --name-only --get-regexp path | tee',
+            cwd=repo_dir,
+        )
+        return [
+            os.path.basename(item.lstrip('submodule.').rstrip('.path'))
+            for item in theme_paths.decode().split()
+            if item.startswith('submodule.themes/')
+        ]
+
+    @staticmethod
+    def make_theme_dict(repos):
+        themes = collections.OrderedDict()
+        for repo in repos:
+            themes[repo] = os.path.basename(repo).rstrip('.git')
+        return themes
+
+    def set_themes_config(self, dir, theme_names):
+        config = self.directory_config(dir)
+        if not theme_names:
+            del config['project.themes']
+        else:
+            config['project.themes'] = ','.join(theme_names)
+        config.save()
+
+    async def set_theme_submodules(self, dir, new_themes):
+        run_local = functools.partial(run_out, cwd=dir)
+        existing_themes = []
+
+        for theme_name in self.repo_themes(dir):
+            if theme_name in new_themes.values():
+                existing_themes.append(theme_name)
+            else:
+                await async_run(run_local, f'git rm "themes/{theme_name}"')
+
+        for theme_repo, theme_name in new_themes.items():
+            if theme_name not in existing_themes:
+                await async_run(
+                    run_local,
+                    f'git submodule add --force {theme_repo} themes/{theme_name}',
+                )
+
+        self.set_themes_config(dir, new_themes.values())
+        await async_run(run_local, 'git add -A .')
+        await async_run(run_local, 'git diff-index --quiet HEAD || git commit -m "Update themes"')
 
 
 class Storage:
@@ -65,7 +182,7 @@ class Storage:
         """
 
     @abc.abstractmethod
-    def create_session(self, site_id, session_id, session_dir):
+    def create_session(self, site_id, session_id, session_dir, themes):
         """Creates new session.
 
         This method mades all mandatory actions to create new session in
@@ -90,7 +207,7 @@ class Storage:
         """
 
     @abc.abstractmethod
-    def create_site(self, lektor, name, owner, site_id):
+    def create_site(self, lektor, name, owner, site_id, themes):
         """Creates new site.
 
         Creates new site in storage and initialize it with lektor quickstart
@@ -103,6 +220,13 @@ class Storage:
 
         Returns safe (returning None's for non-existent options) dict-like
         object from site's lektorproject file for provided site_id.
+        """
+
+    @abc.abstractmethod
+    def site_themes(self, site_id):
+        """Returns a dict-like object with available themes.
+
+        Returns a dict with theme repos as keys and theme names as values.
         """
 
     @classmethod
@@ -171,13 +295,16 @@ class FileStorageMixin:
         return self.root / self.CONFIG_FILENAME
 
 
-class FileStorage(FileStorageMixin, Storage):
+class FileStorage(ConfigGetter, FileStorageMixin, Storage):
     CONFIG_CLASS = FileConfig
 
     def __init__(self, root):
         self.root = pathlib.Path(root).resolve()
 
-    def create_session(self, site_id, session_id, session_dir):
+    def site_themes(self, *args, **kwargs):
+        return []
+
+    def create_session(self, site_id, session_id, session_dir, themes=None):
         site_root = self._site_dir(site_id)
         shutil.copytree(site_root, session_dir)
 
@@ -187,17 +314,10 @@ class FileStorage(FileStorageMixin, Storage):
     def save_session(self, site_id, session_id, session_dir):
         pass
 
-    async def create_site(self, lektor, name, owner, site_id):
+    async def create_site(self, lektor, name, owner, site_id, themes=None):
         site_root = self._site_dir(site_id)
         lektor.quickstart(name, owner, site_root)
         return site_root, {}
-
-    def site_config(self, site_id):
-        site_root = self._site_dir(site_id)
-        config = list(site_root.glob('*.lektorproject'))
-        if config:
-            return inifile.IniFile(one(config))
-        return collections.defaultdict(type(None))
 
     def _site_dir(self, site_id):
         return self.root / site_id / 'master'
@@ -214,7 +334,7 @@ class GitConfig(FileConfig):
         super().__setitem__(key, value)
         parent, name = self.path.parent, self.path.name
         run(f'git add {name}', cwd=parent)
-        run('git commit -m autosave', cwd=parent)
+        run('git diff-index --quiet HEAD || git commit -m autosave', cwd=parent)
         run('git push origin', cwd=parent)
 
     @classmethod
@@ -236,11 +356,16 @@ class GitLab:
 
     def __init__(self, options):
         self.options = options
+        self.options['encoded_namespace'] = quote_plus(options['namespace'])
         self.options.setdefault('api_version', self.DEFAULT_API_VERSION)
 
     @cached_property
     def repo_url(self):
         return '{scheme}://{host}/api/{api_version}'.format(**self.options)
+
+    @property
+    def skip_aws(self):
+        return self.options.get('skip_aws', False)
 
     @cached_property
     def path(self):
@@ -279,7 +404,8 @@ class GitLab:
 
         ssh_repo_url = self._create_new_project().json()['ssh_url_to_repo']
         await asyncio.sleep(1)
-        self._create_aws_project_variable()
+        if not self.skip_aws:
+            self._create_aws_project_variable()
         self._create_initial_commit()
 
         return ssh_repo_url
@@ -340,8 +466,12 @@ class GitLab:
     def projects(self):
         projects, page = [], 1
         while True:
+            url = (
+                '{scheme}://{host}/api/{api_version}/'
+                'groups/{encoded_namespace}/projects'
+            ).format(**self.options)
             response = requests.get(
-                '{scheme}://{host}/api/{api_version}/projects'.format(**self.options),
+                url,
                 headers=self.headers,
                 params=dict(simple=True, page=page, per_page=self.BATCH_SIZE),
             )
@@ -398,7 +528,7 @@ class GitLab:
         response.raise_for_status()
 
 
-class GitStorage(FileStorageMixin, Storage):
+class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
     CONFIG_CLASS = GitConfig
 
     def __init__(self, git):
@@ -408,29 +538,43 @@ class GitStorage(FileStorageMixin, Storage):
         self.root.mkdir()
         run(f'git clone {self.git} .', cwd=self.root)
 
+    def _site_dir(self, site_id):
+        return self.workdir / site_id
+
     @staticmethod
     def init(path):
         lektorium = (path / 'lektorium')
         lektorium.mkdir(parents=True, exist_ok=True)
         run('git init --bare .', cwd=lektorium)
+        run('git symbolic-ref HEAD refs/heads/master', cwd=lektorium)
         return lektorium
 
-    def create_session(self, site_id, session_id, session_dir):
+    def create_session(self, site_id, session_id, session_dir, themes=None):
         repo = self.config[site_id].get('repo', None)
         if repo is None:
             raise ValueError('site repo not found')
+
+        run_local = functools.partial(run, cwd=session_dir)
+
         branch = self.config[site_id].get('branch', '')
         if branch:
             branch = f'-b {branch}'
-        run(f'git clone --recurse-submodules {repo} {branch} {session_dir}')
-        run_local = functools.partial(run, cwd=session_dir)
+        run(f'git clone {repo} {branch} {session_dir}')
+        self.check_theme_repos(session_dir)
+        run_local('git submodule update --init --recursive')
         run_local(f'git checkout --recurse-submodules -b session-{session_id}')
+
+        if themes is not None:
+            set_fn = unsync.unsync()(self.set_theme_submodules)
+            set_fn(session_dir, self.themes(themes)).result()
+
         run_local(f'git push --set-upstream origin session-{session_id}')
         run_local('git submodule update --remote')
 
     def update_session(self, site_id, session_id, session_dir):
         run_local = functools.partial(run, cwd=session_dir)
         run_local('git pull')
+        self.check_theme_repos(session_dir)
         run_local('git submodule update --remote')
 
     def save_session(self, site_id, session_id, session_dir):
@@ -443,37 +587,58 @@ class GitStorage(FileStorageMixin, Storage):
         run_local('git commit -m autosave')
         run_local('git push')
 
-    async def create_site(self, lektor, name, owner, site_id):
-        site_workdir = self.workdir / site_id
+    def check_theme_repos(self, repo_dir):
+        run_local = functools.partial(run_out, cwd=repo_dir)
+        themes = {v: k for k, v in self.themes().items()}
+        for theme in self.repo_themes(repo_dir):
+            if theme in themes:
+                repo = run_local(f'git config --file .gitmodules submodule.themes/{theme}.url')
+                if repo.decode().strip() != themes[theme]:
+                    run_local(f'git rm "themes/{theme}"')
+                    run_local(f'git submodule add --force {themes[theme]} themes/{theme}')
+        run_local('git add -A .')
+        run_local('git diff-index --quiet HEAD || git commit -m "Update theme repos"')
+
+    async def create_site(self, lektor, name, owner, site_id, themes=None):
+        site_workdir = self._site_dir(site_id)
         if site_workdir.exists():
             raise ValueError('workdir for such site-id already exists')
 
-        site_repo = await self.create_site_repo(site_id)
         run_local = functools.partial(run, cwd=site_workdir)
-        theme_repo = os.environ.get('LEKTORIUM_LEKTOR_THEME', None)
-        if theme_repo is not None:
+
+        site_repo = await self.create_site_repo(site_id)
+        theme_repos = self.themes(themes)
+
+        if theme_repos:
+            example_site = None
             with tempfile.TemporaryDirectory() as theme_dir:
-                await async_run(run, f'git clone {theme_repo} {theme_dir}')
-                example_site = pathlib.Path(theme_dir) / 'example-site'
-                if example_site.exists():
+                for theme_repo, theme_name in theme_repos.items():
+                    repo_tmp_dir = pathlib.Path(theme_dir) / theme_name
+                    await async_run(run, f'git clone {theme_repo} {repo_tmp_dir}')
+                    if (repo_tmp_dir / 'example-site').exists():
+                        if example_site is not None:
+                            raise ValueError('Only one example site must exists across theme repos')
+                        example_site = repo_tmp_dir / 'example-site'
+                if example_site is not None and example_site.exists():
                     shutil.rmtree(example_site / 'themes', ignore_errors=True)
                     shutil.copytree(example_site, site_workdir)
-            site_config = list(site_workdir.glob('*.lektorproject'))
+            site_config = self.site_config(site_id)
             if site_config:
-                site_config = one(site_config)
-                config_data = inifile.IniFile(site_config)
-                config_data['project.name'] = name
-                del config_data['project.url']
-                config_data.save()
-                site_config.rename(site_workdir / f'{name}.lektorproject')
+                site_config['project.name'] = name
+                del site_config['project.url']
+                site_config.save()
+                pathlib.Path(site_config.filename).rename(site_workdir / f'{name}.lektorproject')
             else:
                 shutil.rmtree(site_workdir, ignore_errors=True)
-        if theme_repo is None or not site_workdir.exists():
+
+        if not theme_repos or not site_workdir.exists():
             lektor.quickstart(name, owner, site_workdir)
-            if theme_repo is not None:
+            if not theme_repos:
                 shutil.rmtree(site_workdir / 'templates')
                 shutil.rmtree(site_workdir / 'models')
+
         await async_run(run_local, 'git init')
+        await async_run(run_local, 'git symbolic-ref HEAD refs/heads/master')
         await async_run(run_local, 'git lfs install')
         await async_run(run_local, f'git remote add origin {site_repo}')
         await async_run(run_local, 'git fetch')
@@ -484,23 +649,19 @@ class GitStorage(FileStorageMixin, Storage):
                 for m in LFS_MASKS
             ),
         )
-        theme_repo = os.environ.get('LEKTORIUM_LEKTOR_THEME', None)
-        if theme_repo is not None:
-            site_repo_host, _, site_repo_path = str(site_repo).partition(':')
-            theme_repo_host, _, theme_repo_path = str(theme_repo).partition(':')
-            if site_repo_host == theme_repo_host:
-                site_repo_path = len(pathlib.Path(site_repo_path).parts)
-                site_repo_path = ('..',) * site_repo_path
-                theme_repo = pathlib.Path(*site_repo_path) / theme_repo_path
-            await async_run(
-                run_local,
-                f'git submodule add {theme_repo} themes/iarcrp-lektor-theme',
-            )
+
         await async_run(run_local, 'git add .')
         await async_run(run_local, 'git commit -m quickstart')
+
+        if theme_repos:
+            await self.set_theme_submodules(site_workdir, theme_repos)
+
         await async_run(run_local, 'git push --set-upstream origin master')
 
-        return site_workdir, dict(repo=str(site_repo))
+        return (
+            site_workdir,
+            dict(repo=str(site_repo), themes=list(theme_repos.values())),
+        )
 
     async def create_site_repo(self, site_id):
         site_repo = self.git.parent / site_id
@@ -509,6 +670,7 @@ class GitStorage(FileStorageMixin, Storage):
 
         site_repo.mkdir()
         await async_run(run, 'git init --bare .', cwd=site_repo)
+        await async_run(run, 'git symbolic-ref HEAD refs/heads/master', cwd=site_repo)
         with tempfile.TemporaryDirectory() as workdir:
             run_local = functools.partial(run, cwd=workdir)
             await async_run(run_local, f'git clone {site_repo} .')
@@ -520,9 +682,6 @@ class GitStorage(FileStorageMixin, Storage):
     def request_release(self, site_id, session_id, session_dir):
         self.save_session(site_id, session_id, session_dir)
 
-    def site_config(self, site_id):
-        return collections.defaultdict(type(None))
-
     def __repr__(self):
         name = self.__class__.__name__
         return f'{name}("{str(self.git)}"@"{str(self.root)}")'
@@ -531,40 +690,51 @@ class GitStorage(FileStorageMixin, Storage):
 class GitlabStorage(GitStorage):
     GITLAB_SECTION_NAME = 'gitlab'
 
-    def __init__(self, git, token, protocol):
+    def __init__(self, git, token, protocol, skip_aws=False):
         super().__init__(git)
         git = str(git)
         self.token = token
         self.protocol = protocol
+        self.skip_aws = skip_aws
         head, _, tail = git.partition('@')
         self.repo, _, path = tail.partition(':')
         self.namespace, _, _ = path.rpartition('/')
 
-    async def create_site(self, lektor, name, owner, site_id):
-        site_workdir, options = await super().create_site(lektor, name, owner, site_id)
+    def gitlab_options(self, **extra_options):
+        return dict(
+            scheme=self.protocol,
+            host=self.repo,
+            namespace=self.namespace,
+            token=self.token,
+            skip_aws=self.skip_aws,
+            **extra_options,
+        )
 
-        aws = AWS()
-        bucket_name = aws.create_s3_bucket(site_id)
-        aws.open_bucket_access(bucket_name)
-        distribution_id, domain_name = aws.create_cloudfront_distribution(bucket_name)
+    async def create_site(self, lektor, name, owner, site_id, themes=None):
+        site_workdir, options = await super().create_site(lektor, name, owner, site_id, themes)
+        if not self.skip_aws:
+            aws = AWS()
+            bucket_name = aws.create_s3_bucket(site_id)
+            aws.open_bucket_access(bucket_name)
+            distribution_id, domain_name = aws.create_cloudfront_distribution(bucket_name)
 
-        with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
-            fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
-                s3_bucket_name=bucket_name,
-                cloudfront_id=distribution_id,
-            ))
-        with open(str(site_workdir / '.gitlab-ci.yml'), 'w') as fo:
-            fo.write(GITLAB_CI_TEMPLATE)
+            with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
+                fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
+                    s3_bucket_name=bucket_name,
+                    cloudfront_id=distribution_id,
+                ))
+            with open(str(site_workdir / '.gitlab-ci.yml'), 'w') as fo:
+                fo.write(GITLAB_CI_TEMPLATE)
 
-        run_local = functools.partial(run, cwd=site_workdir)
-        await async_run(run_local, 'git add .')
-        await async_run(run_local, 'git commit -m "Add AWS deploy integration"')
-        await async_run(run_local, 'git push --set-upstream origin master')
+            run_local = functools.partial(run, cwd=site_workdir)
+            await async_run(run_local, 'git add .')
+            await async_run(run_local, 'git commit -m "Add AWS deploy integration"')
+            await async_run(run_local, 'git push --set-upstream origin master')
 
-        options.update({
-            'cloudfront_domain_name': domain_name,
-            'url': f'https://{domain_name}',
-        })
+            options.update({
+                'cloudfront_domain_name': domain_name,
+                'url': f'https://{domain_name}',
+            })
 
         return site_workdir, options
 
@@ -581,21 +751,11 @@ class GitlabStorage(GitStorage):
 
     @cached_property
     def merge_requests(self):
-        return GitLab(dict(
-            scheme=self.protocol,
-            host=self.repo,
-            namespace=self.namespace,
-            token=self.token,
-        )).merge_requests
+        return GitLab(self.gitlab_options()).merge_requests
 
     @cached_property
     def projects(self):
-        gitlab = GitLab(dict(
-            scheme=self.protocol,
-            host=self.repo,
-            namespace=self.namespace,
-            token=self.token,
-        ))
+        gitlab = GitLab(self.gitlab_options())
         return {x['path_with_namespace']: x for x in gitlab.projects}
 
     def get_merge_requests(self, site_id):
@@ -606,11 +766,7 @@ class GitlabStorage(GitStorage):
         return await self.gitlab(site_id).init_project()
 
     def gitlab(self, project, branch='master'):
-        return GitLab(dict(
-            scheme=self.protocol,
-            host=self.repo,
-            namespace=self.namespace,
-            token=self.token,
+        return GitLab(self.gitlab_options(
             project=project,
             branch=branch,
         ))

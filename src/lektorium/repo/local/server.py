@@ -285,21 +285,23 @@ class AsyncDockerServer(AsyncServer):
 
     def session_address(self, session_id, container_name):
         if self.sessions_domain is None:
-            return f'http://{container_name}:{self.LEKTOR_PORT}/'
+            return f'https://{container_name}:{self.LEKTOR_PORT}/'
         return f'http://{session_id}.{self.sessions_domain}'
 
     def lektor_labels(self, session_id):
         if self.sessions_domain is None:
             return {}
         route_name = f'{self.lektor_image}-{session_id}'
+        skip_resolver = os.environ.get('LEKTORIUM_SKIP_RESOLVER', False)
         return {
             'enable': 'true',
             'http.routers': {
                 route_name: {
                     'entrypoints': 'websecure',
                     'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
-                    'tls.certresolver': 'le',
+                    'tls': {},
                     'tls.domains[0].main': f'*.{self.sessions_domain}',
+                    **({} if skip_resolver else {'tls.certresolver': 'le'}),
                 },
             },
             f'http.services.{route_name}.loadbalancer.server.port': f'{self.LEKTOR_PORT}',

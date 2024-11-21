@@ -48,6 +48,7 @@ class Repo(metaclass=abc.ABCMeta):
     def create_session(
         self,
         site_id: str,
+        themes: Optional[Tuple[str]] = None,
         custodian: Optional[Tuple[str, str]] = None,
     ) -> str:
         pass

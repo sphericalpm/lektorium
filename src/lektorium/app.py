@@ -4,6 +4,7 @@ import json
 import logging
 import pathlib
 import tempfile
+from os import environ
 
 import aiohttp.web
 import aiohttp_graphql
@@ -89,9 +90,10 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
             storage_path = pathlib.Path(closer(tempfile.TemporaryDirectory()))
             storage_path = storage_class.init(storage_path)
         if storage_class is GitlabStorage:
-            storage = storage_class(storage_path, token, protocol)
+            skip_aws = True if environ.get('LEKTORIUM_SKIP_AWS', '') == 'YES' else False
+            storage = storage_class(storage_path, token, protocol, skip_aws)
         else:
-            storage = storage_class(storage_path)
+            storage = storage_class(pathlib.Path(storage_path))
 
         sessions_root = None
         if server_type == ServerType.DOCKER:
