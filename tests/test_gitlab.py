@@ -1,5 +1,6 @@
 from os import environ
 from unittest import mock
+from urllib.parse import parse_qsl, quote_plus
 
 import pytest
 
@@ -30,33 +31,58 @@ def mock_namespaces(mocker, gitlab_instance):
 
 
 def mock_projects(mocker, gitlab_instance):
+    def match_first_page(request):
+        params = dict(parse_qsl(request.query))
+        return params['page'] == '1'
+
+    def match_other_page(request):
+        params = dict(parse_qsl(request.query))
+        return params['page'] != '1'
+
     namespace = gitlab_instance.options["namespace"]
+    namespace_quoted = quote_plus(namespace)
     mocker.get(
-        f'{gitlab_instance.repo_url}/projects',
+        f'{gitlab_instance.repo_url}/groups/{namespace_quoted}/projects',
         request_headers=gitlab_instance.headers,
         json=[
             {'path_with_namespace': f'{namespace}/proj1', 'id': '1'},
             {'path_with_namespace': 'other/proj1', 'id': '2'},
             {'path_with_namespace': f'{namespace}/proj2', 'id': '3'},
         ],
+        additional_matcher=match_first_page,
+    )
+    mocker.get(
+        f'{gitlab_instance.repo_url}/groups/{namespace_quoted}/projects',
+        request_headers=gitlab_instance.headers,
+        json=[],
+        additional_matcher=match_other_page,
     )
 
 
 def test_repo_url():
-    repo_url = GitLab(dict(scheme='http', host='foo')).repo_url
+    repo_url = GitLab(dict(
+        scheme='http',
+        host='foo',
+        namespace='fizz/buzz',
+    )).repo_url
     assert repo_url == f'http://foo/api/{GitLab.DEFAULT_API_VERSION}'
 
-    repo_url = GitLab(dict(scheme='https', host='bar', api_version='v2')).repo_url
+    repo_url = GitLab(dict(
+        scheme='https',
+        host='bar',
+        api_version='v2',
+        namespace='fizz/buzz',
+    )).repo_url
     assert repo_url == 'https://bar/api/v2'
 
 
 def test_path():
-    path = GitLab(dict(namespace='foo', project='bar')).path
-    assert path == 'foo/bar'
+    path = GitLab(dict(namespace='foo/fuu', project='bar')).path
+    assert path == 'foo/fuu/bar'
 
 
 def test_headers():
-    headers = GitLab(dict(token='foo')).headers
+    headers = GitLab(dict(token='foo', namespace='fizz/buzz')).headers
     assert headers == {'Authorization': 'Bearer foo'}
 
 
@@ -65,7 +91,7 @@ def test_project_id(requests_mock):
         scheme='http',
         host='foo.bar',
         token='buzz',
-        namespace='fizz',
+        namespace='fizz/boop',
         project='proj1',
     )
     gitlab = GitLab(options)
@@ -99,7 +125,7 @@ def test_projects(requests_mock):
         scheme='http',
         host='foo.bar',
         token='buzz',
-        namespace='fizz',
+        namespace='fizz/buzz',
     ))
 
     mock_projects(requests_mock, gitlab)
@@ -160,7 +186,7 @@ def test_create_project_variables(requests_mock):
     requests_mock.post(
         (
             f'{gitlab.repo_url}/projects/{project_id}/variables?id={project_id}'
-            f'&variable_type=file&key={aws_variable_name}&value={value}'
+            f'&variable_type=file&key={aws_variable_name}&value={quote_plus(value)}'
         ),
         request_headers=gitlab.headers,
     )
