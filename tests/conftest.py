@@ -71,7 +71,7 @@ def merge_requests():
             },
         ]
         m.get(
-            'https://server/api/v4/projects',
+            'https://server/api/v4/groups/user/projects',
             json=[
                 project,
             ],
