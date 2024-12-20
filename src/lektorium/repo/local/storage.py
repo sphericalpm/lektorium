@@ -710,6 +710,11 @@ class GitlabStorage(GitStorage):
             **extra_options,
         )
 
+    @staticmethod
+    def update_gitlab_ci(dir):
+        with open(str(dir / '.gitlab-ci.yml'), 'w') as fo:
+            fo.write(GITLAB_CI_TEMPLATE)
+
     async def create_site(self, lektor, name, owner, site_id, themes=None):
         site_workdir, options = await super().create_site(lektor, name, owner, site_id, themes)
         if not self.skip_aws:
@@ -723,8 +728,8 @@ class GitlabStorage(GitStorage):
                     s3_bucket_name=bucket_name,
                     cloudfront_id=distribution_id,
                 ))
-            with open(str(site_workdir / '.gitlab-ci.yml'), 'w') as fo:
-                fo.write(GITLAB_CI_TEMPLATE)
+
+            self.update_gitlab_ci(site_workdir)
 
             run_local = functools.partial(run, cwd=site_workdir)
             await async_run(run_local, 'git add .')
@@ -739,6 +744,7 @@ class GitlabStorage(GitStorage):
         return site_workdir, options
 
     def request_release(self, site_id, session_id, session_dir):
+        self.update_gitlab_ci(session_dir)
         super().request_release(site_id, session_id, session_dir)
         site = self.config[site_id]
         session = site.sessions[session_id]
