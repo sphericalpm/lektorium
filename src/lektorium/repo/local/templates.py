@@ -14,13 +14,17 @@ lektorium-aws-deploy:
     LANG: C.UTF-8
     AWS_PROFILE: {AWS_PROFILE_NAME}
     GIT_SUBMODULE_STRATEGY: recursive
+    GIT_SUBMODULE_FORCE_HTTPS: "true"
   script:
     - apk add --update python3 python3-dev libffi-dev openssl-dev build-base cargo
     - apk add --update py3-pip || true
+    - python3 -m venv ./venv
+    - . ./venv/bin/activate
     - pip3 install --upgrade "lektor==3.2.0" pytz "markupsafe==2.0.1" "Flask==1.1.4"
     - lektor plugins add lektor-s3
     - lektor build
     - lektor deploy "{LECTOR_AWS_SERVER_NAME}"
+    - deactivate
   only:
     - master
 '''
