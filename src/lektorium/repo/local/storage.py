@@ -744,7 +744,12 @@ class GitlabStorage(GitStorage):
         return site_workdir, options
 
     def request_release(self, site_id, session_id, session_dir):
-        self.update_gitlab_ci(session_dir)
+        if self.skip_aws:
+            ci_file = session_dir / '.gitlab-ci.yml'
+            if ci_file.exists():
+                ci_file.unlink()
+        else:
+            self.update_gitlab_ci(session_dir)
         super().request_release(site_id, session_id, session_dir)
         site = self.config[site_id]
         session = site.sessions[session_id]
