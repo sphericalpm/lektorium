@@ -159,7 +159,7 @@ class Query(ObjectType):
                 themes = []
                 if bool(session.edit_url):
                     session_dir = repo.sessions_root / site.site_id / session['session_id']
-                    themes = repo.storage.repo_themes(session_dir)
+                    themes = repo.storage.config_dir_themes(session_dir)
                 yield dict(**session, themes=themes, site=site)
 
     @inject_permissions
