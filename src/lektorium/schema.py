@@ -192,7 +192,7 @@ class Query(ObjectType):
     @repo
     def resolve_themes(self, info, site_id, repo):
         if site_id:
-            return repo.storage.site_themes(site_id)
+            return repo.storage.site_themes(site_id)[::-1]
         return [
             {'name': theme, 'active': True}
             for theme in repo.storage.themes().values()
