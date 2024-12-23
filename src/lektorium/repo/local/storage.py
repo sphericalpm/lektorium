@@ -79,7 +79,8 @@ class Themer:
 
     def themes(self, names=[]):
         repos_dict = self.make_theme_dict(self.theme_repos)
-        repos = [repo for repo, name in repos_dict.items() if name in names]
+        rev_repos_dict = {name: repo for repo, name in repos_dict.items()}
+        repos = [rev_repos_dict[name] for name in names if name in rev_repos_dict]
         if repos:
             return self.make_theme_dict(repos)
         return repos_dict
