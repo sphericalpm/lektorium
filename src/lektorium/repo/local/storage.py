@@ -123,6 +123,13 @@ class Themer:
         ]
         return themes
 
+    def config_dir_themes(self, config_dir):
+        config = self.directory_config(config_dir)
+        return [
+            theme.strip() for theme in
+            config.get('project.themes', '').split(',')
+        ]
+
     def repo_themes(self, repo_dir):
         theme_paths = run_out(
             'git config --file .gitmodules --name-only --get-regexp path | tee',
@@ -680,7 +687,8 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
         return site_repo
 
     def request_release(self, site_id, session_id, session_dir):
-        self.set_themes_config(session_dir, self.repo_themes(session_dir)[::-1])
+        themes = self.config_dir_themes(session_dir)
+        self.set_themes_config(session_dir, themes[::-1])
         self.save_session(site_id, session_id, session_dir)
 
     def __repr__(self):
