@@ -564,9 +564,11 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
         run_local('git submodule update --init --recursive')
         run_local(f'git checkout --recurse-submodules -b session-{session_id}')
 
-        if themes is not None:
-            set_fn = unsync.unsync()(self.set_theme_submodules)
-            set_fn(session_dir, self.themes(themes)).result()
+        if themes is None:
+            themes = self.repo_themes(session_dir)[::-1]
+
+        set_fn = unsync.unsync()(self.set_theme_submodules)
+        set_fn(session_dir, self.themes(themes)).result()
 
         run_local(f'git push --set-upstream origin session-{session_id}')
         run_local('git submodule update --remote')
@@ -599,7 +601,7 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
         run_local('git add -A .')
         run_local('git diff-index --quiet HEAD || git commit -m "Update theme repos"')
 
-    async def create_site(self, lektor, name, owner, site_id, themes=None):
+    async def create_site(self, lektor, name, owner, site_id, themes=[]):
         site_workdir = self._site_dir(site_id)
         if site_workdir.exists():
             raise ValueError('workdir for such site-id already exists')
@@ -607,7 +609,7 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
         run_local = functools.partial(run, cwd=site_workdir)
 
         site_repo = await self.create_site_repo(site_id)
-        theme_repos = self.themes(themes)
+        theme_repos = self.themes(themes[::-1])
 
         if theme_repos:
             example_site = None
@@ -658,10 +660,7 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
 
         await async_run(run_local, 'git push --set-upstream origin master')
 
-        return (
-            site_workdir,
-            dict(repo=str(site_repo), themes=list(theme_repos.values())),
-        )
+        return site_workdir, dict(repo=str(site_repo))
 
     async def create_site_repo(self, site_id):
         site_repo = self.git.parent / site_id
@@ -680,6 +679,7 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
         return site_repo
 
     def request_release(self, site_id, session_id, session_dir):
+        self.set_themes_config(session_dir, self.repo_themes(session_dir)[::-1])
         self.save_session(site_id, session_id, session_dir)
 
     def __repr__(self):
