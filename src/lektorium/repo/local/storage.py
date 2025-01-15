@@ -96,7 +96,7 @@ class Themer:
         run_local('git init .')
         run_local(f'git remote add origin {self.config[site_id]["repo"]}')
         run_local('git config core.sparseCheckout true')
-        run_local(f'echo "{site_id}.lektorproject" >> .git/info/sparse-checkout')
+        run_local('echo "*.lektorproject" >> .git/info/sparse-checkout')
         run_local('git pull --depth=1 origin master')
         return self.site_config(sparce_site_id)
 
