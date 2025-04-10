@@ -298,11 +298,17 @@ class AsyncDockerServer(AsyncServer):
             'http.routers': {
                 route_name: {
                     'entrypoints': 'websecure',
+                    'middlewares': 'no-cache-headers',
                     'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
                     'tls': {},
                     'tls.domains[0].main': f'*.{self.sessions_domain}',
                     **({} if skip_resolver else {'tls.certresolver': 'le'}),
                 },
+            },
+            'http.middlewares.no-cache-headers.headers.customresponseheaders': {
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
             },
             f'http.services.{route_name}.loadbalancer.server.port': f'{self.LEKTOR_PORT}',
         }
