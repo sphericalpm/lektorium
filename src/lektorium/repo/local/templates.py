@@ -22,6 +22,22 @@ lektorium-aws-deploy:
     - . ./venv/bin/activate
     - pip3 install --upgrade "lektor==3.2.0" pytz "markupsafe==2.0.1" "Flask==1.1.4"
     - lektor plugins add lektor-s3
+    - |
+      themes=$(grep -E '^themes[[:space:]]*=' *.lektorproject  | cut -d'=' -f2- | xargs)
+      if [[ "$themes" == *","* ]]; then
+        echo "Creating combined theme"
+        rm -rf themes/combined_theme/
+        mkdir -p themes/combined_theme
+        echo "$themes" | tr ',' '\n' | while IFS= read -r item; do
+          theme=$(echo "$item" | xargs)
+          echo "Copying theme $theme"
+          cp -a themes/$theme/. themes/combined_theme/
+        done
+        sed -i '/^themes[[:space:]]*=.*/s//themes = combined_theme/' *.lektorproject
+      fi
+    - |
+      echo "Lektor theme config:"
+      grep "themes" *.lektorproject
     - lektor build
     - lektor deploy "{LECTOR_AWS_SERVER_NAME}"
     - deactivate
