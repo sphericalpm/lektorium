@@ -28,7 +28,7 @@ lektorium-aws-deploy:
         echo "Creating combined theme"
         rm -rf themes/combined_theme/
         mkdir -p themes/combined_theme
-        echo "$themes" | tr ',' '\\n' | while IFS= read -r item; do
+        echo "$themes" | tr ',' '\n' | while IFS= read -r item; do
           theme=$(echo "$item" | xargs)
           echo "Copying theme $theme"
           cp -a themes/$theme/. themes/combined_theme/
