@@ -1,0 +1,13 @@
+company-website:
+  email: mv@company.pm
+  gitlab:
+    host: gitlab
+    namespace: user
+    project: company-website
+  owner: Muser Museryan
+site.url:
+  branch: src
+  email: user@example.com
+  owner: User Userovich
+  repo: git@gitlab:user/site.repo.git
+  url: https://site.url
