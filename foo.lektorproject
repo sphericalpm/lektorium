@@ -1,6 +1,0 @@
-
-[servers.lektorium-aws]
-name = Lektorium AWS
-enabled = yes
-target = s3://bucket_name
-cloudfront = dist_id
