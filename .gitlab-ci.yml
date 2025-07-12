@@ -16,3 +16,31 @@ lektorium-deploy:
     - docker ps -a
   only:
     - master
+
+stages:
+  - sync
+
+manual_sync:
+  stage: sync
+  image: alpine:latest
+  script:
+    - apk add --no-cache git rsync openssh-client
+
+    - repo_url=$(echo "${CI_REPOSITORY_URL}" | sed 's/.*@//')
+
+    - git remote set-url origin https://oauth2:${CI_ACCESS_TOKEN}@$repo_url
+
+    - git config --global user.name "GitLab CI"
+    - git config --global user.email "ci@${CI_SERVER_HOST}"
+
+    - git clone https://github.com/sphericalpm/lektorium.git /tmp/lektorium
+
+    - rsync -av --delete --exclude='.git' /tmp/lektorium/ ./
+
+    - git diff
+
+    - git commit -am 'Sync with upstream repo'
+    - git push origin HEAD:${CI_COMMIT_REF_NAME}
+
+  only:
+    - web
