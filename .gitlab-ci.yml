@@ -1,4 +1,9 @@
+stages:
+  - sync
+  - deploy
+
 lektorium-deploy:
+  stage: deploy
   variables:
     LC_ALL: C.UTF-8
     LANG: C.UTF-8
@@ -8,17 +13,16 @@ lektorium-deploy:
     - cat /etc/alpine-release
     - apk add --update python3 git docker-cli bash
     - apk add --update py3-pip || true
-    - python3 -m pip install -U pip
+    - python3 -m venv ./venv
+    - . ./venv/bin/activate
     - git tag && git status && git describe
     - pip install 'spherical-dev[dev]>=0.2.2,<0.3.0' wheel
     - cp ${LEKTORIUM_DEPLOY_CONFIG} invoke.yaml
     - inv deploy
     - docker ps -a
+    - deactivate
   only:
     - master
-
-stages:
-  - sync
 
 manual_sync:
   stage: sync
