@@ -14,6 +14,7 @@ IMAGE = 'lektorium'
 CONTAINER = IMAGE
 LEKTOR_BASE = PROXY_BASE = 'alpine'
 LEKTOR_IMAGE = f'{IMAGE}-lektor'
+LECTERN_IMAGE = f'{IMAGE}-lectern'
 PROXY_IMAGE = f'{IMAGE}-proxy'
 PROXY_CONTAINER = PROXY_IMAGE
 
@@ -39,11 +40,13 @@ def get_skip_resolver(ctx):
 @task
 def build_lektor_image(ctx):
     lektor_dir = f'{CONTAINERS_BASE}/lektor'
-    ctx.run((
-        'docker build '
-        f'--build-arg BASE_IMAGE={LEKTOR_BASE} '
-        f'--tag {LEKTOR_IMAGE} {lektor_dir}'
-    ))
+    ctx.run(f'docker build --build-arg BASE_IMAGE={LEKTOR_BASE} --tag {LEKTOR_IMAGE} {lektor_dir}')
+
+
+@task
+def build_lectern_image(ctx):
+    lektor_dir = f'{CONTAINERS_BASE}/lectern'
+    ctx.run(f'docker build --build-arg BASE_IMAGE={LEKTOR_BASE} --tag {LECTERN_IMAGE} {lektor_dir}')
 
 
 @task
@@ -51,12 +54,12 @@ def build_nginx_image(ctx, server_name=None):
     if server_name is None:
         server_name = ctx['server-name']
     proxy_dir = f'{CONTAINERS_BASE}/nginx-proxy'
-    ctx.run((
+    ctx.run(
         'docker build '
         f'--build-arg BASE_IMAGE={PROXY_BASE} '
         f'--build-arg SERVER_NAME={server_name} '
         f'--tag {PROXY_IMAGE} {proxy_dir}'
-    ))
+    )
 
 
 def lektorium_labels(server_name, port=80, skip_resolver=False):
@@ -84,14 +87,7 @@ def run_nginx(ctx, network=None):
         ctx["server-name"],
         skip_resolver=get_skip_resolver(ctx),
     )
-    ctx.run((
-        f'docker run '
-        f'-d --restart unless-stopped '
-        f'--net {network} '
-        f'--name {PROXY_CONTAINER} '
-        f'{labels} '
-        f'{PROXY_IMAGE} '
-    ))
+    ctx.run(f'docker run -d --restart unless-stopped --net {network} --name {PROXY_CONTAINER} {labels} {PROXY_IMAGE} ')
 
 
 @task
@@ -106,15 +102,12 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
     cert_options = ''
     volumes = ''
     if get_skip_resolver(ctx):
-        volumes = ((
+        volumes = (
             '-v ./certs/:/etc/certs '
             f'-v {ctx["dev-certs"]["chain"]}:/etc/certs/cert.pem '
             f'-v {ctx["dev-certs"]["key"]}:/etc/certs/key.pem '
-        ))
-        cert_options = ((
-            '--entrypoints.websecure.http.tls=true '
-            '--providers.file.filename=/etc/certs/traefik-config.yml '
-        ))
+        )
+        cert_options = '--entrypoints.websecure.http.tls=true --providers.file.filename=/etc/certs/traefik-config.yml '
     else:
         volumes = '-v traefik-letsencrypt:/letsencrypt '
         resolver = flatten_options(
@@ -140,27 +133,29 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
     }
     labels = named_args('--label ', flatten_options(labels, 'traefik'))
 
-    command = ' '.join([
-        'docker create',
-        '--restart unless-stopped',
-        f'--name {PROXY_CONTAINER}',
-        '-v /var/run/docker.sock:/var/run/docker.sock',
-        f'{volumes}',
-        f'-p {ip or ""}{":" if ip else ""}80:80',
-        f'-p {ip or ""}{":" if ip else ""}443:443',
-        f'{env}',
-        f'{labels}',
-        f'{image}',
-        '--accessLog',
-        '--api.dashboard',
-        f'{resolver}',
-        '--entrypoints.web.address=:80',
-        '--entrypoints.websecure.address=:443',
-        '--log.level=DEBUG',
-        '--log',
-        '--providers.docker.exposedbydefault=false',
-        f'{cert_options}',
-    ])
+    command = ' '.join(
+        [
+            'docker create',
+            '--restart unless-stopped',
+            f'--name {PROXY_CONTAINER}',
+            '-v /var/run/docker.sock:/var/run/docker.sock',
+            f'{volumes}',
+            f'-p {ip or ""}{":" if ip else ""}80:80',
+            f'-p {ip or ""}{":" if ip else ""}443:443',
+            f'{env}',
+            f'{labels}',
+            f'{image}',
+            '--accessLog',
+            '--api.dashboard',
+            f'{resolver}',
+            '--entrypoints.web.address=:80',
+            '--entrypoints.websecure.address=:443',
+            '--log.level=DEBUG',
+            '--log',
+            '--providers.docker.exposedbydefault=false',
+            f'{cert_options}',
+        ]
+    )
     ctx.run(command)
     ctx.run(f'docker network create {network}', warn=True)
     ctx.run(f'docker network connect {network} {PROXY_CONTAINER}')
@@ -174,23 +169,21 @@ def build_server_image(ctx):
 
     server_dir = f'{CONTAINERS_BASE}/server'
     with (pathlib.Path(server_dir) / 'key').open('w') as key_file:
-        key = os.linesep.join((
-            '-----BEGIN RSA PRIVATE KEY-----',
-            *ctx['key'],
-            '-----END RSA PRIVATE KEY-----',
-            '',
-        ))
+        key = os.linesep.join(
+            (
+                '-----BEGIN RSA PRIVATE KEY-----',
+                *ctx['key'],
+                '-----END RSA PRIVATE KEY-----',
+                '',
+            )
+        )
         key_file.write(key)
     ctx.run(f'rm {server_dir}/lektorium*.whl', warn=True)
     ctx.run(f'pip wheel -w {server_dir} --no-deps .')
-    ctx.run((
-        f'docker build --tag {IMAGE} '
-        f'-f {server_dir}/Dockerfile.ubuntu '
-        f'{server_dir}'
-    ))
+    ctx.run((f'docker build --tag {IMAGE} -f {server_dir}/Dockerfile.ubuntu {server_dir}'))
 
 
-@task(build_lektor_image, build_server_image)
+@task(build_lectern_image, build_lektor_image, build_server_image)
 def build(ctx):
     pass
 
@@ -216,7 +209,7 @@ def run(
     ctx.run(f'docker kill {CONTAINER}', warn=True)
     ctx.run(f'docker rm {CONTAINER}', warn=True)
     labels = lektorium_labels(ctx["server-name"], 8000, get_skip_resolver(ctx))
-    ctx.run((
+    ctx.run(
         f'docker create {create_options} {env} '
         f'--name {CONTAINER} '
         f'--net {network} '
@@ -225,7 +218,7 @@ def run(
         f'{labels} '
         f'{IMAGE} '
         f'{cfg} "{auth}"'
-    ))
+    )
     ctx.run(f'docker network create {network}', warn=True)
     ctx.run(f'docker network connect {network} {CONTAINER}')
     ctx.run(f'docker start {start_options or ""} {CONTAINER}')

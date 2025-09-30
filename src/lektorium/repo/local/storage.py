@@ -72,10 +72,7 @@ class ConfigGetter:
 class Themer:
     @cached_property
     def theme_repos(self):
-        return [
-            item.strip() for item in
-            os.environ.get('LEKTORIUM_LEKTOR_THEME', '').split(';')
-        ]
+        return [item.strip() for item in os.environ.get('LEKTORIUM_LEKTOR_THEME', '').split(';')]
 
     def themes(self, names=[]):
         repos_dict = self.make_theme_dict(self.theme_repos)
@@ -106,9 +103,7 @@ class Themer:
             config = self.sparce_repo_config(site_id)
         all_themes = self.themes().values()
         config_themes = [
-            theme.strip() for theme in
-            config.get('project.themes', '').split(',')
-            if theme.strip() in all_themes
+            theme.strip() for theme in config.get('project.themes', '').split(',') if theme.strip() in all_themes
         ]
 
         themes = config_themes[:]
@@ -117,18 +112,12 @@ class Themer:
                 themes.append(name)
 
         all_active = False if config_themes else True
-        themes = [
-            {'name': name, 'active': True if all_active or name in config_themes else False}
-            for name in themes
-        ]
+        themes = [{'name': name, 'active': True if all_active or name in config_themes else False} for name in themes]
         return themes
 
     def config_dir_themes(self, config_dir):
         config = self.directory_config(config_dir)
-        return [
-            theme.strip() for theme in
-            config.get('project.themes', '').split(',')
-        ]
+        return [theme.strip() for theme in config.get('project.themes', '').split(',')]
 
     def repo_themes(self, repo_dir):
         theme_paths = run_out(
@@ -154,6 +143,7 @@ class Themer:
             del config['project.themes']
         else:
             config['project.themes'] = ','.join(theme_names)
+        del config['packages.lektor-tinymce']
         config.save()
 
     async def set_theme_submodules(self, dir, new_themes):
@@ -259,9 +249,9 @@ class FileConfig(dict):
         return {
             sk: sv
             for sk, sv in site_config.data.items()
-            if sk not in ('site_id', 'staging_url') and (
-                sk != 'repo' or GitlabStorage.GITLAB_SECTION_NAME not in site_config.data
-            ) and (sk != 'name' or sv != site_config['site_id'])
+            if sk not in ('site_id', 'staging_url')
+            and (sk != 'repo' or GitlabStorage.GITLAB_SECTION_NAME not in site_config.data)
+            and (sk != 'name' or sv != site_config['site_id'])
         }
 
 
@@ -273,6 +263,7 @@ class FileStorageMixin:
         config = {}
         if path.exists():
             with path.open('rb') as config_file:
+
                 def iter_sites(config_file):
                     config_data = yaml.load(config_file, Loader=yaml.Loader) or {}
                     for site_id, props in config_data.items():
@@ -287,6 +278,7 @@ class FileStorageMixin:
                         props['site_id'] = site_id
                         props.setdefault('name', site_id)
                         yield props
+
                 sites = (Site(**props) for props in iter_sites(config_file))
                 config = {s['site_id']: s for s in sites}
         return cls.CONFIG_CLASS(path, config)
@@ -385,10 +377,7 @@ class GitLab:
             headers=self.headers,
         )
         response.raise_for_status()
-        objects = [
-            x for x in response.json()
-            if x[path_attribute] == self.options['namespace']
-        ]
+        objects = [x for x in response.json() if x[path_attribute] == self.options['namespace']]
         if objects:
             return one(objects)['id']
         return None
@@ -474,10 +463,7 @@ class GitLab:
     def projects(self):
         projects, page = [], 1
         while True:
-            url = (
-                '{scheme}://{host}/api/{api_version}/'
-                'groups/{encoded_namespace}/projects'
-            ).format(**self.options)
+            url = ('{scheme}://{host}/api/{api_version}/groups/{encoded_namespace}/projects').format(**self.options)
             response = requests.get(
                 url,
                 headers=self.headers,
@@ -499,11 +485,7 @@ class GitLab:
     def merge_requests(self):
         response = requests.get(
             '{scheme}://{host}/api/{api_version}/{scope}merge_requests'.format(
-                scope=(
-                    f'projects/{self.project_id}/'
-                    if 'project' in self.options else
-                    ''
-                ),
+                scope=(f'projects/{self.project_id}/' if 'project' in self.options else ''),
                 **self.options,
             ),
             headers=self.headers,
@@ -551,7 +533,7 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
 
     @staticmethod
     def init(path):
-        lektorium = (path / 'lektorium')
+        lektorium = path / 'lektorium'
         lektorium.mkdir(parents=True, exist_ok=True)
         run('git init --bare .', cwd=lektorium)
         run('git symbolic-ref HEAD refs/heads/master', cwd=lektorium)
@@ -654,10 +636,7 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
         await async_run(run_local, 'git fetch')
         await async_run(run_local, 'git reset origin/master')
         (site_workdir / '.gitattributes').write_text(
-            os.linesep.join(
-                f'{m} filter=lfs diff=lfs merge=lfs -text'
-                for m in LFS_MASKS
-            ),
+            os.linesep.join(f'{m} filter=lfs diff=lfs merge=lfs -text' for m in LFS_MASKS),
         )
 
         await async_run(run_local, 'git add .')
@@ -733,10 +712,12 @@ class GitlabStorage(GitStorage):
             distribution_id, domain_name = aws.create_cloudfront_distribution(bucket_name)
 
             with open(str(site_workdir / f'{name}.lektorproject'), 'a') as fo:
-                fo.write(LECTOR_S3_SERVER_TEMPLATE.format(
-                    s3_bucket_name=bucket_name,
-                    cloudfront_id=distribution_id,
-                ))
+                fo.write(
+                    LECTOR_S3_SERVER_TEMPLATE.format(
+                        s3_bucket_name=bucket_name,
+                        cloudfront_id=distribution_id,
+                    )
+                )
 
             self.update_gitlab_ci(site_workdir)
 
@@ -745,10 +726,12 @@ class GitlabStorage(GitStorage):
             await async_run(run_local, 'git commit -m "Add AWS deploy integration"')
             await async_run(run_local, 'git push --set-upstream origin master')
 
-            options.update({
-                'cloudfront_domain_name': domain_name,
-                'url': f'https://{domain_name}',
-            })
+            options.update(
+                {
+                    'cloudfront_domain_name': domain_name,
+                    'url': f'https://{domain_name}',
+                }
+            )
 
         return site_workdir, options
 
@@ -786,7 +769,9 @@ class GitlabStorage(GitStorage):
         return await self.gitlab(site_id).init_project()
 
     def gitlab(self, project, branch='master'):
-        return GitLab(self.gitlab_options(
-            project=project,
-            branch=branch,
-        ))
+        return GitLab(
+            self.gitlab_options(
+                project=project,
+                branch=branch,
+            )
+        )

@@ -19,6 +19,7 @@ from .auth0 import Auth0Client, FakeAuth0Client
 from .jwt import GraphExecutionError, JWTMiddleware
 from .repo.local import (
     AsyncDockerServer,
+    AsyncDockerServerLectern,
     AsyncLocalServer,
     FakeServer,
     FileStorage,
@@ -55,6 +56,7 @@ class ServerType(BaseEnum):
     FAKE = FakeServer
     ASYNC = AsyncLocalServer
     DOCKER = AsyncDockerServer
+    LECTERN = AsyncDockerServerLectern
 
 
 def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
@@ -96,7 +98,7 @@ def create_app(repo_type=RepoType.LIST, auth='', repo_args=''):
             storage = storage_class(pathlib.Path(storage_path))
 
         sessions_root = None
-        if server_type == ServerType.DOCKER:
+        if server_type in (ServerType.DOCKER, ServerType.LECTERN):
             sessions_root = pathlib.Path('/sessions')
             if not sessions_root.exists():
                 raise RuntimeError('/sessions not exists')
@@ -143,10 +145,9 @@ def init_app(repo, auth0_options=None, auth0_client=None):
         return aiohttp.web.FileResponse(client_dir / 'public' / 'index.html')
 
     async def auth0_config(request):
-        options = {
-            x: auth0_options.get(f'data-auth0-{x}', None)
-            for x in ['domain', 'id', 'api']
-        } if auth0_options else {}
+        options = (
+            {x: auth0_options.get(f'data-auth0-{x}', None) for x in ['domain', 'id', 'api']} if auth0_options else {}
+        )
         options = json.dumps(options)
         return aiohttp.web.Response(
             text=f'let lektoriumAuth0Config={options};',
@@ -184,11 +185,7 @@ def init_app(repo, auth0_options=None, auth0_client=None):
         context=dict(
             repo=repo,
             auth0_client=auth0_client,
-            **(
-                {'user_permissions': ['admin']}
-                if auth0_options is None else
-                {}
-            ),
+            **({'user_permissions': ['admin']} if auth0_options is None else {}),
         ),
         error_formatter=error_formatter,
     )
