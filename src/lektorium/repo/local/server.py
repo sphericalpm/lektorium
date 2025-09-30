@@ -59,7 +59,7 @@ class FakeServer(Server):
             raise RuntimeError()
         port = self.generate_port(list(self.serves.values()))
         self.serves[path] = port
-        return f'http://localhost:{self.serves[path]}/'
+        return f'http://localhost:{self.serves[path]}/', ''
 
     def stop_server(self, path, finalizer=None):
         self.serves.pop(path)
@@ -85,6 +85,7 @@ class AsyncServer(Server):
                     return ('Failed to start',) * 2
                 return (started.result(),) * 2
             return (functools.partial(resolver, started), 'Starting')
+
         started = asyncio.Future()
         task = asyncio.ensure_future(self.start(path, started, dict(session)))
         self.serves[path] = [lambda: task if task.cancel() else task, started]
@@ -135,7 +136,7 @@ class AsyncLocalServer(AsyncServer):
                 started.set_exception(exc)
                 return
             log.info('started')
-            started.set_result(f'http://localhost:{port}/')
+            started.set_result(f'http://localhost:{port}/', '')
             try:
                 async for line in proc.stdout:
                     pass
@@ -174,7 +175,7 @@ class AsyncDockerServer(AsyncServer):
                 if f'{self.LABEL_PREFIX}.edit_url' not in x['Config']['Labels']:
                     continue
                 session = {
-                    k[len(self.LABEL_PREFIX) + 1:]: v
+                    k[len(self.LABEL_PREFIX) + 1 :]: v
                     for k, v in x['Config']['Labels'].items()
                     if k.startswith(self.LABEL_PREFIX)
                 }
@@ -183,28 +184,24 @@ class AsyncDockerServer(AsyncServer):
                     creation_time = datetime.fromtimestamp(creation_time)
                     session['creation_time'] = creation_time
                 yield session
+
         docker = aiodocker.Docker()
-        containers = (
-            await c.show()
-            for c in await docker.containers.list()
-        )
+        containers = (await c.show() for c in await docker.containers.list())
         return list(parse([x async for x in containers]))
 
     @property
     async def network_mode(self):
         if self.network is None:
             docker = aiodocker.Docker()
-            containers = (
-                await c.show()
-                for c in await docker.containers.list()
-            )
+            containers = (await c.show() for c in await docker.containers.list())
             networks = [
-                c['HostConfig']['NetworkMode']
-                async for c in containers
-                if c['Name'] == f'/{self.server_container}'
+                c['HostConfig']['NetworkMode'] async for c in containers if c['Name'] == f'/{self.server_container}'
             ]
             self.network = one(networks)
         return self.network
+
+    def env_vars(self, session):
+        return []
 
     async def start(self, path, started, session):
         log = logging.getLogger(f'Server({path})')
@@ -214,15 +211,8 @@ class AsyncDockerServer(AsyncServer):
             try:
                 session_id = pathlib.Path(path).name
                 container_name = f'{self.lektor_image}-{session_id}'
-                session_address = self.session_address(session_id, container_name)
                 labels = flatten_options(self.lektor_labels(session_id), 'traefik')
-                session = {
-                    **session,
-                    'edit_url': session_address,
-                }
-                if 'creation_time' in session:
-                    session['creation_time'] = str(session['creation_time'].timestamp())
-                session.pop('parked_time', None)
+                session = self.update_session_params(session_id, container_name, session)
                 labels.update(flatten_options(session, self.LABEL_PREFIX))
                 docker = aiodocker.Docker()
                 container = await docker.containers.run(
@@ -235,11 +225,8 @@ class AsyncDockerServer(AsyncServer):
                                 self.server_container,
                             ],
                         ),
-                        Cmd=[
-                            '--project', f'{path}',
-                            'server',
-                            '--host', '0.0.0.0',
-                        ],
+                        Cmd=['--project', f'{path}', 'server', '--host', '0.0.0.0'],
+                        Env=self.env_vars(session),
                         Labels=labels,
                         Image=self.lektor_image,
                     ),
@@ -261,7 +248,7 @@ class AsyncDockerServer(AsyncServer):
                     )
             else:
                 log.info('started')
-                started.set_result(session_address)
+                started.set_result((session['edit_url'], session['preview_url']))
                 self.serves[path][0] = container.kill
             finally:
                 if stream is not None:
@@ -282,6 +269,17 @@ class AsyncDockerServer(AsyncServer):
             if info['Name'] == f'/{container_name}':
                 await container.kill()
         callable(finalizer) and finalizer()
+
+    def update_session_params(self, session_id, container_name, session):
+        session = {
+            **session,
+            'edit_url': self.session_address(session_id, container_name),
+            'preview_url': '',
+        }
+        if 'creation_time' in session:
+            session['creation_time'] = str(session['creation_time'].timestamp())
+        session.pop('parked_time', None)
+        return session
 
     def session_address(self, session_id, container_name):
         if self.sessions_domain is None:
@@ -312,3 +310,44 @@ class AsyncDockerServer(AsyncServer):
             },
             f'http.services.{route_name}.loadbalancer.server.port': f'{self.LEKTOR_PORT}',
         }
+
+
+class AsyncDockerServerLectern(AsyncDockerServer):
+    LECTERN_PORT = 4999
+
+    def __init__(self, *, lektor_image='lektorium-lectern', **kwargs):
+        super().__init__(lektor_image=lektor_image, **kwargs)
+
+    def env_vars(self, session):
+        return [
+            f'VITE_TINYMCE_KEY={os.environ.get("TINYMCE_KEY", "")}',
+            f'VITE_REDIRECT_URL={session["preview_url"]}',
+        ]
+
+    def update_session_params(self, session_id, container_name, session):
+        session = super().update_session_params(session_id, container_name, session)
+        session['preview_url'] = self.preview_session_address(session_id, container_name)
+        return session
+
+    def session_address(self, session_id, container_name):
+        if self.sessions_domain is None:
+            return f'https://{container_name}:{self.LECTERN_PORT}/lectern-admin/ui/'
+        return f'http://{session_id}.{self.sessions_domain}/lectern-admin/ui/'
+
+    def preview_session_address(self, session_id, container_name):
+        if self.sessions_domain is None:
+            return f'https://{container_name}:{self.LEKTOR_PORT}/'
+        return f'http://{session_id}-preview.{self.sessions_domain}'
+
+    def lektor_labels(self, session_id):
+        if self.sessions_domain is None:
+            return {}
+        labels = super().lektor_labels(session_id)
+        route_name = one(labels['http.routers'].keys())
+        labels[f'http.services.{route_name}.loadbalancer.server.port'] = f'{self.LECTERN_PORT}'
+        labels[f'http.services.{route_name}-preview.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
+        labels['http.routers'][f'{route_name}-preview'] = {**labels['http.routers'][route_name]}
+        labels['http.routers'][f'{route_name}-preview']['rule'] = f'Host(`{session_id}-preview.{self.sessions_domain}`)'
+        labels['http.routers'][f'{route_name}']['service'] = f'{route_name}'
+        labels['http.routers'][f'{route_name}-preview']['service'] = f'{route_name}-preview'
+        return labels

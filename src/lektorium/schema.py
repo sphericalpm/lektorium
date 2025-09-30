@@ -23,10 +23,7 @@ ADMIN = 'admin'
 
 class Site(ObjectType):
     def __init__(self, **kwargs):
-        super().__init__(**{
-            k: v for k, v in kwargs.items()
-            if k in self._meta.fields
-        })
+        super().__init__(**{k: v for k, v in kwargs.items() if k in self._meta.fields})
 
     site_id = String()
     site_name = String()
@@ -41,6 +38,7 @@ class Session(ObjectType):
     session_id = String()
     site_name = String()
     edit_url = String()
+    preview_url = String()
     creation_time = DateTime()
     custodian = String()
     custodian_email = String()
@@ -110,6 +108,7 @@ def repo(method):
     def wrapper(self, info, *args, **kwargs):
         repo = info.context['repo']
         return method(self, info, *args, repo=repo, **kwargs)
+
     return wrapper
 
 
@@ -165,10 +164,7 @@ class Query(ObjectType):
     @inject_permissions
     @repo
     async def resolve_sites(self, info, repo, permissions):
-        return [
-            Site(**x) for x in repo.sites
-            if ADMIN in permissions or f'user:{x["site_id"]}' in permissions
-        ]
+        return [Site(**x) for x in repo.sites if ADMIN in permissions or f'user:{x["site_id"]}' in permissions]
 
     @inject_permissions
     @repo
@@ -176,12 +172,9 @@ class Query(ObjectType):
         await repo.init_sessions()
         sessions = (Session(**x) for x in Query.sessions_list(repo))
         return [
-            x for x in sessions
-            if (
-                bool(x.edit_url) != parked and (
-                    ADMIN in permissions or f'user:{x.site.site_id}' in permissions
-                )
-            )
+            x
+            for x in sessions
+            if (bool(x.edit_url) != parked and (ADMIN in permissions or f'user:{x.site.site_id}' in permissions))
         ]
 
     @inject_permissions(admin=True)
@@ -193,10 +186,7 @@ class Query(ObjectType):
     def resolve_themes(self, info, site_id, repo):
         if site_id:
             return repo.storage.site_themes(site_id)[::-1]
-        return [
-            {'name': theme, 'active': True}
-            for theme in repo.storage.themes().values()
-        ]
+        return [{'name': theme, 'active': True} for theme in repo.storage.themes().values()]
 
     @inject_permissions(admin=True)
     async def resolve_user_permissions(self, info, user_id, permissions):
@@ -336,10 +326,7 @@ class CreateSite(MutationBase):
 
 
 MutationQuery = type(
-    'MutationQuery', (
-        ObjectType,
-    ), {
-        cls.REPO_METHOD: getattr(cls, 'Field')()
-        for cls in MutationBase.__subclasses__()
-    },
+    'MutationQuery',
+    (ObjectType,),
+    {cls.REPO_METHOD: getattr(cls, 'Field')() for cls in MutationBase.__subclasses__()},
 )

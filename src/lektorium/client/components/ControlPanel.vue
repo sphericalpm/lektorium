@@ -104,8 +104,16 @@
                                             v-if="session.editUrl && session.editUrl.startsWith('http')"
                                             :href="session.editUrl"
                                             target="_blank"
-                                        >{{ session.editUrl }}</a>
+                                        >Admin&nbsp;Interface</a>
                                         <span v-else>{{ session.editUrl }}</span>
+
+                                        <br>
+                                        <a
+                                            v-if="session.previewUrl && session.previewUrl.startsWith('http')"
+                                            :href="session.previewUrl"
+                                            target="_blank"
+                                        >Site&nbsp;Preview</a>
+                                        <span v-else-if="session.previewUrl">{{ session.previewUrl }}</span>
                                     </td>
                                     <td>
                                         <b-button-group>
@@ -473,6 +481,7 @@ module.exports = {
                     productionUrl
                     stagingUrl
                     editUrl
+                    previewUrl
                     themes
                     site {
                         siteId

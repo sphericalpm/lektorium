@@ -64,7 +64,7 @@ class Repo(BaseRepo):
 
     def init_sites(self):
         for site_id, site in self.config.items():
-            site_dir = (self.sessions_root / site_id)
+            site_dir = self.sessions_root / site_id
             if site_dir.exists():
                 for session_dir in site_dir.iterdir():
                     session = Session(
@@ -74,6 +74,7 @@ class Repo(BaseRepo):
                         custodian_email=site['email'],
                         parked_time=datetime.fromtimestamp(session_dir.lstat().st_mtime),
                         edit_url=None,
+                        preview_url=None,
                     )
                     site.sessions[session['session_id']] = session
 
@@ -106,6 +107,7 @@ class Repo(BaseRepo):
             for site in self.config.values():
                 for session_id, session in site.sessions.items():
                     yield session_id, (session, site)
+
         return dict(iterate())
 
     @property
@@ -142,9 +144,11 @@ class Repo(BaseRepo):
             creation_time=datetime.now(),
             custodian=custodian,
             custodian_email=custodian_email,
+            preview_url=None,
         )
         session_object['edit_url'] = self.server.serve_lektor(
-            session_dir, {
+            session_dir,
+            {
                 **session_object,
                 'site_id': site_id,
             },
@@ -174,6 +178,7 @@ class Repo(BaseRepo):
         self.server.stop_server(session_dir)
         self.storage.save_session(site_id, session_id, session_dir)
         session['edit_url'] = None
+        session['preview_url'] = None
         session['parked_time'] = datetime.now()
 
     def unpark_session(self, session_id):
@@ -209,12 +214,16 @@ class Repo(BaseRepo):
         if production_url is None:
             production_url = self.server.serve_static(site_root)
 
-        self.config[site_id] = Site(site_id, production_url, **dict(
-            name=name,
-            owner=owner,
-            email=email,
-            **site_options,
-        ))
+        self.config[site_id] = Site(
+            site_id,
+            production_url,
+            **dict(
+                name=name,
+                owner=owner,
+                email=email,
+                **site_options,
+            ),
+        )
 
     def request_release(self, session_id):
         if session_id not in self.sessions:

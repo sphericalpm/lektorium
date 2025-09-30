@@ -4,11 +4,13 @@ import bidict
 
 
 class Site(collections.abc.Mapping):
-    ATTR_MAPPING = bidict.bidict({
-        'name': 'site_name',
-        'email': 'custodian_email',
-        'owner': 'custodian',
-    })
+    ATTR_MAPPING = bidict.bidict(
+        {
+            'name': 'site_name',
+            'email': 'custodian_email',
+            'owner': 'custodian',
+        }
+    )
     RESTRICTED_KEYS = ('sessions', 'staging_url')
 
     def __init__(self, site_id, production_url, **props):
@@ -48,8 +50,12 @@ class Session(collections.abc.Mapping):
 
     def __getitem__(self, key):
         result = self.data[key]
-        if key == 'edit_url' and callable(result):
-            self[key], result = result()
+        if key == 'edit_url':
+            if callable(result):
+                self['edit_url'], result = result()
+            if isinstance(result, (list, tuple)):
+                self['edit_url'], self['preview_url'] = result
+                result, _ = result
         return result
 
     def __setitem__(self, key, value):
@@ -71,3 +77,7 @@ class Session(collections.abc.Mapping):
     @property
     def edit_url(self):
         return self['edit_url']
+
+    @property
+    def preview_url(self):
+        return self['preview_url']
