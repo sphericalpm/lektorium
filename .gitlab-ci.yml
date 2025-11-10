@@ -43,6 +43,7 @@ manual_sync:
 
     - git diff
 
+    - git add .
     - git commit -am 'Sync with upstream repo'
     - git push origin HEAD:${CI_COMMIT_REF_NAME}
 
