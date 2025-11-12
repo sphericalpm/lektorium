@@ -100,27 +100,34 @@
                                         </template>
                                     </td>
                                     <td>
-                                        <a
-                                            v-if="session.editUrl && session.editUrl.startsWith('http')"
-                                            :href="session.editUrl"
-                                            target="_blank"
-                                        >Admin&nbsp;Interface</a>
-                                        <span v-else>{{ session.editUrl }}</span>
+                                        <template v-if="session.editUrl">
+                                            <a
+                                                v-if="session.editUrl.startsWith('http')"
+                                                :href="session.editUrl"
+                                                target="_blank"
+                                            >Admin&nbsp;Interface</a>
+                                            <span v-else>{{ session.editUrl }}</span>
+                                        </tempate>
 
-                                        <br>
-                                        <a
-                                            v-if="session.previewUrl && session.previewUrl.startsWith('http')"
-                                            :href="session.previewUrl"
-                                            target="_blank"
-                                        >Site&nbsp;Preview</a>
-                                        <span v-else-if="session.previewUrl">{{ session.previewUrl }}</span>
+                                        <template v-if="session.previewUrl">
+                                            <br>
+                                            <a
+                                                v-if="session.previewUrl.startsWith('http')"
+                                                :href="session.previewUrl"
+                                                target="_blank"
+                                            >Site&nbsp;Preview</a>
+                                            <span v-else>{{ session.previewUrl }}</span>
+                                        </tempate>
 
-                                        <a
-                                            v-if="session.legacyAdminUrl && session.legacyAdminUrl.startsWith('http')"
-                                            :href="session.legacyAdminUrl"
-                                            target="_blank"
-                                        >Legacy&nbsp;Admin&nbsp;Interface</a>
-                                        <span v-else-if="session.legacyAdminUrl">{{ session.legacyAdminUrl }}</span>
+                                        <template v-if="session.legacyAdminUrl">
+                                            <br>
+                                            <a
+                                                v-if="session.legacyAdminUrl.startsWith('http')"
+                                                :href="session.legacyAdminUrl"
+                                                target="_blank"
+                                            >Legacy&nbsp;Admin&nbsp;Interface</a>
+                                            <span v-else>{{ session.legacyAdminUrl }}</span>
+                                        </tempate>
                                     </td>
                                     <td>
                                         <b-button-group>
