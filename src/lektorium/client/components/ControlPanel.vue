@@ -114,6 +114,13 @@
                                             target="_blank"
                                         >Site&nbsp;Preview</a>
                                         <span v-else-if="session.previewUrl">{{ session.previewUrl }}</span>
+
+                                        <a
+                                            v-if="session.legacyAdminUrl && session.legacyAdminUrl.startsWith('http')"
+                                            :href="session.legacyAdminUrl"
+                                            target="_blank"
+                                        >Legacy&nbsp;Admin&nbsp;Interface</a>
+                                        <span v-else-if="session.legacyAdminUrl">{{ session.legacyAdminUrl }}</span>
                                     </td>
                                     <td>
                                         <b-button-group>
@@ -482,6 +489,7 @@ module.exports = {
                     stagingUrl
                     editUrl
                     previewUrl
+                    legacyAdminUrl
                     themes
                     site {
                         siteId

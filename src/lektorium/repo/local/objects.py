@@ -54,7 +54,7 @@ class Session(collections.abc.Mapping):
             if callable(result):
                 self['edit_url'], result = result()
             if isinstance(result, (list, tuple)):
-                self['edit_url'], self['preview_url'] = result
+                self['edit_url'], self['preview_url'], self['legacy_admin_url'] = result
                 result, _ = result
         return result
 
@@ -81,3 +81,7 @@ class Session(collections.abc.Mapping):
     @property
     def preview_url(self):
         return self['preview_url']
+
+    @property
+    def legacy_admin_url(self):
+        return self['legacy_admin_url']

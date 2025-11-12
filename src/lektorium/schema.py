@@ -39,6 +39,7 @@ class Session(ObjectType):
     site_name = String()
     edit_url = String()
     preview_url = String()
+    legacy_admin_url = String()
     creation_time = DateTime()
     custodian = String()
     custodian_email = String()

@@ -17,6 +17,10 @@ class Session(dict):
     def preview_url(self) -> Optional[str]:
         return self.get('preview_url', None)
 
+    @property
+    def legacy_admin_url(self) -> Optional[str]:
+        return self.get('legacy_admin_url', None)
+
 
 VALID_MERGE_REQUEST = {
     'id': 123,
@@ -137,6 +141,7 @@ class Repo(BaseRepo):
                 session_id=session_id,
                 edit_url=f'https://edit.{session_id}-created.example.com',
                 preview_url=None,
+                legacy_admin_url=None,
                 creation_time=datetime.datetime.now(),
                 custodian=custodian_name,
                 custodian_email=custodian_email,
