@@ -75,6 +75,7 @@ class Repo(BaseRepo):
                         parked_time=datetime.fromtimestamp(session_dir.lstat().st_mtime),
                         edit_url=None,
                         preview_url=None,
+                        legacy_admin_url=None,
                     )
                     site.sessions[session['session_id']] = session
 
@@ -145,6 +146,7 @@ class Repo(BaseRepo):
             custodian=custodian,
             custodian_email=custodian_email,
             preview_url=None,
+            legacy_admin_url=None,
         )
         session_object['edit_url'] = self.server.serve_lektor(
             session_dir,
@@ -179,6 +181,7 @@ class Repo(BaseRepo):
         self.storage.save_session(site_id, session_id, session_dir)
         session['edit_url'] = None
         session['preview_url'] = None
+        session['legacy_admin_url'] = None
         session['parked_time'] = datetime.now()
 
     def unpark_session(self, session_id):

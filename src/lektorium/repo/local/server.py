@@ -248,7 +248,7 @@ class AsyncDockerServer(AsyncServer):
                     )
             else:
                 log.info('started')
-                started.set_result((session['edit_url'], session['preview_url']))
+                started.set_result((session['edit_url'], session['preview_url'], session['legacy_admin_url']))
                 self.serves[path][0] = container.kill
             finally:
                 if stream is not None:
@@ -275,6 +275,7 @@ class AsyncDockerServer(AsyncServer):
             **session,
             'edit_url': self.session_address(session_id, container_name),
             'preview_url': '',
+            'legacy_admin_url': '',
         }
         if 'creation_time' in session:
             session['creation_time'] = str(session['creation_time'].timestamp())
@@ -327,6 +328,7 @@ class AsyncDockerServerLectern(AsyncDockerServer):
     def update_session_params(self, session_id, container_name, session):
         session = super().update_session_params(session_id, container_name, session)
         session['preview_url'] = self.preview_session_address(session_id, container_name)
+        session['legacy_admin_url'] = self.legacy_admin_session_address(session_id, container_name)
         return session
 
     def session_address(self, session_id, container_name):
@@ -339,15 +341,28 @@ class AsyncDockerServerLectern(AsyncDockerServer):
             return f'https://{container_name}:{self.LEKTOR_PORT}/'
         return f'http://{session_id}-preview.{self.sessions_domain}'
 
+    def legacy_admin_session_address(self, session_id, container_name):
+        if self.sessions_domain is None:
+            return f'https://{container_name}:{self.LEKTOR_PORT}/admin/'
+        return f'http://{session_id}-legacy-admin.{self.sessions_domain}'
+
     def lektor_labels(self, session_id):
         if self.sessions_domain is None:
             return {}
         labels = super().lektor_labels(session_id)
         route_name = one(labels['http.routers'].keys())
         labels[f'http.services.{route_name}.loadbalancer.server.port'] = f'{self.LECTERN_PORT}'
+        labels['http.routers'][f'{route_name}']['service'] = f'{route_name}'
+
         labels[f'http.services.{route_name}-preview.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
         labels['http.routers'][f'{route_name}-preview'] = {**labels['http.routers'][route_name]}
         labels['http.routers'][f'{route_name}-preview']['rule'] = f'Host(`{session_id}-preview.{self.sessions_domain}`)'
-        labels['http.routers'][f'{route_name}']['service'] = f'{route_name}'
         labels['http.routers'][f'{route_name}-preview']['service'] = f'{route_name}-preview'
+
+        labels[f'http.services.{route_name}-legacy-admin.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
+        labels['http.routers'][f'{route_name}-legacy-admin'] = {**labels['http.routers'][route_name]}
+        labels['http.routers'][f'{route_name}-legacy-admin']['rule'] = (
+            f'Host(`{session_id}-legacy-admin.{self.sessions_domain}`)'
+        )
+        labels['http.routers'][f'{route_name}-legacy-admin']['service'] = f'{route_name}-legacy-admin'
         return labels
