@@ -344,7 +344,7 @@ class AsyncDockerServerLectern(AsyncDockerServer):
     def legacy_admin_session_address(self, session_id, container_name):
         if self.sessions_domain is None:
             return f'https://{container_name}:{self.LEKTOR_PORT}/admin/'
-        return f'http://{session_id}-legacy-admin.{self.sessions_domain}'
+        return f'http://{session_id}-legacy-admin.{self.sessions_domain}/admin/'
 
     def lektor_labels(self, session_id):
         if self.sessions_domain is None:

@@ -55,7 +55,7 @@ class Session(collections.abc.Mapping):
                 self['edit_url'], result = result()
             if isinstance(result, (list, tuple)):
                 self['edit_url'], self['preview_url'], self['legacy_admin_url'] = result
-                result, _ = result
+                result = result[0]
         return result
 
     def __setitem__(self, key, value):
