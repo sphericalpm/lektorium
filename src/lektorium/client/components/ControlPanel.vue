@@ -107,7 +107,7 @@
                                                 target="_blank"
                                             >Admin&nbsp;Interface</a>
                                             <span v-else>{{ session.editUrl }}</span>
-                                        </tempate>
+                                        </template>
 
                                         <template v-if="session.previewUrl">
                                             <br>
@@ -117,7 +117,7 @@
                                                 target="_blank"
                                             >Site&nbsp;Preview</a>
                                             <span v-else>{{ session.previewUrl }}</span>
-                                        </tempate>
+                                        </template>
 
                                         <template v-if="session.legacyAdminUrl">
                                             <br>
@@ -127,7 +127,7 @@
                                                 target="_blank"
                                             >Legacy&nbsp;Admin&nbsp;Interface</a>
                                             <span v-else>{{ session.legacyAdminUrl }}</span>
-                                        </tempate>
+                                        </template>
                                     </td>
                                     <td>
                                         <b-button-group>
