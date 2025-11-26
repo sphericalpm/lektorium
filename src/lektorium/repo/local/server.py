@@ -59,7 +59,7 @@ class FakeServer(Server):
             raise RuntimeError()
         port = self.generate_port(list(self.serves.values()))
         self.serves[path] = port
-        return f'http://localhost:{self.serves[path]}/', ''
+        return f'http://localhost:{self.serves[path]}/'
 
     def stop_server(self, path, finalizer=None):
         self.serves.pop(path)
@@ -136,7 +136,7 @@ class AsyncLocalServer(AsyncServer):
                 started.set_exception(exc)
                 return
             log.info('started')
-            started.set_result(f'http://localhost:{port}/', '')
+            started.set_result(f'http://localhost:{port}/')
             try:
                 async for line in proc.stdout:
                     pass
@@ -314,15 +314,13 @@ class AsyncDockerServer(AsyncServer):
 
 
 class AsyncDockerServerLectern(AsyncDockerServer):
-    LECTERN_PORT = 4999
-
     def __init__(self, *, lektor_image='lektorium-lectern', **kwargs):
         super().__init__(lektor_image=lektor_image, **kwargs)
 
     def env_vars(self, session):
         return [
-            f'VITE_TINYMCE_KEY={os.environ.get("TINYMCE_KEY", "")}',
-            f'VITE_REDIRECT_URL={session["preview_url"]}',
+            f'LECTERN_TINYMCE_KEY={os.environ.get("TINYMCE_KEY", "")}',
+            f'LECTERN_REDIRECT_URL={session["preview_url"]}',
         ]
 
     def update_session_params(self, session_id, container_name, session):
@@ -333,7 +331,7 @@ class AsyncDockerServerLectern(AsyncDockerServer):
 
     def session_address(self, session_id, container_name):
         if self.sessions_domain is None:
-            return f'https://{container_name}:{self.LECTERN_PORT}/lectern-admin/ui/'
+            return f'https://{container_name}:{self.LEKTOR_PORT}/lectern-admin/ui/'
         return f'http://{session_id}.{self.sessions_domain}/lectern-admin/ui/'
 
     def preview_session_address(self, session_id, container_name):
@@ -351,7 +349,7 @@ class AsyncDockerServerLectern(AsyncDockerServer):
             return {}
         labels = super().lektor_labels(session_id)
         route_name = one(labels['http.routers'].keys())
-        labels[f'http.services.{route_name}.loadbalancer.server.port'] = f'{self.LECTERN_PORT}'
+        labels[f'http.services.{route_name}.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
         labels['http.routers'][f'{route_name}']['service'] = f'{route_name}'
 
         labels[f'http.services.{route_name}-preview.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
