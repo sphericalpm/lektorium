@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lektorium"
+description = "a pragmatic web content management solution for those with way too many small sites"
+license = "MIT"
+authors = [{ name = "Anton Patrushev", email = "ap@spherical.pm" }]
+maintainers = [{name = "spherical.pm", email = "support@spherical.pm"}]
+readme = "README.md"
+requires-python = ">=3.8"
+
+# setuptools-scm
+dynamic = ["version"]
+
+dependencies = [
+    "aiodocker",
+    "aiohttp-graphql<1.1",
+    "aiohttp==3.6.3",
+    "appdirs",
+    "authlib",
+    "beautifulsoup4",
+    "bidict",
+    "boto3",
+    "cached-property",
+    "graphene<3",
+    "graphql-core<3",
+    "graphql-server-core<1.1.2",
+    "importlib-resources",
+    "importlib-metadata>=4.0; python_version < '3.10'",
+    "lektor==3.2.0",
+    "Flask==1.1.4",
+    "markupsafe==2.0.1",
+    "more-itertools",
+    "python-dateutil<2.8.1",
+    "pyyaml",
+    "spherical-dev>=0.2.2,<0.3.0",
+    "wrapt",
+    "invoke",
+    "decorator",
+    "pytz",
+    "unsync",
+]
+
+[project.optional-dependencies]
+dev = [
+    "aiohttp-devtools",
+    "aioresponses",
+    "aresponses",
+    "async-timeout",
+    "coverage<5",
+    "mypy",
+    "pep8-naming",
+    "pydocstyle",
+    "pytest-aiohttp",
+    "pytest-asyncio",
+    "pytest-cov",
+    "requests-mock",
+    "spherical-dev[dev]>=0.2.2,<0.3.0",
+    "wheel",
+]
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lektorium = [
+    "client/*",
+    "client/*/*",
+    "client/*/*/*",
+]
+
+[tool.setuptools_scm]
