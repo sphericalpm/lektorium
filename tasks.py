@@ -34,7 +34,7 @@ def get_config(ctx, env, cfg, auth, network):
 
 
 def get_skip_resolver(ctx):
-    return ctx.get('env', {}).get('LEKTORIUM_SKIP_RESOLVER', False)
+    return ctx['env'].get('LEKTORIUM_SKIP_RESOLVER', False)
 
 
 @task
@@ -46,7 +46,9 @@ def build_lektor_image(ctx):
 @task
 def build_lectern_image(ctx):
     lektor_dir = f'{CONTAINERS_BASE}/lectern'
-    ctx.run(f'docker build --build-arg BASE_IMAGE={LEKTOR_BASE} --tag {LECTERN_IMAGE} {lektor_dir}')
+    extra_index = ctx['env'].get('PIP_EXTRA_INDEX_URL', '')
+    extra_index_arg = f'--build-arg PIP_EXTRA_INDEX_URL={extra_index} ' if extra_index else ''
+    ctx.run(f'docker build --build-arg BASE_IMAGE={LEKTOR_BASE} {extra_index_arg}--tag {LECTERN_IMAGE} {lektor_dir}')
 
 
 @task
