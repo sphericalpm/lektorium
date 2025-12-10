@@ -46,9 +46,16 @@ def build_lektor_image(ctx):
 @task
 def build_lectern_image(ctx):
     lektor_dir = f'{CONTAINERS_BASE}/lectern'
+    lectern_pkg = ctx['env'].get('LECTERN_PKG', '')
+    if not lectern_pkg:
+        return
+    lectern_pkg_arg = f'--build-arg LECTERN_PKG="{lectern_pkg}" '
     extra_index = ctx['env'].get('PIP_EXTRA_INDEX_URL', '')
     extra_index_arg = f'--build-arg PIP_EXTRA_INDEX_URL={extra_index} ' if extra_index else ''
-    ctx.run(f'docker build --build-arg BASE_IMAGE={LEKTOR_BASE} {extra_index_arg}--tag {LECTERN_IMAGE} {lektor_dir}')
+    ctx.run(
+        f'docker build --build-arg BASE_IMAGE={LEKTOR_BASE} '
+        f'{lectern_pkg_arg}{extra_index_arg}--tag {LECTERN_IMAGE} {lektor_dir}'
+    )
 
 
 @task
