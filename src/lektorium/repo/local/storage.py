@@ -143,7 +143,6 @@ class Themer:
             del config['project.themes']
         else:
             config['project.themes'] = ','.join(theme_names)
-        del config['packages.lektor-tinymce']
         config.save()
 
     async def set_theme_submodules(self, dir, new_themes):
