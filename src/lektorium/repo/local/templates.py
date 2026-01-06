@@ -9,6 +9,7 @@ AWS_SHARED_CREDENTIALS_FILE_TEMPLATE = f'''
 
 GITLAB_CI_TEMPLATE = f'''
 lektorium-aws-deploy:
+  image: alpine:latest
   variables:
     LC_ALL: C.UTF-8
     LANG: C.UTF-8

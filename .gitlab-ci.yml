@@ -4,6 +4,7 @@ stages:
 
 lektorium-deploy:
   stage: deploy
+  image: alpine:latest
   variables:
     LC_ALL: C.UTF-8
     LANG: C.UTF-8
