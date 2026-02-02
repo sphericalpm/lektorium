@@ -297,7 +297,6 @@ class AsyncDockerServer(AsyncServer):
             'http.routers': {
                 route_name: {
                     'entrypoints': 'websecure',
-                    'middlewares': 'no-cache-headers',
                     'rule': f'Host(`{session_id}.{self.sessions_domain}`)',
                     'tls': {},
                     'tls.domains[0].main': f'*.{self.sessions_domain}',
@@ -308,6 +307,10 @@ class AsyncDockerServer(AsyncServer):
                 'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
                 'Pragma': 'no-cache',
                 'Expires': '0',
+            },
+            'http.middlewares.retry-app.retry': {
+                'attempts': '5',
+                'initialinterval': '200ms',
             },
             f'http.services.{route_name}.loadbalancer.server.port': f'{self.LEKTOR_PORT}',
         }
@@ -351,11 +354,13 @@ class AsyncDockerServerLectern(AsyncDockerServer):
         route_name = one(labels['http.routers'].keys())
         labels[f'http.services.{route_name}.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
         labels['http.routers'][f'{route_name}']['service'] = f'{route_name}'
+        labels['http.routers'][f'{route_name}']['middlewares'] = 'retry-app'
 
         labels[f'http.services.{route_name}-preview.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
         labels['http.routers'][f'{route_name}-preview'] = {**labels['http.routers'][route_name]}
         labels['http.routers'][f'{route_name}-preview']['rule'] = f'Host(`{session_id}-preview.{self.sessions_domain}`)'
         labels['http.routers'][f'{route_name}-preview']['service'] = f'{route_name}-preview'
+        labels['http.routers'][f'{route_name}-preview']['middlewares'] = 'retry-app'
 
         labels[f'http.services.{route_name}-legacy-admin.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
         labels['http.routers'][f'{route_name}-legacy-admin'] = {**labels['http.routers'][route_name]}
@@ -363,4 +368,5 @@ class AsyncDockerServerLectern(AsyncDockerServer):
             f'Host(`{session_id}-legacy-admin.{self.sessions_domain}`)'
         )
         labels['http.routers'][f'{route_name}-legacy-admin']['service'] = f'{route_name}-legacy-admin'
+        labels['http.routers'][f'{route_name}-legacy-admin']['middlewares'] = 'retry-app'
         return labels

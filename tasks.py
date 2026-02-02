@@ -136,6 +136,8 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
                     'entrypoints': 'web',
                     'rule': 'HostRegexp(`{host:.+}`)',
                     'middlewares': 'redirect-to-https',
+                    'service': 'noop@internal',
+                    'priority': '100000',
                 },
             },
         },
@@ -162,6 +164,7 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
             '--log.level=DEBUG',
             '--log',
             '--providers.docker.exposedbydefault=false',
+            '--providers.docker.allowEmptyServices=true',
             f'{cert_options}',
         ]
     )
