@@ -21,7 +21,7 @@ lektorium-aws-deploy:
     - apk add --update py3-pip || true
     - python3 -m venv ./venv
     - . ./venv/bin/activate
-    - pip3 install --upgrade "lektor==3.2.0" pytz "markupsafe==2.0.1" "Flask==1.1.4"
+    - pip3 install --upgrade "lektor==3.2.0" pytz "markupsafe==2.0.1" "Flask==1.1.4" "Setuptools<81"
     - lektor plugins add lektor-s3
     - |
       themes=$(grep -E '^themes[[:space:]]*=' *.lektorproject  | cut -d'=' -f2- | xargs)
