@@ -55,5 +55,11 @@ cloudfront = {{cloudfront_id}}
 '''
 
 EMPTY_COMMIT_PAYLOAD = '''
-{"branch": "master", "commit_message": "Initial commit", "actions": []}
+{
+  "branch": "master",
+  "commit_message": "Initial commit",
+  "actions": [
+    {"action": "create", "file_path": ".gitkeep"}
+  ]
+}
 '''
