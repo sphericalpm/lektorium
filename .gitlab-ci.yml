@@ -2,6 +2,16 @@ stages:
   - sync
   - deploy
 
+variables:
+  TRIGGER_TASK:
+    value: ""
+    options:
+      - ""
+      - "manual_sync"
+      - "manual_site_themes_update"
+      - "manual_deploy"
+    description: "Select the task to run when starting a pipeline manually."
+
 lektorium-deploy:
   stage: deploy
   image: alpine:latest
@@ -22,8 +32,9 @@ lektorium-deploy:
     - inv deploy
     - docker ps -a
     - deactivate
-  only:
-    - master
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $TRIGGER_TASK == "manual_deploy"'
+    - if: '$CI_PIPELINE_SOURCE != "web" && $CI_COMMIT_BRANCH == "master"'
 
 manual_sync:
   stage: sync
@@ -48,5 +59,37 @@ manual_sync:
     - git commit -am 'Sync with upstream repo'
     - git push origin HEAD:${CI_COMMIT_REF_NAME}
 
-  only:
-    - web
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $TRIGGER_TASK == "manual_sync"'
+
+manual_site_themes_update:
+  stage: sync
+  image: alpine:latest
+  variables:
+    # Set this in the Run pipeline form to bypass config.yml. Site repository
+    # URLs may be separated by spaces, commas, or newlines.
+    CI_SITE_UPDATE_REPOS: ""
+  script:
+    - apk add --no-cache git openssh-client python3 py3-yaml
+
+    - git config --global user.name "GitLab CI"
+    - git config --global user.email "ci@${CI_SERVER_HOST}"
+    - git config --global push.default simple
+
+    # Use the same access token as manual_sync for HTTPS and SSH-style URLs.
+    - git config --global url."https://oauth2:${CI_PROJECTS_ACCESS_TOKEN}@${CI_SERVER_HOST}/".insteadOf "git@${CI_SERVER_HOST}:"
+    - git config --global --add url."https://oauth2:${CI_PROJECTS_ACCESS_TOKEN}@${CI_SERVER_HOST}/".insteadOf "ssh://git@${CI_SERVER_HOST}/"
+    - git config --global --add url."https://oauth2:${CI_PROJECTS_ACCESS_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://${CI_SERVER_HOST}/"
+
+    - |
+      if [ -n "${GITHUB_SSH_KEY:-}" ]; then
+        mkdir -p ~/.ssh
+        echo "$GITHUB_SSH_KEY" | base64 -d > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+      fi
+
+    - python3 ci/update_site_themes.py
+
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $TRIGGER_TASK == "manual_site_themes_update"'
