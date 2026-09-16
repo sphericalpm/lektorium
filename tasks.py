@@ -78,13 +78,13 @@ def lektorium_labels(server_name, port=80, skip_resolver=False):
         'http.routers': {
             'lektorium': {
                 'entrypoints': 'websecure',
-                'rule': f"Host(`{server_name}`)",
+                'rule': f'Host(`{server_name}`)',
                 'tls': {},
                 **({} if skip_resolver else {'tls.certresolver': 'le'}),
             },
         },
     }
-    return named_args("--label ", flatten_options(labels, "traefik"))
+    return named_args('--label ', flatten_options(labels, 'traefik'))
 
 
 @task
@@ -93,7 +93,7 @@ def run_nginx(ctx, network=None):
     ctx.run(f'docker kill {PROXY_CONTAINER}', warn=True)
     ctx.run(f'docker rm {PROXY_CONTAINER}', warn=True)
     labels = lektorium_labels(
-        ctx["server-name"],
+        ctx['server-name'],
         skip_resolver=get_skip_resolver(ctx),
     )
     ctx.run(f'docker run -d --restart unless-stopped --net {network} --name {PROXY_CONTAINER} {labels} {PROXY_IMAGE} ')
@@ -136,8 +136,6 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
                     'entrypoints': 'web',
                     'rule': 'HostRegexp(`{host:.+}`)',
                     'middlewares': 'redirect-to-https',
-                    'service': 'noop@internal',
-                    'priority': '100000',
                 },
             },
         },
@@ -164,7 +162,6 @@ def run_traefik(ctx, image='traefik', ip=None, network=None):
             '--log.level=DEBUG',
             '--log',
             '--providers.docker.exposedbydefault=false',
-            '--providers.docker.allowEmptyServices=true',
             f'{cert_options}',
         ]
     )
@@ -220,7 +217,7 @@ def run(
     ctx.run(f'docker stop {CONTAINER}', warn=True)
     ctx.run(f'docker kill {CONTAINER}', warn=True)
     ctx.run(f'docker rm {CONTAINER}', warn=True)
-    labels = lektorium_labels(ctx["server-name"], 8000, get_skip_resolver(ctx))
+    labels = lektorium_labels(ctx['server-name'], 8000, get_skip_resolver(ctx))
     ctx.run(
         f'docker create {create_options} {env} '
         f'--name {CONTAINER} '

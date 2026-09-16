@@ -194,9 +194,7 @@ class AsyncDockerServer(AsyncServer):
         if self.network is None:
             docker = aiodocker.Docker()
             containers = (await c.show() for c in await docker.containers.list())
-            networks = [
-                c['HostConfig']['NetworkMode'] async for c in containers if c['Name'] == f'/{self.server_container}'
-            ]
+            networks = [c['HostConfig']['NetworkMode'] async for c in containers if c['Name'] == f'/{self.server_container}']
             self.network = one(networks)
         return self.network
 
@@ -309,8 +307,7 @@ class AsyncDockerServer(AsyncServer):
                 'Expires': '0',
             },
             'http.middlewares.retry-app.retry': {
-                'attempts': '5',
-                'initialinterval': '200ms',
+                'attempts': '20',
             },
             f'http.services.{route_name}.loadbalancer.server.port': f'{self.LEKTOR_PORT}',
         }
@@ -360,7 +357,6 @@ class AsyncDockerServerLectern(AsyncDockerServer):
         labels['http.routers'][f'{route_name}-preview'] = {**labels['http.routers'][route_name]}
         labels['http.routers'][f'{route_name}-preview']['rule'] = f'Host(`{session_id}-preview.{self.sessions_domain}`)'
         labels['http.routers'][f'{route_name}-preview']['service'] = f'{route_name}-preview'
-        labels['http.routers'][f'{route_name}-preview']['middlewares'] = 'retry-app'
 
         labels[f'http.services.{route_name}-legacy-admin.loadbalancer.server.port'] = f'{self.LEKTOR_PORT}'
         labels['http.routers'][f'{route_name}-legacy-admin'] = {**labels['http.routers'][route_name]}
@@ -368,5 +364,4 @@ class AsyncDockerServerLectern(AsyncDockerServer):
             f'Host(`{session_id}-legacy-admin.{self.sessions_domain}`)'
         )
         labels['http.routers'][f'{route_name}-legacy-admin']['service'] = f'{route_name}-legacy-admin'
-        labels['http.routers'][f'{route_name}-legacy-admin']['middlewares'] = 'retry-app'
         return labels
