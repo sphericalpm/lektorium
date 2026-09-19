@@ -20,6 +20,14 @@ class SessionNotFound(ExceptionBase):
     pass
 
 
+class SiteNotFound(ExceptionBase):
+    pass
+
+
+class SiteHasActiveSession(ExceptionBase):
+    pass
+
+
 class Repo(metaclass=abc.ABCMeta):
     DEFAULT_USER = ('User Interface Py', 'user@interface.py')
 
@@ -55,6 +63,10 @@ class Repo(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def destroy_session(self, session_id: str) -> None:
+        pass
+
+    @abc.abstractmethod
+    async def delete_site(self, site_id: str) -> None:
         pass
 
     @abc.abstractmethod

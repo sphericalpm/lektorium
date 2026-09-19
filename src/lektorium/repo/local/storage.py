@@ -212,6 +212,10 @@ class Storage:
         """
 
     @abc.abstractmethod
+    def delete_site(self, site_id):
+        """Deletes a site and its storage-managed repositories."""
+
+    @abc.abstractmethod
     def site_config(self, site_id):
         """Returns site configuration from lektorproject file.
 
@@ -239,6 +243,13 @@ class FileConfig(dict):
 
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
+        self.save()
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self.save()
+
+    def save(self):
         with self.path.open('wb') as config_file:
             config = {k: self.unprepare(v) for k, v in self.items()}
             config_file.write(yaml.dump(config).encode())
@@ -318,6 +329,12 @@ class FileStorage(ConfigGetter, FileStorageMixin, Storage):
         lektor.quickstart(name, owner, site_root)
         return site_root, {}
 
+    def delete_site(self, site_id):
+        site_root = self._site_dir(site_id).parent
+        if site_root.exists():
+            shutil.rmtree(site_root)
+        del self.config[site_id]
+
     def _site_dir(self, site_id):
         return self.root / site_id / 'master'
 
@@ -331,6 +348,13 @@ class GitConfig(FileConfig):
 
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
+        self.commit()
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        self.commit()
+
+    def commit(self):
         parent, name = self.path.parent, self.path.name
         run(f'git add {name}', cwd=parent)
         run('git diff-index --quiet HEAD || git commit -m autosave', cwd=parent)
@@ -516,6 +540,15 @@ class GitLab:
         )
         response.raise_for_status()
 
+    def delete_project(self):
+        project_path = quote_plus(self.path)
+        response = requests.delete(
+            f'{self.repo_url}/projects/{project_path}',
+            headers=self.headers,
+        )
+        if response.status_code != 404:
+            response.raise_for_status()
+
 
 class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
     CONFIG_CLASS = GitConfig
@@ -664,6 +697,18 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
 
         return site_repo
 
+    def delete_site_repo(self, site_id):
+        site_repo = pathlib.Path(self.git).parent / site_id
+        if site_repo.exists():
+            shutil.rmtree(site_repo)
+
+    def delete_site(self, site_id):
+        self.delete_site_repo(site_id)
+        site_workdir = self._site_dir(site_id)
+        if site_workdir.exists():
+            shutil.rmtree(site_workdir)
+        del self.config[site_id]
+
     def request_release(self, site_id, session_id, session_dir):
         themes = self.config_dir_themes(session_dir)
         self.set_themes_config(session_dir, themes[::-1])
@@ -766,6 +811,9 @@ class GitlabStorage(GitStorage):
 
     async def create_site_repo(self, site_id):
         return await self.gitlab(site_id).init_project()
+
+    def delete_site_repo(self, site_id):
+        self.gitlab(site_id).delete_project()
 
     def gitlab(self, project, branch='master'):
         return GitLab(

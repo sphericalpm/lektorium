@@ -326,6 +326,13 @@ class CreateSite(MutationBase):
         return super().mutate(root, info, owner=owner, **kwargs)
 
 
+class DeleteSite(MutationBase):
+    REPO_METHOD = 'delete_site'
+
+    class Arguments:
+        site_id = String(required=True)
+
+
 MutationQuery = type(
     'MutationQuery',
     (ObjectType,),

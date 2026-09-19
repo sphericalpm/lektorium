@@ -5,7 +5,7 @@ import dateutil.parser
 
 from .interface import DuplicateEditSession, InvalidSessionState
 from .interface import Repo as BaseRepo
-from .interface import SessionNotFound
+from .interface import SessionNotFound, SiteHasActiveSession, SiteNotFound
 
 
 class Session(dict):
@@ -154,6 +154,14 @@ class Repo(BaseRepo):
             raise SessionNotFound()
         site = self.sessions[session_id][1]
         site['sessions'] = [x for x in site['sessions'] if x['session_id'] != session_id]
+
+    async def delete_site(self, site_id: str) -> None:
+        site = next((site for site in self.data if site['site_id'] == site_id), None)
+        if site is None:
+            raise SiteNotFound()
+        if any(session.get('edit_url') for session in site.get('sessions', ())):
+            raise SiteHasActiveSession()
+        self.data.remove(site)
 
     def park_session(self, session_id: str) -> None:
         if session_id not in self.sessions:

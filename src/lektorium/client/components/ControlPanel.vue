@@ -1,14 +1,23 @@
 <template>
     <div>
-        <loading :active.sync="loading_overlay_active" :is-full-page="true"></loading>
+        <loading
+            :active.sync="loading_overlay_active"
+            :is-full-page="true"
+        ></loading>
         <b-card no-body>
-            <b-tabs pills card vertical v-model="current_tab">
+            <b-tabs
+                pills
+                card
+                vertical
+                v-model="current_tab"
+            >
                 <b-tab @click="refreshPanelData">
                     <template slot="title">
-                        Available Sites <b-badge pill> {{_.get(available_sites, 'length', 0)}} </b-badge>
+                        Available Sites
+                        <b-badge pill>{{ _.get(available_sites, 'length', 0) }}</b-badge>
                     </template>
                     <b-card-text>
-                        <table class="table table-hover">
+                        <table class="table table-hover table-striped">
                             <thead>
                                 <tr>
                                     <th scope="col">Site</th>
@@ -22,20 +31,27 @@
                                                 variant="success"
                                                 class="rounded"
                                                 v-b-modal.site-modal
-                                            >+ Create New Site</b-button>
+                                            >
+                                                + Create New Site
+                                            </b-button>
                                         </div>
                                     </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(site, index) in available_sites" :key="index">
+                                <tr
+                                    v-for="(site, index) in available_sites"
+                                    :key="index"
+                                >
                                     <td>{{ site.siteName }}</td>
                                     <td>
                                         <a
                                             v-if="site.productionUrl && site.productionUrl.startsWith('http')"
                                             :href="site.productionUrl"
                                             target="_blank"
-                                        >{{ site.productionUrl }}</a>
+                                        >
+                                            {{ site.productionUrl }}
+                                        </a>
                                         <span v-else>{{ site.productionUrl }}</span>
                                     </td>
                                     <!-- <td> <a :href="site.stagingUrl">{{ site.stagingUrl }}</a></td> -->
@@ -44,7 +60,7 @@
                                             {{ site.custodian }}
                                         </a>
                                     </td>
-                                    <td>
+                                    <td class="text-right">
                                         <b-dropdown
                                             :disabled="checkActiveSession(site)"
                                             text="Create Editor"
@@ -54,8 +70,44 @@
                                             class="rounded"
                                             @click="createSession(site.siteId)"
                                         >
-                                            <b-dropdown-item @click="customizeTheme(site.siteId)">Customize themes</b-dropdown-item>
+                                            <b-dropdown-item @click="customizeTheme(site.siteId)">
+                                                Customize themes
+                                            </b-dropdown-item>
                                         </b-dropdown>
+                                        <span
+                                            v-if="create_site_btn_visible"
+                                            class="delete-site-wrapper ml-3"
+                                            v-b-tooltip.hover.focus
+                                            :title="deleteSiteDisabledReason(site)"
+                                            :tabindex="checkActiveSession(site) ? 0 : null"
+                                            :role="checkActiveSession(site) ? 'button' : null"
+                                            :aria-disabled="checkActiveSession(site) ? 'true' : null"
+                                            :aria-label="checkActiveSession(site) ? `Delete ${site.siteName}` : null"
+                                            :aria-describedby="checkActiveSession(site) ? `delete-site-reason-${index}` : null"
+                                        >
+                                            <b-button
+                                                variant="danger"
+                                                class="rounded"
+                                                :disabled="checkActiveSession(site)"
+                                                :aria-label="`Delete ${site.siteName}`"
+                                                :aria-describedby="
+                                                    checkActiveSession(site) ? `delete-site-reason-${index}` : null
+                                                "
+                                                @click="confirmDeleteSite(site)"
+                                            >
+                                                <i
+                                                    class="fas fa-times"
+                                                    aria-hidden="true"
+                                                ></i>
+                                            </b-button>
+                                        </span>
+                                        <span
+                                            v-if="create_site_btn_visible && checkActiveSession(site)"
+                                            :id="`delete-site-reason-${index}`"
+                                            class="sr-only"
+                                        >
+                                            {{ deleteSiteDisabledReason(site) }}
+                                        </span>
                                     </td>
                                 </tr>
                             </tbody>
@@ -64,7 +116,8 @@
                 </b-tab>
                 <b-tab @click="refreshPanelData">
                     <template slot="title">
-                        Edit Sessions <b-badge pill> {{_.get(edit_sessions, 'length', 0)}} </b-badge>
+                        Edit Sessions
+                        <b-badge pill>{{ _.get(edit_sessions, 'length', 0) }}</b-badge>
                     </template>
                     <b-card-text>
                         <table class="table table-hover">
@@ -83,7 +136,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(session, index) in edit_sessions" :key="index">
+                                <tr
+                                    v-for="(session, index) in edit_sessions"
+                                    :key="index"
+                                >
                                     <td>{{ session.sessionId }}</td>
                                     <td>{{ session.siteName }}</td>
                                     <td>{{ formatTime(session.creationTime) }}</td>
@@ -96,7 +152,8 @@
                                     <!-- <td>{{ session.stagingUrl }}</td> -->
                                     <td class="font-12">
                                         <template v-for="theme in session.themes">
-                                            {{ theme }}<br>
+                                            {{ theme }}
+                                            <br />
                                         </template>
                                     </td>
                                     <td>
@@ -105,27 +162,33 @@
                                                 v-if="session.editUrl.startsWith('http')"
                                                 :href="session.editUrl"
                                                 target="_blank"
-                                            >Admin&nbsp;Interface</a>
+                                            >
+                                                Admin&nbsp;Interface
+                                            </a>
                                             <span v-else>{{ session.editUrl }}</span>
                                         </template>
 
                                         <template v-if="session.previewUrl">
-                                            <br>
+                                            <br />
                                             <a
                                                 v-if="session.previewUrl.startsWith('http')"
                                                 :href="session.previewUrl"
                                                 target="_blank"
-                                            >Site&nbsp;Preview</a>
+                                            >
+                                                Site&nbsp;Preview
+                                            </a>
                                             <span v-else>{{ session.previewUrl }}</span>
                                         </template>
 
                                         <template v-if="session.legacyAdminUrl">
-                                            <br>
+                                            <br />
                                             <a
                                                 v-if="session.legacyAdminUrl.startsWith('http')"
                                                 :href="session.legacyAdminUrl"
                                                 target="_blank"
-                                            >Legacy&nbsp;Admin&nbsp;Interface</a>
+                                            >
+                                                Legacy&nbsp;Admin&nbsp;Interface
+                                            </a>
                                             <span v-else>{{ session.legacyAdminUrl }}</span>
                                         </template>
                                     </td>
@@ -135,17 +198,23 @@
                                                 class="rounded mb-1 mr-1"
                                                 variant="primary"
                                                 @click="parkSession(session)"
-                                            >Park</b-button>
+                                            >
+                                                Park
+                                            </b-button>
                                             <b-button
                                                 class="rounded mb-1 mr-1"
                                                 variant="danger"
                                                 @click="destroySession(session)"
-                                            >Destroy</b-button>
+                                            >
+                                                Destroy
+                                            </b-button>
                                             <b-button
                                                 class="rounded mb-1 mr-1"
                                                 variant="success"
                                                 @click="requestRelease(session)"
-                                            >Request release</b-button>
+                                            >
+                                                Request release
+                                            </b-button>
                                         </b-button-group>
                                     </td>
                                 </tr>
@@ -155,7 +224,8 @@
                 </b-tab>
                 <b-tab @click="refreshPanelData">
                     <template slot="title">
-                        Parked Sessions <b-badge pill> {{_.get(parked_sessions, 'length', 0)}} </b-badge>
+                        Parked Sessions
+                        <b-badge pill>{{ _.get(parked_sessions, 'length', 0) }}</b-badge>
                     </template>
                     <b-card-text>
                         <table class="table table-hover">
@@ -168,7 +238,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(session, index) in parked_sessions" :key="index">
+                                <tr
+                                    v-for="(session, index) in parked_sessions"
+                                    :key="index"
+                                >
                                     <td>{{ session.sessionId }}</td>
                                     <td>{{ session.siteName }}</td>
                                     <td>{{ formatTime(session.creationTime) }}</td>
@@ -179,12 +252,16 @@
                                                 variant="primary"
                                                 @click="unparkSession(session)"
                                                 :disabled="checkUnparkedSessions(session)"
-                                            >Unpark</b-button>
+                                            >
+                                                Unpark
+                                            </b-button>
                                             <b-button
                                                 class="rounded mb-1 mr-1"
                                                 variant="danger"
                                                 @click="destroySession(session)"
-                                            >Destroy</b-button>
+                                            >
+                                                Destroy
+                                            </b-button>
                                         </b-button-group>
                                     </td>
                                 </tr>
@@ -194,7 +271,8 @@
                 </b-tab>
                 <b-tab @click="refreshPanelData">
                     <template slot="title">
-                        Releasing <b-badge pill> {{_.get(releasing, 'length', 0)}} </b-badge>
+                        Releasing
+                        <b-badge pill>{{ _.get(releasing, 'length', 0) }}</b-badge>
                     </template>
                     <b-card-text>
                         <table class="table table-hover">
@@ -209,14 +287,20 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(release, index) in releasing" :key="index">
+                                <tr
+                                    v-for="(release, index) in releasing"
+                                    :key="index"
+                                >
                                     <td>{{ release.sourceBranch }}</td>
                                     <td>{{ release.siteName }}</td>
                                     <td>
-                                        <a v-if="release.webUrl && release.webUrl.startsWith('http')"
+                                        <a
+                                            v-if="release.webUrl && release.webUrl.startsWith('http')"
                                             :href="release.webUrl"
                                             target="_blank"
-                                        >{{ release.title }}</a>
+                                        >
+                                            {{ release.title }}
+                                        </a>
                                     </td>
                                     <td>{{ formatTime(release.creationTime) }}</td>
                                     <td>{{ release.state }}</td>
@@ -225,9 +309,13 @@
                         </table>
                     </b-card-text>
                 </b-tab>
-                <b-tab v-if="manage_users_visible" @click="refreshPanelData">
+                <b-tab
+                    v-if="manage_users_visible"
+                    @click="refreshPanelData"
+                >
                     <template slot="title">
-                        Users <b-badge pill>{{_.get(users, 'length', 0)}}</b-badge>
+                        Users
+                        <b-badge pill>{{ _.get(users, 'length', 0) }}</b-badge>
                     </template>
                     <b-card-text>
                         <table class="table table-hover">
@@ -242,20 +330,31 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="(user, index) in users" :key="index">
+                                <tr
+                                    v-for="(user, index) in users"
+                                    :key="index"
+                                >
                                     <td>{{ user.userId }}</td>
                                     <td>{{ user.nickname }}</td>
                                     <td>{{ user.name }}</td>
-                                    <td> {{ user.email }} </td>
+                                    <td>{{ user.email }}</td>
                                     <td>
                                         <ul>
-                                            <li v-for="(permission, index) in user.permissions" :key="index">
-                                                {{permission}}
+                                            <li
+                                                v-for="(permission, index) in user.permissions"
+                                                :key="index"
+                                            >
+                                                {{ permission }}
                                             </li>
                                         </ul>
                                     </td>
                                     <td>
-                                        <b-button v-b-modal.user-modal @click="showUserModal(user)">Edit Permissions</b-button>
+                                        <b-button
+                                            v-b-modal.user-modal
+                                            @click="showUserModal(user)"
+                                        >
+                                            Edit Permissions
+                                        </b-button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -272,36 +371,61 @@
             @hidden="onReset"
             hide-footer
         >
-            <b-form @submit="onSubmit" @reset="onReset" class="w-100">
+            <b-form
+                @submit="onSubmit"
+                @reset="onReset"
+                class="w-100"
+            >
                 <b-form-group label="Title:">
                     <b-form-input
                         type="text"
                         v-model="add_site_form.title"
                         required
-                        placeholder="Enter title"></b-form-input>
+                        placeholder="Enter title"
+                    ></b-form-input>
                 </b-form-group>
                 <b-form-group label="Site id:">
                     <b-form-input
                         type="text"
                         v-model="add_site_form.site_id"
                         required
-                        placeholder="Enter site id"></b-form-input>
+                        placeholder="Enter site id"
+                    ></b-form-input>
                 </b-form-group>
                 <b-form-group label="Owner:">
                     <b-form-input
                         list="owner-list"
                         v-model="add_site_form.owner"
-                        placeholder="Select owner or leave empty to be an owner"></b-form-input>
+                        placeholder="Select owner or leave empty to be an owner"
+                    ></b-form-input>
                     <datalist id="owner-list">
-                        <option v-for="u in users" :key="u" :value="`${u.email},${u.name}`">{{ u.name }}</option>
+                        <option
+                            v-for="u in users"
+                            :key="u"
+                            :value="`${u.email},${u.name}`"
+                        >
+                            {{ u.name }}
+                        </option>
                     </datalist>
                 </b-form-group>
                 <b-form-group label="Themes:">
                     <theme-select v-model="add_site_form.themes"></theme-select>
                 </b-form-group>
                 <b-button-group>
-                    <b-button class="rounded mb-1 mr-1" type="submit" variant="primary">OK</b-button>
-                    <b-button class="rounded mb-1 mr-1" type="reset" variant="danger">Cancel</b-button>
+                    <b-button
+                        class="rounded mb-1 mr-1"
+                        type="submit"
+                        variant="primary"
+                    >
+                        OK
+                    </b-button>
+                    <b-button
+                        class="rounded mb-1 mr-1"
+                        type="reset"
+                        variant="danger"
+                    >
+                        Cancel
+                    </b-button>
                 </b-button-group>
             </b-form>
         </b-modal>
@@ -315,19 +439,30 @@
         >
             <b-form class="mb-3">
                 <b-form-group label="Permissions:">
-                    <b-form-checkbox-group id="checkbox-group-permissions" v-model="selectedUserPermissions" name="permissions-2">
-                        <templeate v-for="(permission, index) in availablePermissions" :key="index">
+                    <b-form-checkbox-group
+                        id="checkbox-group-permissions"
+                        v-model="selectedUserPermissions"
+                        name="permissions-2"
+                    >
+                        <templeate
+                            v-for="(permission, index) in availablePermissions"
+                            :key="index"
+                        >
                             <b-form-checkbox :value="permission.value">
                                 {{ getPermissionDescription(permission.value) }}
                             </b-form-checkbox>
-                            <br>
+                            <br />
                         </templeate>
                     </b-form-checkbox-group>
                 </b-form-group>
             </b-form>
             <div class="text-center">
-                <b-button variant="success" @click="updateUserPermissions"
-                >Save</b-button>
+                <b-button
+                    variant="success"
+                    @click="updateUserPermissions"
+                >
+                    Save
+                </b-button>
             </div>
         </b-modal>
 
@@ -353,19 +488,30 @@
                     :disabled="saveThemeBtnDisabled"
                     variant="success"
                     @click="createThemedSession"
-                >Save</b-button>
+                >
+                    Save
+                </b-button>
             </div>
         </b-modal>
 
-        <b-modal id="perm-alert" no-close-on-backdrop hide-header-close hide-footer title="Permission denied">
+        <b-modal
+            id="perm-alert"
+            no-close-on-backdrop
+            hide-header-close
+            hide-footer
+            title="Permission denied"
+        >
             <p>You do not have permission for this operation. Please, contact your system administrator.</p>
         </b-modal>
 
         <b-alert
             :show="message_visible"
             :variant="message_type"
-            dismissible @dismissed="message_visible=false"
-        >{{ message }}</b-alert>
+            dismissible
+            @dismissed="message_visible = false"
+        >
+            {{ message }}
+        </b-alert>
     </div>
 </template>
 
@@ -411,7 +557,7 @@ module.exports = {
     methods: {
         isAnonymous(result) {
             if (result.data.errors !== undefined) {
-                if (result.data.errors[0].code == 403){
+                if (result.data.errors[0].code == 403) {
                     return true;
                 }
             }
@@ -421,12 +567,12 @@ module.exports = {
         async getHeaders() {
             if (this.$auth === undefined) return {};
             const tokens = await this.$auth.getTokens();
-            return {Authorization: `Bearer ${tokens.join('.')}`};
+            return { Authorization: `Bearer ${tokens.join('.')}` };
         },
 
         startLoadingModal() {
             const delay = 800;
-            let timer_id = setTimeout(() => this.loading_overlay_active = true, delay);
+            let timer_id = setTimeout(() => (this.loading_overlay_active = true), delay);
             return timer_id;
         },
 
@@ -438,22 +584,22 @@ module.exports = {
                 if (permissions.indexOf('admin') >= 0) {
                     this.create_site_btn_visible = true;
                     this.manage_users_visible = true;
-                };
+                }
             } else {
                 this.create_site_btn_visible = true;
                 this.manage_users_visible = true;
-            };
+            }
         },
 
         async makeRequest(query) {
             let timer_id = this.startLoadingModal();
             var result = await axios({
-                method: "POST",
-                url: "/graphql",
+                method: 'POST',
+                url: '/graphql',
                 headers: await this.getHeaders(),
                 data: {
-                    query: query
-                }
+                    query: query,
+                },
             });
             this.finishLoadingModal(timer_id);
             return result;
@@ -464,7 +610,7 @@ module.exports = {
             if (this.isAnonymous(response)) {
                 this.$bvModal.show('perm-alert');
                 return;
-            };
+            }
             return [response.data.data[request_name], response.data.data.errors];
         },
 
@@ -557,6 +703,38 @@ module.exports = {
             }
         },
 
+        async confirmDeleteSite(site) {
+            if (this.checkActiveSession(site)) return;
+            const confirmed = await this.$bvModal.msgBoxConfirm(
+                `Delete '${site.siteName}' and its repositories? This action cannot be undone.`,
+                {
+                    title: 'Delete site',
+                    okTitle: 'Delete',
+                    okVariant: 'danger',
+                    cancelTitle: 'Cancel',
+                    cancelVariant: 'secondary',
+                    centered: true,
+                },
+            );
+            if (confirmed) await this.deleteSite(site);
+        },
+
+        async deleteSite(site) {
+            const id = site.siteId;
+            const query = `
+                deleteSite(siteId: ${JSON.stringify(id)}) {
+                    ok
+                }
+            `;
+            const result = await this.makeMutationRequest(query, 'deleteSite');
+            if (result && result[0] && result[0].ok) {
+                this.showMessage(`'${site.siteName}' removed successfully.`, `success`);
+                this.getPanelData();
+            } else {
+                this.showMessage(`Unable to remove '${site.siteName}'`, `danger`);
+            }
+        },
+
         async parkSession(session) {
             let id = session.sessionId;
             let query = `
@@ -566,7 +744,7 @@ module.exports = {
             `;
             const result = await this.makeMutationRequest(query, 'parkSession');
             if (result && result[0] && result[0].ok) {
-                this.showMessage(`'${id}' parked successfully.`,`success`);
+                this.showMessage(`'${id}' parked successfully.`, `success`);
                 this.getPanelData();
             } else {
                 this.showMessage(`Unable to park '${id}'`, `danger`);
@@ -582,7 +760,7 @@ module.exports = {
             `;
             const result = await this.makeMutationRequest(query, 'unparkSession');
             if (result && result[0] && result[0].ok) {
-                this.showMessage(`'${id}' unparked successfully.`,`success`);
+                this.showMessage(`'${id}' unparked successfully.`, `success`);
                 this.current_tab = 1;
                 this.getPanelData();
             } else {
@@ -619,7 +797,7 @@ module.exports = {
             return await this.createSession(siteId, themes);
         },
 
-        async createSession(siteId, themes='') {
+        async createSession(siteId, themes = '') {
             let query = `
                 createSession(
                     siteId: "${siteId}",
@@ -641,11 +819,16 @@ module.exports = {
         },
 
         checkActiveSession(site) {
-            let result = false;
+            let result = this.edit_sessions.find(item => item.site.siteId == site.siteId);
             if (site.sessions) {
-                result = site.sessions.find(item => item.parked == false);
+                result = result || site.sessions.find(item => item.parked == false);
             }
             return Boolean(result);
+        },
+
+        deleteSiteDisabledReason(site) {
+            if (!this.checkActiveSession(site)) return '';
+            return `Cannot delete ${site.siteName} because an active edit session exists.`;
         },
 
         checkUnparkedSessions(session) {
@@ -690,7 +873,7 @@ module.exports = {
             this.userPermissions = result.data.data.userPermissions;
             this.selectedUserPermissions = [];
             this.userPermissions.forEach(element => {
-                this.selectedUserPermissions.push(element.permissionName)
+                this.selectedUserPermissions.push(element.permissionName);
             });
         },
 
@@ -727,14 +910,18 @@ module.exports = {
         },
 
         async updateUserPermissions() {
-            let permissionsToDelete = this.userPermissions.map(function(perm){return perm.permissionName});
-            permissionsToDelete = permissionsToDelete.filter(element => !(this.selectedUserPermissions.includes(element)));
-            let userPermissionsPlate = this.userPermissions.map(function(perm){return perm.permissionName});
-            let permissionsToSet = this.selectedUserPermissions.filter(element => !(userPermissionsPlate.includes(element)));
-            if (permissionsToDelete.length>0) {
+            let permissionsToDelete = this.userPermissions.map(function (perm) {
+                return perm.permissionName;
+            });
+            permissionsToDelete = permissionsToDelete.filter(element => !this.selectedUserPermissions.includes(element));
+            let userPermissionsPlate = this.userPermissions.map(function (perm) {
+                return perm.permissionName;
+            });
+            let permissionsToSet = this.selectedUserPermissions.filter(element => !userPermissionsPlate.includes(element));
+            if (permissionsToDelete.length > 0) {
                 this.deleteUserPermissions(this.selectedUser.userId, permissionsToDelete);
             }
-            if (permissionsToSet.length>0){
+            if (permissionsToSet.length > 0) {
                 this.setUserPermissions(this.selectedUser.userId, permissionsToSet);
             }
             this.$bvModal.hide('user-modal');
@@ -743,8 +930,10 @@ module.exports = {
         getPermissionDescription(value) {
             if (!value.startsWith('user:')) {
                 return value;
-            };
-            let site = _(this.available_sites).filter(x => x.siteId == value.slice(5)).head();
+            }
+            let site = _(this.available_sites)
+                .filter(x => x.siteId == value.slice(5))
+                .head();
             return _.isNil(site) ? value : site.siteName;
         },
 
@@ -768,7 +957,7 @@ module.exports = {
         },
 
         customizeTheme(siteId) {
-            this.resetThemeSelectModal()
+            this.resetThemeSelectModal();
             this.selectedSite = siteId;
             this.$nextTick(() => this.$bvModal.show('theme-select-modal'));
         },
@@ -795,13 +984,7 @@ module.exports = {
         onSubmit(evt) {
             evt.preventDefault();
             this.$refs.addSiteModal.hide();
-            let hasThemes = (
-                _.chain(this.add_site_form)
-                .get('themes', [])
-                .filter('active')
-                .size()
-                .value()
-            ) > 0;
+            let hasThemes = _.chain(this.add_site_form).get('themes', []).filter('active').size().value() > 0;
 
             this.addSite({
                 title: this.add_site_form.title,
@@ -822,33 +1005,25 @@ module.exports = {
             let production_result = _.find(this.available_sites, item => item.productionUrl == 'Starting');
             let admin_result = _.find(this.edit_sessions, item => item.editUrl == 'Starting');
             if (admin_result || production_result) {
-                setTimeout(this.getPanelData,5000);
+                setTimeout(this.getPanelData, 5000);
             }
         },
 
         formatTime(utc_time) {
-            utc_time.setMinutes(utc_time.getMinutes()-utc_time.getTimezoneOffset());
+            utc_time.setMinutes(utc_time.getMinutes() - utc_time.getTimezoneOffset());
             const user_time = utc_time.toLocaleString();
             return user_time;
         },
 
         convertTimeAndOrder(data) {
-            return (
-                _.chain(data)
-                .map(item => ({...item, creationTime: new Date(item.creationTime)}))
+            return _.chain(data)
+                .map(item => ({ ...item, creationTime: new Date(item.creationTime) }))
                 .orderBy(['creationTime'], ['desc'])
-                .value()
-            )
+                .value();
         },
 
         themesString(themes) {
-            themes = (
-                _.chain(themes)
-                .filter('active')
-                .map('name')
-                .join('","')
-                .value()
-            );
+            themes = _.chain(themes).filter('active').map('name').join('","').value();
             return themes ? `themes: ["${themes}"],` : 'themes: [],';
         },
     },
@@ -876,10 +1051,15 @@ module.exports = {
 }
 
 .modal-backdrop {
-        opacity:0.5 !important;
+    opacity: 0.5 !important;
 }
 
 .font-12 {
     font-size: 12px;
+}
+
+.delete-site-wrapper {
+    display: inline-block;
+    vertical-align: top;
 }
 </style>
