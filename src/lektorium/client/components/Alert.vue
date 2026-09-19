@@ -1,7 +1,13 @@
 <template>
     <div>
-        <b-alert variant="success" show dismissible>{{ message }}</b-alert>
-        <br>
+        <b-alert
+            variant="success"
+            show
+            dismissible
+        >
+            {{ message }}
+        </b-alert>
+        <br />
     </div>
 </template>
 

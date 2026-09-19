@@ -1,11 +1,30 @@
 <template>
     <div v-if="!_.isNil(usableThemes)">
-        <b-table-simple class="table wo-borders" width="100%">
+        <b-table-simple
+            class="table wo-borders"
+            width="100%"
+        >
             <b-thead>
                 <b-tr>
-                    <b-td scope="col" width="10%">#</b-td>
-                    <b-td scope="col" width="20%" class="text-right">Enabled</b-td>
-                    <b-td scope="col" width="70%">Name</b-td>
+                    <b-td
+                        scope="col"
+                        width="10%"
+                    >
+                        #
+                    </b-td>
+                    <b-td
+                        scope="col"
+                        width="20%"
+                        class="text-right"
+                    >
+                        Enabled
+                    </b-td>
+                    <b-td
+                        scope="col"
+                        width="70%"
+                    >
+                        Name
+                    </b-td>
                 </b-tr>
             </b-thead>
             <b-tbody
@@ -13,13 +32,16 @@
                 is="draggable"
                 tag="tbody"
             >
-                <b-tr v-for="(themeData, idx) in themes" :key="idx">
+                <b-tr
+                    v-for="(themeData, idx) in themes"
+                    :key="idx"
+                >
                     <b-td>{{ idx + 1 }}</b-td>
                     <b-td class="text-right">
                         <b-form-checkbox
                             :name="`cbox-${idx}`"
                             :checked="themeData.active"
-                            @input="(v) => themeData.active = v"
+                            @input="v => (themeData.active = v)"
                         ></b-form-checkbox>
                     </b-td>
                     <b-td>{{ themeData.name }}</b-td>
@@ -27,7 +49,12 @@
             </b-tbody>
         </b-table-simple>
     </div>
-    <div v-else class="text-center"><b-spinner></b-spinner></div>
+    <div
+        v-else
+        class="text-center"
+    >
+        <b-spinner></b-spinner>
+    </div>
 </template>
 
 <script>
@@ -55,7 +82,7 @@ module.exports = {
         async getHeaders() {
             if (this.$auth === undefined) return {};
             const tokens = await this.$auth.getTokens();
-            return {Authorization: `Bearer ${tokens.join('.')}`};
+            return { Authorization: `Bearer ${tokens.join('.')}` };
         },
     },
     asyncComputed: {
@@ -68,18 +95,16 @@ module.exports = {
                     }
                 }
             `;
-            return (
-                this.getHeaders()
-                .then(headers => (
+            return this.getHeaders()
+                .then(headers =>
                     axios({
-                        method: "POST",
-                        url: "/graphql",
+                        method: 'POST',
+                        url: '/graphql',
                         headers: headers,
-                        data: {query: query},
-                    })
-                ))
-                .then(res => this.themes = _.get(res, 'data.data.themes'))
-            );
+                        data: { query: query },
+                    }),
+                )
+                .then(res => (this.themes = _.get(res, 'data.data.themes')));
         },
     },
     watch: {

@@ -1,6 +1,9 @@
 <template>
     <div class="spinner">
-        <img src="/images/loading.svg" alt="Loading">
+        <img
+            src="/images/loading.svg"
+            alt="Loading"
+        />
     </div>
 </template>
 
@@ -9,7 +12,7 @@ module.exports = {
     methods: {
         handleLoginEvent(data) {
             if (!data.error) {
-                this.$router.push(data.state.target || "/");
+                this.$router.push(data.state.target || '/');
             }
         },
     },

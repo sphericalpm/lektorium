@@ -15,7 +15,10 @@
         </div>
 
         <div class="row">
-            <pre v-highlightjs class="rounded w-100">
+            <pre
+                v-highlightjs
+                class="rounded w-100"
+            >
                 <code class="json">{{ JSON.stringify(profile, null, 4) }}</code>
             </pre>
         </div>

@@ -15,14 +15,12 @@ module.exports = {
     name: 'app',
     components: {
         'nav-bar': window.httpVueLoader('/components/NavBar.vue'),
-        'error': window.httpVueLoader('/components/Error.vue')
+        error: window.httpVueLoader('/components/Error.vue'),
     },
     created() {
         if (!_.isNil(this.$auth)) {
-            return this.$auth
-            .handleAuthentication()
-            .catch(() => this.$auth.login());
-        };
+            return this.$auth.handleAuthentication().catch(() => this.$auth.login());
+        }
     },
 };
 </script>
