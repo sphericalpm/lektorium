@@ -4,6 +4,8 @@ from .interface import (
     ExceptionBase,
     InvalidSessionState,
     SessionNotFound,
+    SiteHasActiveSession,
+    SiteNotFound,
 )
 from .local import Repo as LocalRepo
 from .memory import SITES

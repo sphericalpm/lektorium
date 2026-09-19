@@ -11,7 +11,7 @@ from cached_property import cached_property
 from ...utils import closer
 from ..interface import DuplicateEditSession, InvalidSessionState
 from ..interface import Repo as BaseRepo
-from ..interface import SessionNotFound
+from ..interface import SessionNotFound, SiteHasActiveSession, SiteNotFound
 from .objects import Session, Site
 
 
@@ -81,7 +81,12 @@ class Repo(BaseRepo):
 
     async def init_sessions(self):
         if not self.sessions_initialized:
-            sessions = self.server.sessions
+            try:
+                sessions = self.server.sessions
+            except RuntimeError as error:
+                if str(error) != 'sessions tracking not implemented':
+                    raise
+                sessions = ()
             if asyncio.iscoroutine(sessions):
                 sessions = await sessions
             for session in sessions:
@@ -168,6 +173,24 @@ class Repo(BaseRepo):
             functools.partial(shutil.rmtree, session_dir),
         )
         site.sessions.pop(session_id)
+
+    async def delete_site(self, site_id):
+        await self.init_sessions()
+        if site_id not in self.config:
+            raise SiteNotFound()
+
+        site = self.config[site_id]
+        if any(not session.parked for session in site.sessions.values()):
+            raise SiteHasActiveSession()
+
+        site_dir = self.storage._site_dir(site_id)
+        if site_dir in getattr(self.server, 'serves', {}):
+            self.server.stop_server(site_dir)
+
+        sessions_dir = self.sessions_root / site_id
+        if sessions_dir.exists():
+            shutil.rmtree(sessions_dir)
+        self.storage.delete_site(site_id)
 
     def park_session(self, session_id):
         if session_id not in self.sessions:
