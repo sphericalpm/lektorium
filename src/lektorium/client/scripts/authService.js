@@ -1,12 +1,17 @@
 function parseJwt(token) {
     var base64Url = token.split('.')[1];
     var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
+    var jsonPayload = decodeURIComponent(
+        atob(base64)
+            .split('')
+            .map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            })
+            .join(''),
+    );
 
     return JSON.parse(jsonPayload);
-};
+}
 
 function authService() {
     const webAuth = new auth0.WebAuth({
@@ -15,7 +20,7 @@ function authService() {
         clientID: _.get(lektoriumAuth0Config, 'id'),
         audience: _.get(lektoriumAuth0Config, 'api'),
         responseType: 'id_token token',
-        scope: 'openid profile email'
+        scope: 'openid profile email',
     });
 
     const localStorageKey = 'loggedIn';
@@ -29,9 +34,9 @@ function authService() {
 
         login(customState) {
             webAuth.authorize({
-                appState: customState
+                appState: customState,
             });
-        };
+        }
 
         logOut() {
             localStorage.removeItem(localStorageKey);
@@ -42,11 +47,11 @@ function authService() {
             this.profile = null;
 
             webAuth.logout({
-                returnTo: `${window.location.origin}`
+                returnTo: `${window.location.origin}`,
             });
 
             this.emit(loginEvent, { loggedIn: false });
-        };
+        }
 
         handleAuthentication() {
             return new Promise((resolve, reject) => {
@@ -55,7 +60,7 @@ function authService() {
                         this.emit(loginEvent, {
                             loggedIn: false,
                             error: err,
-                            errorMsg: err.statusText
+                            errorMsg: err.statusText,
                         });
                         reject(err);
                     } else {
@@ -64,18 +69,15 @@ function authService() {
                     }
                 });
             });
-        };
+        }
 
         isAuthenticated() {
-            return (
-                Date.now() < this.tokenExpiry &&
-                localStorage.getItem(localStorageKey) === 'true'
-            );
-        };
+            return Date.now() < this.tokenExpiry && localStorage.getItem(localStorageKey) === 'true';
+        }
 
         isTokenValid() {
             return this.idToken && this.tokenExpiry && Date.now() < this.tokenExpiry;
-        };
+        }
 
         getTokens() {
             return new Promise((resolve, reject) => {
@@ -89,7 +91,7 @@ function authService() {
                     resolve();
                 }
             });
-        };
+        }
 
         localLogin(authResult) {
             var profile = JSON.parse(JSON.stringify(authResult.idTokenPayload));
@@ -107,9 +109,9 @@ function authService() {
             this.emit(loginEvent, {
                 loggedIn: true,
                 profile: profile,
-                state: authResult.appState || {}
+                state: authResult.appState || {},
             });
-        };
+        }
 
         renewTokens() {
             return new Promise((resolve, reject) => {
@@ -127,11 +129,11 @@ function authService() {
                 });
             });
         }
-    };
+    }
 
     const service = new AuthService();
     return service;
-};
+}
 
 function authServiceInstall(Vue) {
     var service = authService();
@@ -140,13 +142,13 @@ function authServiceInstall(Vue) {
         created() {
             if (this.handleLoginEvent) {
                 service.addListener('loginEvent', this.handleLoginEvent);
-            };
+            }
         },
 
         destroyed() {
             if (this.handleLoginEvent) {
                 service.removeListener('loginEvent', this.handleLoginEvent);
-            };
+            }
         },
     });
-};
+}
