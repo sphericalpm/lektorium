@@ -144,6 +144,52 @@ def test_create_session_other_exist(client):
     }, 'Server should fail to create session if another already exists'
 
 
+def test_delete_site(client):
+    result = client.execute(r'''mutation {
+        deleteSite(siteId: "ldi") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'deleteSite': {
+                'ok': True,
+            },
+        },
+    }
+
+
+def test_delete_site_with_parked_sessions(client):
+    result = client.execute(r'''mutation {
+        deleteSite(siteId: "uci") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'deleteSite': {
+                'ok': True,
+            },
+        },
+    }
+
+
+@pytest.mark.parametrize('site_id', ('bow', 'missing'))
+def test_delete_site_rejected(client, site_id):
+    result = client.execute(f'''mutation {{
+        deleteSite(siteId: "{site_id}") {{
+            ok
+        }}
+    }}''')
+    assert deorder(result) == {
+        'data': {
+            'deleteSite': {
+                'ok': False,
+            },
+        },
+    }
+
+
 def test_park_session(client):
     result = client.execute(r'''mutation {
         parkSession(sessionId: "widgets-1") {

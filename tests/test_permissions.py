@@ -105,6 +105,31 @@ def test_admin_mutation(client_admin):
     }
 
 
+def test_delete_site_requires_admin(client_with_permissions):
+    result = client_with_permissions.execute(r'''mutation {
+        deleteSite(siteId:"ldi") {
+            ok
+        }
+    }''')
+    assert result['errors']
+    assert not result['data']['deleteSite']
+
+
+def test_admin_can_delete_site(client_admin):
+    result = client_admin.execute(r'''mutation {
+        deleteSite(siteId:"ldi") {
+            ok
+        }
+    }''')
+    assert deorder(result) == {
+        'data': {
+            'deleteSite': {
+                'ok': True,
+            },
+        },
+    }
+
+
 @pytest.fixture
 def anonymous_client():
     return graphene.test.Client(

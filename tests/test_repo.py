@@ -9,6 +9,8 @@ from lektorium.repo import (
     InvalidSessionState,
     ListRepo,
     SessionNotFound,
+    SiteHasActiveSession,
+    SiteNotFound,
 )
 from lektorium.repo.local import FileStorage, GitStorage
 from lektorium.repo.memory import VALID_MERGE_REQUEST
@@ -20,6 +22,11 @@ def memory_repo(_):
 
 @pytest.fixture(scope='function', params=[memory_repo, local_repo, git_repo])
 def repo(request, tmpdir):
+    return request.param(tmpdir)
+
+
+@pytest.fixture(scope='function', params=[memory_repo, local_repo])
+def deletion_repo(request, tmpdir):
     return request.param(tmpdir)
 
 
@@ -134,6 +141,45 @@ async def test_create_site(repo):
     site_count_before = len(list(repo.sites))
     await repo.create_site('cri', 'Common Redundant Idioms')
     assert len(list(repo.sites)) == site_count_before + 1
+
+
+@pytest.mark.asyncio
+async def test_delete_site(deletion_repo):
+    session_id = deletion_repo.create_session('uci')
+    deletion_repo.park_session(session_id)
+    sessions_dir = getattr(deletion_repo, 'sessions_root', None)
+    if sessions_dir is not None:
+        sessions_dir = sessions_dir / 'uci'
+        assert sessions_dir.exists()
+
+    await deletion_repo.delete_site('uci')
+
+    assert 'uci' not in {site['site_id'] for site in deletion_repo.sites}
+    if sessions_dir is not None:
+        assert not sessions_dir.exists()
+
+
+@pytest.mark.asyncio
+async def test_delete_site_with_active_session(deletion_repo):
+    session_id = deletion_repo.create_session('uci')
+    site_path = session_path = None
+    if hasattr(deletion_repo, 'storage'):
+        site_path = deletion_repo.storage._site_dir('uci')
+        session_path = deletion_repo.sessions_root / 'uci' / session_id
+
+    with pytest.raises(SiteHasActiveSession):
+        await deletion_repo.delete_site('uci')
+
+    assert 'uci' in {site['site_id'] for site in deletion_repo.sites}
+    if site_path is not None:
+        assert site_path.exists()
+        assert session_path.exists()
+
+
+@pytest.mark.asyncio
+async def test_delete_unknown_site(deletion_repo):
+    with pytest.raises(SiteNotFound):
+        await deletion_repo.delete_site('missing')
 
 
 @pytest.mark.skip(reason='too wide test')
