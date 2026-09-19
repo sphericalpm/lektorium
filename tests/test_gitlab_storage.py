@@ -51,3 +51,18 @@ async def test_gitlabstorage(tmpdir):
                 }
 
                 assert await storage.create_site_repo('') == 'site_repo'
+
+
+def test_gitlabstorage_delete_site_repo():
+    with mock.patch.object(GitStorage, '__init__', return_value=None):
+        storage = GitlabStorage(
+            'git@server.domain:namespace/reponame.git',
+            'token',
+            'protocol',
+        )
+    gitlab = mock.Mock()
+    with mock.patch.object(storage, 'gitlab', return_value=gitlab) as gitlab_factory:
+        storage.delete_site_repo('site-id')
+
+    gitlab_factory.assert_called_once_with('site-id')
+    gitlab.delete_project.assert_called_once_with()

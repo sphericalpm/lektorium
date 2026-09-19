@@ -2,6 +2,7 @@ import collections
 import os
 import pathlib
 import shutil
+from unittest import mock
 
 import pytest
 import requests_mock
@@ -50,6 +51,50 @@ async def test_everything(tmpdir, storage_factory):
     if (tmpdir / site_id).exists():
         shutil.rmtree(tmpdir / site_id)
         storage.site_config(site_id).get('project.name')
+
+
+@pytest.mark.asyncio
+async def test_delete_site(tmpdir, storage_factory):
+    storage = storage_factory(tmpdir)
+    site_id = 'delete-site'
+    remote_path = None
+    if isinstance(storage, GitStorage):
+        site_path = storage._site_dir(site_id)
+        site_path.mkdir()
+        remote_path = pathlib.Path(storage.git).parent / site_id
+        remote_path.mkdir()
+        options = {'repo': str(remote_path)}
+    else:
+        site_path, options = await storage.create_site(
+            LocalLektor,
+            'Delete Site',
+            'Site Owner',
+            site_id,
+        )
+    storage.config[site_id] = Site(site_id, None, **options)
+
+    storage.delete_site(site_id)
+
+    assert not site_path.exists()
+    assert site_id not in storage.config
+    if remote_path is not None:
+        assert not remote_path.exists()
+    assert site_id not in storage_factory(tmpdir).config
+
+
+@pytest.mark.asyncio
+async def test_delete_site_provider_failure_keeps_config(tmpdir):
+    storage = git_prepare(GitStorage)(tmpdir)
+    site_id = 'delete-site'
+    site_repo = pathlib.Path(storage.git).parent / site_id
+    site_repo.mkdir()
+    storage.config[site_id] = Site(site_id, None, repo=str(site_repo))
+
+    with mock.patch.object(storage, 'delete_site_repo', side_effect=RuntimeError):
+        with pytest.raises(RuntimeError):
+            storage.delete_site(site_id)
+
+    assert site_id in storage.config
 
 
 @pytest.mark.skip(reason='too wide test')

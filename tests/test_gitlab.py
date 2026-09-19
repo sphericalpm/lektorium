@@ -86,6 +86,24 @@ def test_headers():
     assert headers == {'Authorization': 'Bearer foo'}
 
 
+@pytest.mark.parametrize('status_code', (202, 404))
+def test_delete_project(requests_mock, status_code):
+    gitlab = GitLab(dict(
+        scheme='https',
+        host='foo.bar',
+        token='buzz',
+        namespace='fizz/buzz',
+        project='proj1',
+    ))
+    requests_mock.delete(
+        f'{gitlab.repo_url}/projects/{quote_plus(gitlab.path)}',
+        request_headers=gitlab.headers,
+        status_code=status_code,
+    )
+
+    gitlab.delete_project()
+
+
 def test_project_id(requests_mock):
     options = dict(
         scheme='http',
