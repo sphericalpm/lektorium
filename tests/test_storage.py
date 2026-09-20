@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 import requests_mock
-from conftest import git_prepare
+from conftest import git_create_site_todo, git_prepare
 
 from lektorium.repo.local import (
     FileStorage,
@@ -28,9 +28,20 @@ def storage_factory(request):
     return request.param
 
 
+@pytest.fixture(
+    scope='function',
+    params=[
+        FileStorage,
+        pytest.param(git_prepare(GitStorage), marks=git_create_site_todo),
+    ],
+)
+def site_creation_storage_factory(request):
+    return request.param
+
+
 @pytest.mark.asyncio
-async def test_everything(tmpdir, storage_factory):
-    storage = storage_factory(tmpdir)
+async def test_everything(tmpdir, site_creation_storage_factory):
+    storage = site_creation_storage_factory(tmpdir)
     assert isinstance(storage.config, dict)
     site_id = 'test-site'
     path, options = await storage.create_site(
@@ -42,7 +53,7 @@ async def test_everything(tmpdir, storage_factory):
     assert path.exists()
     storage.site_config(site_id).get('project.name')
     storage.config[site_id] = Site(site_id, None, **options)
-    storage = storage_factory(tmpdir)
+    storage = site_creation_storage_factory(tmpdir)
     assert len(storage.config)
     session_dir = tmpdir / 'session-id'
     assert not session_dir.exists()

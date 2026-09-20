@@ -131,6 +131,8 @@ def inject_permissions(wrapped=None, admin=False):
 
     @wrapt.decorator
     async def wrapper(wrapped, instance, args, kwargs):
+        # TODO: Distinguish GraphQL's root argument from info. When root is
+        # None, permission-protected queries currently treat it as info.
         info, *_ = args
         permissions = get_user_permissions(info)
         if skip_permissions_check(info):

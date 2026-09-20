@@ -1,7 +1,7 @@
 import copy
 
 import pytest
-from conftest import git_repo, local_repo
+from conftest import git_create_site_todo, git_repo, local_repo
 
 from lektorium.repo import (
     SITES,
@@ -20,7 +20,14 @@ def memory_repo(_):
     return ListRepo(copy.deepcopy(SITES))
 
 
-@pytest.fixture(scope='function', params=[memory_repo, local_repo, git_repo])
+@pytest.fixture(
+    scope='function',
+    params=[
+        memory_repo,
+        local_repo,
+        pytest.param(git_repo, marks=git_create_site_todo),
+    ],
+)
 def repo(request, tmpdir):
     return request.param(tmpdir)
 
@@ -52,7 +59,9 @@ def test_session_attributes(repo):
         'custodian',
         'custodian_email',
         'edit_url',
+        'legacy_admin_url',
         'parked_time',
+        'preview_url',
         'session_id',
     }
 

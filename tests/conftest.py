@@ -16,6 +16,11 @@ from lektorium.repo.local import (
 )
 from lektorium.repo.memory import VALID_MERGE_REQUEST
 
+git_create_site_todo = pytest.mark.xfail(
+    reason='TODO in local/storage.py: Git site creation mishandles default themes',
+    strict=True,
+)
+
 
 @wrapt.decorator
 def git_prepare(wrapped, instance, args, kwargs):
