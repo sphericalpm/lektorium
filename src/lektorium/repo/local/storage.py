@@ -72,6 +72,8 @@ class ConfigGetter:
 class Themer:
     @cached_property
     def theme_repos(self):
+        # TODO: Filter blank entries so an unset theme variable does not
+        # become an empty repository URL.
         return [item.strip() for item in os.environ.get('LEKTORIUM_LEKTOR_THEME', '').split(';')]
 
     def themes(self, names=[]):
@@ -631,6 +633,8 @@ class GitStorage(ConfigGetter, Themer, FileStorageMixin, Storage):
         run_local = functools.partial(run, cwd=site_workdir)
 
         site_repo = await self.create_site_repo(site_id)
+        # TODO: Normalize themes=None before reversing it. LocalRepo uses None
+        # when site creation does not specify themes.
         theme_repos = self.themes(themes[::-1])
 
         if theme_repos:

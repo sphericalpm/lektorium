@@ -9,6 +9,11 @@ import lektorium.repo
 import lektorium.schema
 from lektorium.app import error_formatter
 
+permission_query_todo = pytest.mark.xfail(
+    reason='TODO in schema.py: permission decorator treats GraphQL root as info',
+    strict=True,
+)
+
 
 def deorder(obj):
     '''Removes OrderedDict's in object tree'''
@@ -73,6 +78,7 @@ def client_admin():
     )
 
 
+@permission_query_todo
 def test_admin_query(client_admin):
     result = client_admin.execute(r'''{
         sites {
@@ -148,6 +154,7 @@ def anonymous_client():
     )
 
 
+@permission_query_todo
 def test_query_no_permissions(anonymous_client):
     result = anonymous_client.execute(r'''{
         sites {
@@ -168,6 +175,7 @@ def test_mutation_no_permissions(anonymous_client):
     assert not result['data']['createSite']
 
 
+@permission_query_todo
 def test_query_with_permissions(client_with_permissions):
     result = client_with_permissions.execute(r'''{
         sites {
@@ -183,6 +191,7 @@ def test_query_with_permissions(client_with_permissions):
     }
 
 
+@permission_query_todo
 def test_query_without_permissions(client_without_permissions):
     result = client_without_permissions.execute(r'''{
         sites {

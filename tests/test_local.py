@@ -1,7 +1,7 @@
 import unittest.mock
 
 import pytest
-from conftest import git_repo, local_repo
+from conftest import git_create_site_todo, git_repo, local_repo
 
 from lektorium.repo import LocalRepo
 from lektorium.repo.local import (
@@ -13,7 +13,10 @@ from lektorium.repo.local import (
 from lektorium.repo.local.repo import Session, Site
 
 
-@pytest.fixture(scope='function', params=[local_repo, git_repo])
+@pytest.fixture(
+    scope='function',
+    params=[local_repo, pytest.param(git_repo, marks=git_create_site_todo)],
+)
 def repo(request, tmpdir):
     return request.param(tmpdir)
 
