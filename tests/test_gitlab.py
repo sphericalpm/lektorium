@@ -60,19 +60,23 @@ def mock_projects(mocker, gitlab_instance):
 
 
 def test_repo_url():
-    repo_url = GitLab(dict(
-        scheme='http',
-        host='foo',
-        namespace='fizz/buzz',
-    )).repo_url
+    repo_url = GitLab(
+        dict(
+            scheme='http',
+            host='foo',
+            namespace='fizz/buzz',
+        )
+    ).repo_url
     assert repo_url == f'http://foo/api/{GitLab.DEFAULT_API_VERSION}'
 
-    repo_url = GitLab(dict(
-        scheme='https',
-        host='bar',
-        api_version='v2',
-        namespace='fizz/buzz',
-    )).repo_url
+    repo_url = GitLab(
+        dict(
+            scheme='https',
+            host='bar',
+            api_version='v2',
+            namespace='fizz/buzz',
+        )
+    ).repo_url
     assert repo_url == 'https://bar/api/v2'
 
 
@@ -88,13 +92,15 @@ def test_headers():
 
 @pytest.mark.parametrize('status_code', (202, 404))
 def test_delete_project(requests_mock, status_code):
-    gitlab = GitLab(dict(
-        scheme='https',
-        host='foo.bar',
-        token='buzz',
-        namespace='fizz/buzz',
-        project='proj1',
-    ))
+    gitlab = GitLab(
+        dict(
+            scheme='https',
+            host='foo.bar',
+            token='buzz',
+            namespace='fizz/buzz',
+            project='proj1',
+        )
+    )
     requests_mock.delete(
         f'{gitlab.repo_url}/projects/{quote_plus(gitlab.path)}',
         request_headers=gitlab.headers,
@@ -126,12 +132,14 @@ def test_project_id(requests_mock):
 
 
 def test_get_namespace_id(requests_mock):
-    gitlab = GitLab(dict(
-        scheme='http',
-        host='foo.bar',
-        token='buzz',
-        namespace='fizz',
-    ))
+    gitlab = GitLab(
+        dict(
+            scheme='http',
+            host='foo.bar',
+            token='buzz',
+            namespace='fizz',
+        )
+    )
 
     namespace_id = mock_namespaces(requests_mock, gitlab)
 
@@ -139,12 +147,14 @@ def test_get_namespace_id(requests_mock):
 
 
 def test_projects(requests_mock):
-    gitlab = GitLab(dict(
-        scheme='http',
-        host='foo.bar',
-        token='buzz',
-        namespace='fizz/buzz',
-    ))
+    gitlab = GitLab(
+        dict(
+            scheme='http',
+            host='foo.bar',
+            token='buzz',
+            namespace='fizz/buzz',
+        )
+    )
 
     mock_projects(requests_mock, gitlab)
 
@@ -287,9 +297,7 @@ def test_merge_requests(requests_mock):
     title = 'request title ghi'
 
     def additional_matcher(request):
-        return all(
-            item in request.text for item in (src_branch, tgt_branch, title)
-        )
+        return all(item in request.text for item in (src_branch, tgt_branch, title))
 
     options = dict(
         scheme='http',
@@ -321,9 +329,7 @@ def test_create_merge_request(requests_mock):
     title = 'request-title-ghi'
 
     def additional_matcher(request):
-        return all(
-            item in request.text for item in (src_branch, tgt_branch, title)
-        )
+        return all(item in request.text for item in (src_branch, tgt_branch, title))
 
     options = dict(
         scheme='http',

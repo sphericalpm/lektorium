@@ -106,11 +106,16 @@ def test_create_cloudfront_distribution():
             'ActiveTrustedSigners': {'Quantity': 0, 'Enabled': False},
             'DistributionConfig': {
                 'CallerReference': '',
-                'Origins': {'Quantity': 1, 'Items': [{
-                    'Id': '',
-                    'DomainName': '',
-                    'S3OriginConfig': {'OriginAccessIdentity': ''},
-                }]},
+                'Origins': {
+                    'Quantity': 1,
+                    'Items': [
+                        {
+                            'Id': '',
+                            'DomainName': '',
+                            'S3OriginConfig': {'OriginAccessIdentity': ''},
+                        }
+                    ],
+                },
                 'DefaultCacheBehavior': {
                     'TargetOriginId': '',
                     'ForwardedValues': {
@@ -134,15 +139,17 @@ def test_create_cloudfront_distribution():
             Enabled=True,
             Origins=dict(
                 Quantity=1,
-                Items=[dict(
-                    Id=ANY,
-                    DomainName=origin_domain,
-                    CustomOriginConfig=dict(
-                        HTTPPort=80,
-                        HTTPSPort=443,
-                        OriginProtocolPolicy='http-only',
-                    ),
-                )],
+                Items=[
+                    dict(
+                        Id=ANY,
+                        DomainName=origin_domain,
+                        CustomOriginConfig=dict(
+                            HTTPPort=80,
+                            HTTPSPort=443,
+                            OriginProtocolPolicy='http-only',
+                        ),
+                    )
+                ],
             ),
             DefaultCacheBehavior=dict(
                 TargetOriginId=ANY,

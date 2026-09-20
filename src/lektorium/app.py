@@ -145,9 +145,7 @@ def init_app(repo, auth0_options=None, auth0_client=None):
         return aiohttp.web.FileResponse(client_dir / 'public' / 'index.html')
 
     async def auth0_config(request):
-        options = (
-            {x: auth0_options.get(f'data-auth0-{x}', None) for x in ['domain', 'id', 'api']} if auth0_options else {}
-        )
+        options = {x: auth0_options.get(f'data-auth0-{x}', None) for x in ['domain', 'id', 'api']} if auth0_options else {}
         options = json.dumps(options)
         return aiohttp.web.Response(
             text=f'let lektoriumAuth0Config={options};',

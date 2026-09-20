@@ -104,9 +104,7 @@ class Themer:
         if not config:
             config = self.sparce_repo_config(site_id)
         all_themes = self.themes().values()
-        config_themes = [
-            theme.strip() for theme in config.get('project.themes', '').split(',') if theme.strip() in all_themes
-        ]
+        config_themes = [theme.strip() for theme in config.get('project.themes', '').split(',') if theme.strip() in all_themes]
 
         themes = config_themes[:]
         for name in all_themes:

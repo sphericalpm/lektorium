@@ -21,11 +21,15 @@ async def test_gitlabstorage(tmpdir):
         create_cloudfront_distribution=lambda *args, **kwargs: ('dist_id', 'domain_name'),
         open_bucket_access=lambda *args, **kwargs: None,
     ):
+
         async def init_project_mock(*args, **kwargs):
             return 'site_repo'
+
         with mock.patch.multiple(GitLab, init_project=init_project_mock):
+
             async def mock_create_site(*args, **kwargs):
                 return local_dir, {}
+
             with mock.patch.multiple(
                 GitStorage,
                 __init__=lambda *args, **kwargs: None,

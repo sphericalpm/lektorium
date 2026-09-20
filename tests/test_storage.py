@@ -117,7 +117,7 @@ async def test_request_release(tmpdir):
     session_id = 'session-id'
     session_dir = tmpdir / session_id
     storage.create_session(site_id, session_id, session_dir)
-    page = (pathlib.Path(session_dir) / 'content' / 'contents.lr')
+    page = pathlib.Path(session_dir) / 'content' / 'contents.lr'
     page.write_text(os.linesep.join((page.read_text(), 'Signature.')))
     site = storage.config[site_id]
     site.sessions[session_id] = dict(custodian='user', custodian_email='email')
@@ -140,9 +140,7 @@ async def test_request_release(tmpdir):
         assert last_request.url == post_url
         assert last_request.method == 'POST'
         assert last_request.body == (
-            'source_branch=session-session-id&'
-            'target_branch=master&'
-            'title=Request+from%3A+%22user%22+%3Cemail%3E'
+            'source_branch=session-session-id&target_branch=master&title=Request+from%3A+%22user%22+%3Cemail%3E'
         )
 
 
