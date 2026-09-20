@@ -317,10 +317,7 @@ def test_unpark_session_another_exist(client):
                 'ok': False,
             },
         },
-    }, (
-        'Server should fail to unpark session when there is an active session '
-        'for same website'
-    )
+    }, 'Server should fail to unpark session when there is an active session for same website'
 
 
 def test_unpark_unknown_session(client):
@@ -422,11 +419,13 @@ def test_resolve_funcs(client):
     }''')
     assert deorder(result) == {
         'data': {
-            'sessions': [{
-                'productionUrl': 'https://bow.acme.com',
-                'stagingUrl': 'https://bow-test.acme.com',
-                'parked': False,
-            }],
+            'sessions': [
+                {
+                    'productionUrl': 'https://bow.acme.com',
+                    'stagingUrl': 'https://bow-test.acme.com',
+                    'parked': False,
+                }
+            ],
         },
     }
 
@@ -500,11 +499,13 @@ def test_parked_resolve(client):
         'data': {
             'sites': [
                 {'sessions': [{'parked': False}]},
-                {'sessions': [
-                    {'parked': True},
-                    {'parked': True},
-                    {'parked': False},
-                ]},
+                {
+                    'sessions': [
+                        {'parked': True},
+                        {'parked': True},
+                        {'parked': False},
+                    ]
+                },
                 {'sessions': None},
             ],
         },

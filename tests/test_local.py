@@ -75,6 +75,7 @@ def test_session():
 def test_session_callable_editurl():
     def edit_url():
         return ('edit_url', 'http://stag.test')
+
     session = Session(session_name='test_session', edit_url=edit_url)
     assert session.edit_url == 'http://stag.test'
 

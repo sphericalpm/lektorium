@@ -39,15 +39,17 @@ def deletion_repo(request, tmpdir):
 
 def test_site_attributes(repo):
     attributes = set({a: s[a] for s in repo.sites for a in s})
-    assert attributes.issuperset({
-        'custodian',
-        'custodian_email',
-        'production_url',
-        'sessions',
-        'site_id',
-        'site_name',
-        'staging_url',
-    })
+    assert attributes.issuperset(
+        {
+            'custodian',
+            'custodian_email',
+            'production_url',
+            'sessions',
+            'site_id',
+            'site_name',
+            'staging_url',
+        }
+    )
 
 
 def test_session_attributes(repo):

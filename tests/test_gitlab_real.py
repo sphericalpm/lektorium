@@ -19,10 +19,7 @@ def test_gitlab_real():
     options = dict(x.split('=') for x in options)
     gitlab = storage.GitLab(options)
     response = requests.get(
-        (
-            '{scheme}://{host}/api/{api_version}/projects'
-            '/{config}/repository/files/{filename}'
-        ).format(
+        '{scheme}://{host}/api/{api_version}/projects/{config}/repository/files/{filename}'.format(
             filename=storage.GitStorage.CONFIG_FILENAME,
             **gitlab.options,
         ),
@@ -34,10 +31,7 @@ def test_gitlab_real():
     config = base64.b64decode(config)
     config = yaml.load(io.BytesIO(config))
     response = requests.get(
-        (
-            '{scheme}://{host}/api/{api_version}/projects'
-            '/{config}'
-        ).format(**gitlab.options),
+        '{scheme}://{host}/api/{api_version}/projects/{config}'.format(**gitlab.options),
         headers=gitlab.headers,
     )
     response.raise_for_status()

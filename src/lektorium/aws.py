@@ -45,7 +45,8 @@ class AWS:
         bucket_name = prefix + site_id
         response = self.s3_client.create_bucket(Bucket=bucket_name)
         self._raise_if_not_status(
-            response, 200,
+            response,
+            200,
             'Failed to create S3 bucket',
         )
         return bucket_name
@@ -68,7 +69,8 @@ class AWS:
             Policy=BUCKET_POLICY_TEMPLATE.format(bucket_name=bucket_name),
         )
         self._raise_if_not_status(
-            response, 204,
+            response,
+            204,
             'Failed to set bucket access policy',
         )
 
@@ -84,7 +86,8 @@ class AWS:
             ),
         )
         self._raise_if_not_status(
-            response, 200,
+            response,
+            200,
             'Failed to make S3 bucket website',
         )
 
@@ -98,15 +101,17 @@ class AWS:
                 Enabled=True,
                 Origins=dict(
                     Quantity=1,
-                    Items=[dict(
-                        Id='1',
-                        DomainName=domain,
-                        CustomOriginConfig=dict(
-                            HTTPPort=80,
-                            HTTPSPort=443,
-                            OriginProtocolPolicy='http-only',
-                        ),
-                    )],
+                    Items=[
+                        dict(
+                            Id='1',
+                            DomainName=domain,
+                            CustomOriginConfig=dict(
+                                HTTPPort=80,
+                                HTTPSPort=443,
+                                OriginProtocolPolicy='http-only',
+                            ),
+                        )
+                    ],
                 ),
                 DefaultCacheBehavior=dict(
                     TargetOriginId='1',
@@ -123,7 +128,8 @@ class AWS:
             ),
         )
         self._raise_if_not_status(
-            response, 201,
+            response,
+            201,
             'Failed to create CloudFront distribution',
         )
         distribution_data = response['Distribution']

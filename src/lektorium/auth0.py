@@ -20,6 +20,7 @@ def cacher(method_alias, timeout=None):
             instance._cache[key] = (await wrapped(*args), time.time())
         result, _ = instance._cache[key]
         return result
+
     return wrapper
 
 
@@ -55,9 +56,7 @@ class FakeAuth0Client:
 
     async def set_user_permissions(self, user_id, permissions):
         if user_id in self.users_permissions:
-            new_permissions = [
-                {'permission_name': name, 'description': ''} for name in permissions
-            ]
+            new_permissions = [{'permission_name': name, 'description': ''} for name in permissions]
             for permission in new_permissions:
                 if permission not in self.users_permissions[user_id]:
                     self.users_permissions[user_id].append(permission)
@@ -66,9 +65,7 @@ class FakeAuth0Client:
 
     async def delete_user_permissions(self, user_id, permissions):
         if user_id in self.users_permissions:
-            permissions_to_delete = [
-                {'permission_name': name, 'description': ''} for name in permissions
-            ]
+            permissions_to_delete = [{'permission_name': name, 'description': ''} for name in permissions]
             for index, permission in enumerate(self.users_permissions[user_id]):
                 if permission in permissions_to_delete:
                     del self.users_permissions[user_id][index]
@@ -172,10 +169,12 @@ class Auth0Client:
             await self.add_api_permission(permission, permission)
         data = {'permissions': []}
         for permission in permissions:
-            data['permissions'].append({
-                'resource_server_identifier': self.api_id,
-                'permission_name': permission,
-            })
+            data['permissions'].append(
+                {
+                    'resource_server_identifier': self.api_id,
+                    'permission_name': permission,
+                }
+            )
         url = f'{self.audience}/users/{user_id}/permissions'
         async with self.session.post(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 201:
@@ -188,10 +187,12 @@ class Auth0Client:
         self._cache.clear()
         data = {'permissions': []}
         for permission in permissions:
-            data['permissions'].append({
-                'resource_server_identifier': self.api_id,
-                'permission_name': permission,
-            })
+            data['permissions'].append(
+                {
+                    'resource_server_identifier': self.api_id,
+                    'permission_name': permission,
+                }
+            )
         url = f'{self.audience}/users/{user_id}/permissions'
         async with self.session.delete(url, json=data, headers=await self.auth_headers) as resp:
             if resp.status != 204:

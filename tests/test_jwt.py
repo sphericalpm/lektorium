@@ -83,6 +83,7 @@ async def test_public_key(aresponses, jwt_middleware):
             headers={'Content-Type': 'application/json'},
             body=b'{"public_key": "somekey"}',
         )
+
     aresponses.add(
         jwt_middleware.auth0_domain,
         '/.well-known/jwks.json',

@@ -26,13 +26,17 @@ class LocalLektor(Lektor):
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
         )
-        proc.communicate(input=os.linesep.join((
-            name,
-            owner,
-            str(folder),
-            'n',
-            'Y',
-            '',
-        )).encode())
+        proc.communicate(
+            input=os.linesep.join(
+                (
+                    name,
+                    owner,
+                    str(folder),
+                    'n',
+                    'Y',
+                    '',
+                )
+            ).encode()
+        )
         if proc.wait() != 0:
             raise RuntimeError()

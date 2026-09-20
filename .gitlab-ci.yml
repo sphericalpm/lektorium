@@ -27,7 +27,7 @@ lektorium-deploy:
     - python3 -m venv ./venv
     - . ./venv/bin/activate
     - git tag && git status && git describe
-    - pip install 'spherical-dev[dev]>=0.2.2,<0.3.0' wheel "Setuptools<81"
+    - pip install 'spherical-dev[dev]>=0.3.6.1,<0.4.0' wheel "Setuptools<81"
     - cp ${LEKTORIUM_DEPLOY_CONFIG} invoke.yaml
     - inv deploy
     - docker ps -a

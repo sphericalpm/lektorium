@@ -3,23 +3,14 @@ import setuptools
 
 setuptools.setup(
     name='lektorium',
-
     use_scm_version=True,
-    setup_requires=[
-        'setuptools_scm',
-    ],
-
+    setup_requires=['setuptools_scm'],
     author='Anton Patrushev',
     author_email='ap@spherical.pm',
     maintainer='spherical.pm',
     maintainer_email='support@spherical.pm',
-
-    description=(
-        'a pragmatic web content management solution '
-        'for those with way too many little sites'
-    ),
+    description=('a pragmatic web content management solution for those with way too many little sites'),
     license='MIT',
-
     packages=[
         'lektorium',
         'lektorium.repo',
@@ -55,7 +46,7 @@ setuptools.setup(
         'more-itertools',
         'python-dateutil<2.8.1',
         'pyyaml',
-        'spherical-dev>=0.2.2,<0.3.0',
+        'spherical-dev[dev]>=0.3.6.1,<0.4.0',
         'wrapt',
         'invoke',
         'decorator',
@@ -76,7 +67,6 @@ setuptools.setup(
             'pytest-asyncio',
             'pytest-cov',
             'requests-mock',
-            'spherical-dev[dev]>=0.2.2,<0.3.0',
             'wheel',
         ],
     },

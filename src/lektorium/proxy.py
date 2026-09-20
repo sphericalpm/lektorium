@@ -26,6 +26,7 @@ async def streamer(
 
     def ws_close(*args, **kwargs):
         create_task(ws.close())
+
     other.add_done_callback(ws_close)
 
     try:

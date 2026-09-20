@@ -25,7 +25,7 @@ git_create_site_todo = pytest.mark.xfail(
 @wrapt.decorator
 def git_prepare(wrapped, instance, args, kwargs):
     assert not len(kwargs)
-    tmpdir, = args
+    (tmpdir,) = args
     tmpdir = tmpdir / 'lektorium'
     if not tmpdir.exists():
         tmpdir.mkdir()
