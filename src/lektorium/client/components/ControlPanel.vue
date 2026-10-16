@@ -61,57 +61,59 @@
                                         </a>
                                     </td>
                                     <td class="text-right">
-                                        <b-dropdown
-                                            :disabled="checkActiveSession(site)"
-                                            text="Create Editor"
-                                            right
-                                            split
-                                            variant="success"
-                                            class="rounded"
-                                            @click="createSession(site.siteId)"
-                                        >
-                                            <b-dropdown-item @click="customizeTheme(site.siteId)">
-                                                Customize themes
-                                            </b-dropdown-item>
-                                        </b-dropdown>
-                                        <b-dropdown
-                                            v-if="create_site_btn_visible"
-                                            right
-                                            no-caret
-                                            variant="secondary"
-                                            class="site-actions ml-3"
-                                            toggle-class="rounded"
-                                        >
-                                            <template slot="button-content">
-                                                <i
-                                                    class="fas fa-bars"
-                                                    aria-hidden="true"
-                                                ></i>
-                                                <span class="sr-only">Actions for {{ site.siteName }}</span>
-                                            </template>
-                                            <b-dropdown-item
-                                                variant="danger"
+                                        <div class="site-action-controls">
+                                            <b-dropdown
                                                 :disabled="checkActiveSession(site)"
-                                                :aria-label="`Delete ${site.siteName}`"
-                                                :aria-describedby="
-                                                    checkActiveSession(site) ? `delete-site-reason-${index}` : null
-                                                "
-                                                @click="confirmDeleteSite(site)"
+                                                text="Create Editor"
+                                                right
+                                                split
+                                                variant="success"
+                                                class="rounded"
+                                                @click="createSession(site.siteId)"
                                             >
-                                                <i
-                                                    class="fas fa-trash-alt mr-2"
-                                                    aria-hidden="true"
-                                                ></i>
-                                                Delete
-                                                <small
-                                                    v-if="checkActiveSession(site)"
-                                                    :id="`delete-site-reason-${index}`"
-                                                    class="d-block text-muted"
+                                                <b-dropdown-item @click="customizeTheme(site.siteId)">
+                                                    Customize themes
+                                                </b-dropdown-item>
+                                            </b-dropdown>
+                                            <b-dropdown
+                                                v-if="create_site_btn_visible"
+                                                right
+                                                no-caret
+                                                variant="secondary"
+                                                class="ml-3"
+                                                toggle-class="rounded"
+                                            >
+                                                <template slot="button-content">
+                                                    <i
+                                                        class="fas fa-bars"
+                                                        aria-hidden="true"
+                                                    ></i>
+                                                    <span class="sr-only">Actions for {{ site.siteName }}</span>
+                                                </template>
+                                                <b-dropdown-item
+                                                    variant="danger"
+                                                    :disabled="checkActiveSession(site)"
+                                                    :aria-label="`Delete ${site.siteName}`"
+                                                    :aria-describedby="
+                                                        checkActiveSession(site) ? `delete-site-reason-${index}` : null
+                                                    "
+                                                    @click="confirmDeleteSite(site)"
                                                 >
-                                                    {{ deleteSiteDisabledReason(site) }}
-                                                </small>
-                                            </b-dropdown-item>
-                                        </b-dropdown>
+                                                    <i
+                                                        class="fas fa-trash-alt mr-2"
+                                                        aria-hidden="true"
+                                                    ></i>
+                                                    Delete
+                                                    <small
+                                                        v-if="checkActiveSession(site)"
+                                                        :id="`delete-site-reason-${index}`"
+                                                        class="d-block text-muted"
+                                                    >
+                                                        {{ deleteSiteDisabledReason(site) }}
+                                                    </small>
+                                                </b-dropdown-item>
+                                            </b-dropdown>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1063,8 +1065,11 @@ module.exports = {
     font-size: 12px;
 }
 
-.site-actions {
-    vertical-align: top;
+.site-action-controls {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    white-space: nowrap;
 }
 
 .floating-message {
