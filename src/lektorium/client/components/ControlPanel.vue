@@ -684,7 +684,7 @@ module.exports = {
                 return;
             }
             let data = result.data.data;
-            this.available_sites = data.sites;
+            this.available_sites = data.sites.slice().reverse();
             this.edit_sessions = this.convertTimeAndOrder(data.editSessions);
             this.parked_sessions = this.convertTimeAndOrder(data.parkedSessions);
             this.users = data.users;
