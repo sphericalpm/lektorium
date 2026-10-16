@@ -519,6 +519,10 @@
         >
             {{ message }}
         </b-alert>
+        <div
+            ref="pageBottom"
+            aria-hidden="true"
+        ></div>
     </div>
 </template>
 
@@ -686,7 +690,7 @@ module.exports = {
                 return;
             }
             let data = result.data.data;
-            this.available_sites = data.sites.slice().reverse();
+            this.available_sites = data.sites;
             this.edit_sessions = this.convertTimeAndOrder(data.editSessions);
             this.parked_sessions = this.convertTimeAndOrder(data.parkedSessions);
             this.users = data.users;
@@ -861,7 +865,8 @@ module.exports = {
             const result = await this.makeMutationRequest(query, 'createSite', 'create sites');
             if (result && result[0] && result[0].ok) {
                 this.showMessage(`${site_name} was created`, `success`);
-                this.getPanelData();
+                await this.getPanelData();
+                this.$nextTick(() => this.scrollToPageBottom());
             } else {
                 this.showMessage(`Unable to create site`, `danger`);
             }
@@ -948,6 +953,14 @@ module.exports = {
             this.message = text;
             this.message_type = type;
             this.message_visible = true;
+        },
+
+        scrollToPageBottom() {
+            const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            this.$refs.pageBottom.scrollIntoView({
+                behavior: reducedMotion ? 'auto' : 'smooth',
+                block: 'end',
+            });
         },
 
         showUserModal(user) {
