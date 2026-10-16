@@ -9,9 +9,8 @@ from datetime import datetime
 from cached_property import cached_property
 
 from ...utils import closer
-from ..interface import DuplicateEditSession, InvalidSessionState
+from ..interface import DuplicateEditSession, InvalidSessionState, SessionNotFound, SiteHasActiveSession, SiteNotFound
 from ..interface import Repo as BaseRepo
-from ..interface import SessionNotFound, SiteHasActiveSession, SiteNotFound
 from .objects import Session, Site
 
 
@@ -237,8 +236,8 @@ class Repo(BaseRepo):
         production_url = site_options.pop('production_url', None)
         if production_url is None:
             production_url = site_options.get('url', None)
-        if production_url is None:
-            production_url = self.server.serve_static(site_root)
+        # if production_url is None:
+        #     production_url = self.server.serve_static(site_root)
 
         self.config[site_id] = Site(
             site_id,
