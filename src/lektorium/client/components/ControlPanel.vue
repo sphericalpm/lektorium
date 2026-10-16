@@ -511,6 +511,7 @@
         <b-alert
             :show="message_visible"
             :variant="message_type"
+            class="floating-message"
             dismissible
             @dismissed="message_visible = false"
         >
@@ -1064,5 +1065,16 @@ module.exports = {
 
 .site-actions {
     vertical-align: top;
+}
+
+.floating-message {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    z-index: 1080;
+    width: calc(100% - 2rem);
+    max-width: 40rem;
+    transform: translateX(-50%);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
 }
 </style>
