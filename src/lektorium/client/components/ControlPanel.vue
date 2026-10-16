@@ -74,20 +74,23 @@
                                                 Customize themes
                                             </b-dropdown-item>
                                         </b-dropdown>
-                                        <span
+                                        <b-dropdown
                                             v-if="create_site_btn_visible"
-                                            class="delete-site-wrapper ml-3"
-                                            v-b-tooltip.hover.focus
-                                            :title="deleteSiteDisabledReason(site)"
-                                            :tabindex="checkActiveSession(site) ? 0 : null"
-                                            :role="checkActiveSession(site) ? 'button' : null"
-                                            :aria-disabled="checkActiveSession(site) ? 'true' : null"
-                                            :aria-label="checkActiveSession(site) ? `Delete ${site.siteName}` : null"
-                                            :aria-describedby="checkActiveSession(site) ? `delete-site-reason-${index}` : null"
+                                            right
+                                            no-caret
+                                            variant="secondary"
+                                            class="site-actions ml-3"
+                                            toggle-class="rounded"
                                         >
-                                            <b-button
+                                            <template slot="button-content">
+                                                <i
+                                                    class="fas fa-bars"
+                                                    aria-hidden="true"
+                                                ></i>
+                                                <span class="sr-only">Actions for {{ site.siteName }}</span>
+                                            </template>
+                                            <b-dropdown-item
                                                 variant="danger"
-                                                class="rounded"
                                                 :disabled="checkActiveSession(site)"
                                                 :aria-label="`Delete ${site.siteName}`"
                                                 :aria-describedby="
@@ -96,18 +99,19 @@
                                                 @click="confirmDeleteSite(site)"
                                             >
                                                 <i
-                                                    class="fas fa-times"
+                                                    class="fas fa-trash-alt mr-2"
                                                     aria-hidden="true"
                                                 ></i>
-                                            </b-button>
-                                        </span>
-                                        <span
-                                            v-if="create_site_btn_visible && checkActiveSession(site)"
-                                            :id="`delete-site-reason-${index}`"
-                                            class="sr-only"
-                                        >
-                                            {{ deleteSiteDisabledReason(site) }}
-                                        </span>
+                                                Delete
+                                                <small
+                                                    v-if="checkActiveSession(site)"
+                                                    :id="`delete-site-reason-${index}`"
+                                                    class="d-block text-muted"
+                                                >
+                                                    {{ deleteSiteDisabledReason(site) }}
+                                                </small>
+                                            </b-dropdown-item>
+                                        </b-dropdown>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1058,8 +1062,7 @@ module.exports = {
     font-size: 12px;
 }
 
-.delete-site-wrapper {
-    display: inline-block;
+.site-actions {
     vertical-align: top;
 }
 </style>
