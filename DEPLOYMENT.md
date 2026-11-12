@@ -60,6 +60,7 @@ Below is a structure of Lektorium config file which may require changes for your
             project: <gitlab_project_name>
         [branch: <branch_name>]
         [url: <production_url>]
+        [created: <unix_timestamp>]
 
 ### Supported settings
 
@@ -93,6 +94,14 @@ website production url
 gitlab branch name
 
 :Type: ``str``
+
+#### site_id.created
+Optional creation time in Unix seconds, stored as an integer. New sites record
+this value automatically. Existing sites may omit it or have a null value.
+The site list displays the local calendar date as `dd MMM yyyy` and groups
+creation-date sorting into UTC days.
+
+:Type: ``int``
 
 #### site_id.gitlab.schema
 network protocol to work with gitlab
@@ -139,3 +148,24 @@ spherical-website:
     project: spherical-website
   url: https://www.spherical.pm
 ```
+
+## Backfill creation dates
+
+After deploying creation-date support, start a web pipeline with
+`TRIGGER_TASK=manual_set_creation_dates`. Set `CI_LEKTORIUM_CONFIG_REPO` to the
+repository containing `config.yml`. The job uses `CI_PROJECTS_ACCESS_TOKEN` for
+GitLab access. The credentials must allow reading site repositories and pushing
+to the config repository's default branch.
+
+The job fills only entries without a `created` key, using each entry's `repo` URL.
+It reads the oldest root-commit author timestamp from the repository's default
+branch, using a bare partial clone with complete commit history. Existing values,
+including nulls, are preserved.
+
+Successful updates are pushed in one commit named `Set site creation dates`.
+Individual site failures produce warnings and leave the job successful; config
+loading, commit, or push failures fail the job. Running it again does not create
+a commit unless additional dates can be filled. YAML formatting and comments may
+change when the file is saved.
+
+Reload or redeploy Lektorium afterward to refresh its cached configuration.

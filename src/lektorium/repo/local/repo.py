@@ -4,6 +4,7 @@ import functools
 import pathlib
 import shutil
 import tempfile
+import time
 from datetime import datetime
 
 from cached_property import cached_property
@@ -224,6 +225,7 @@ class Repo(BaseRepo):
         session.pop('parked_time', None)
 
     async def create_site(self, site_id, name, themes=None, owner=None):
+        created = int(time.time())
         owner, email = owner or self.DEFAULT_USER
         site_root, site_options = await self.storage.create_site(
             self.lektor,
@@ -246,6 +248,7 @@ class Repo(BaseRepo):
                 name=name,
                 owner=owner,
                 email=email,
+                created=created,
                 **site_options,
             ),
         )
