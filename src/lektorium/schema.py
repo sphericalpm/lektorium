@@ -6,6 +6,7 @@ from graphene import (
     Boolean,
     DateTime,
     Field,
+    Float,
     List,
     Mutation,
     ObjectType,
@@ -27,6 +28,7 @@ class Site(ObjectType):
 
     site_id = String()
     site_name = String()
+    created = Float()
     custodian = String()
     custodian_email = String()
     production_url = String()

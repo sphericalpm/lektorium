@@ -20,7 +20,32 @@
                         <table class="table table-hover table-striped">
                             <thead>
                                 <tr>
-                                    <th scope="col">Site</th>
+                                    <th
+                                        scope="col"
+                                        :aria-sort="siteSortAria('siteName')"
+                                    >
+                                        <button
+                                            type="button"
+                                            class="site-sort-button"
+                                            @click="setSiteSort('siteName')"
+                                        >
+                                            Site
+                                            <span aria-hidden="true">{{ siteSortIndicator('siteName') }}</span>
+                                        </button>
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        :aria-sort="siteSortAria('created')"
+                                    >
+                                        <button
+                                            type="button"
+                                            class="site-sort-button"
+                                            @click="setSiteSort('created')"
+                                        >
+                                            Created
+                                            <span aria-hidden="true">{{ siteSortIndicator('created') }}</span>
+                                        </button>
+                                    </th>
                                     <th scope="col">Production</th>
                                     <!-- <th scope="col">Staging</th> -->
                                     <th scope="col">Custodian</th>
@@ -40,10 +65,12 @@
                             </thead>
                             <tbody>
                                 <tr
-                                    v-for="(site, index) in available_sites"
-                                    :key="index"
+                                    v-for="(site, index) in orderedSites"
+                                    :key="site.siteId"
+                                    :ref="'site-row-' + site.siteId"
                                 >
                                     <td>{{ site.siteName }}</td>
+                                    <td class="text-nowrap">{{ formatCreated(site.created) }}</td>
                                     <td>
                                         <a
                                             v-if="site.productionUrl && site.productionUrl.startsWith('http')"
@@ -519,10 +546,6 @@
         >
             {{ message }}
         </b-alert>
-        <div
-            ref="pageBottom"
-            aria-hidden="true"
-        ></div>
     </div>
 </template>
 
@@ -531,7 +554,10 @@ module.exports = {
     name: 'ControlPanel',
     data() {
         return {
+            daySeconds: 86400,
             available_sites: [],
+            site_sort_column: 'created',
+            site_sort_direction: 'desc',
             edit_sessions: [],
             parked_sessions: [],
             users: [],
@@ -565,7 +591,58 @@ module.exports = {
         themeSelect: window.httpVueLoader('/components/ThemeSelect.vue'),
         Loading: VueLoading,
     },
+    computed: {
+        orderedSites() {
+            const direction = this.site_sort_direction === 'asc' ? 1 : -1;
+            return [...(this.available_sites || [])].sort((left, right) => {
+                const names = (left.siteName || '').localeCompare(right.siteName || '', undefined, { sensitivity: 'base' });
+                if (this.site_sort_column === 'siteName') {
+                    return direction * names;
+                }
+
+                if (_.isNumber(left.created) && !_.isNumber(right.created)) {
+                    return -1;
+                }
+                if (_.isNumber(right.created) && !_.isNumber(left.created)) {
+                    return 1;
+                }
+                const leftDay = Math.floor(left.created / this.daySeconds) * this.daySeconds;
+                const rightDay = Math.floor(right.created / this.daySeconds) * this.daySeconds;
+                return direction * (leftDay - rightDay) || names;
+            });
+        },
+    },
     methods: {
+        setSiteSort(column) {
+            if (this.site_sort_column === column) {
+                this.site_sort_direction = this.site_sort_direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.site_sort_column = column;
+                this.site_sort_direction = column === 'created' ? 'desc' : 'asc';
+            }
+        },
+
+        siteSortAria(column) {
+            if (this.site_sort_column !== column) return 'none';
+            return this.site_sort_direction === 'asc' ? 'ascending' : 'descending';
+        },
+
+        siteSortIndicator(column) {
+            if (this.site_sort_column !== column) return '↕';
+            return this.site_sort_direction === 'asc' ? '▲' : '▼';
+        },
+
+        formatCreated(created) {
+            if (!_.isNumber(created)) {
+                return '';
+            }
+            const date = new Date(created * 1000);
+            const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][
+                date.getMonth()
+            ];
+            return `${String(date.getDate()).padStart(2, '0')} ${month} ${date.getFullYear()}`;
+        },
+
         isAnonymous(result) {
             if (result.data.errors !== undefined) {
                 if (result.data.errors[0].code == 403) {
@@ -634,6 +711,7 @@ module.exports = {
             let query = `{
                 sites {
                     siteId
+                    created
                     custodian
                     custodianEmail
                     productionUrl
@@ -866,7 +944,7 @@ module.exports = {
             if (result && result[0] && result[0].ok) {
                 this.showMessage(`${site_name} was created`, `success`);
                 await this.getPanelData();
-                this.$nextTick(() => this.scrollToPageBottom());
+                this.$nextTick(() => this.scrollToSite(payload.site_id));
             } else {
                 this.showMessage(`Unable to create site`, `danger`);
             }
@@ -955,11 +1033,13 @@ module.exports = {
             this.message_visible = true;
         },
 
-        scrollToPageBottom() {
+        scrollToSite(siteId) {
+            const [row] = this.$refs['site-row-' + siteId] || [];
+            if (!row) return;
             const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            this.$refs.pageBottom.scrollIntoView({
+            row.scrollIntoView({
                 behavior: reducedMotion ? 'auto' : 'smooth',
-                block: 'end',
+                block: 'nearest',
             });
         },
 
@@ -1076,6 +1156,20 @@ module.exports = {
 
 .font-12 {
     font-size: 12px;
+}
+
+.site-sort-button {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.site-sort-button:focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
 }
 
 .site-action-controls {
