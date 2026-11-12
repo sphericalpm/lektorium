@@ -1,0 +1,9 @@
+[tools]
+python = "3.9"
+uv = "latest"
+
+[settings]
+python.uv_venv_auto = "source"
+
+[env]
+UV_PYTHON = { value = "{{ tools.python.path }}", tools = true }
