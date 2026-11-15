@@ -46,7 +46,7 @@ def get_skip_resolver(ctx):
 @task
 def build_lektor_image(ctx):
     lektor_dir = f'{CONTAINERS_BASE}/lektor'
-    ctx.run(f'docker build --build-arg BASE_IMAGE={LEKTOR_BASE} --tag {LEKTOR_IMAGE} {lektor_dir}')
+    ctx.run(f'docker build --no-cache --build-arg BASE_IMAGE={LEKTOR_BASE} --tag {LEKTOR_IMAGE} {lektor_dir}')
 
 
 @task
@@ -59,7 +59,7 @@ def build_lectern_image(ctx):
     extra_index = ctx['env'].get('PIP_EXTRA_INDEX_URL', '')
     extra_index_arg = f'--build-arg PIP_EXTRA_INDEX_URL={extra_index} ' if extra_index else ''
     ctx.run(
-        f'docker build --build-arg BASE_IMAGE={LEKTOR_BASE} '
+        f'docker build --no-cache --build-arg BASE_IMAGE={LEKTOR_BASE} '
         f'{lectern_pkg_arg}{extra_index_arg}--tag {LECTERN_IMAGE} {lektor_dir}'
     )
 
@@ -195,7 +195,7 @@ def build_server_image(ctx):
         key_file.write(key)
     ctx.run(f'rm {server_dir}/lektorium*.whl', warn=True)
     ctx.run(f'pip wheel -w {server_dir} --no-deps .')
-    ctx.run((f'docker build --tag {IMAGE} -f {server_dir}/Dockerfile.ubuntu {server_dir}'))
+    ctx.run((f'docker build --no-cache --tag {IMAGE} -f {server_dir}/Dockerfile.ubuntu {server_dir}'))
 
 
 @task(build_lectern_image, build_lektor_image, build_server_image)

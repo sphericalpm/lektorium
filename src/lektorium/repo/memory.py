@@ -1,4 +1,5 @@
 import datetime
+import time
 from typing import Generator, Iterable, Mapping, Optional, Tuple
 
 import dateutil.parser
@@ -184,6 +185,7 @@ class Repo(BaseRepo):
         session.pop('parked_time', None)
 
     async def create_site(self, site_id, name, owner=None):
+        created = int(time.time())
         owner, email = owner or self.DEFAULT_USER
         self.data.append(
             dict(
@@ -193,6 +195,7 @@ class Repo(BaseRepo):
                 staging_url=f'https://staging.{site_id}.example.com',
                 custodian=owner,
                 custodian_email=email,
+                created=created,
             )
         )
 

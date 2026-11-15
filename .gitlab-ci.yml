@@ -9,6 +9,7 @@ variables:
       - ""
       - "manual_sync"
       - "manual_site_themes_update"
+      - "manual_set_creation_dates"
       - "manual_deploy"
     description: "Select the task to run when starting a pipeline manually."
 
@@ -93,3 +94,22 @@ manual_site_themes_update:
 
   rules:
     - if: '$CI_PIPELINE_SOURCE == "web" && $TRIGGER_TASK == "manual_site_themes_update"'
+
+manual_set_creation_dates:
+  stage: sync
+  image: alpine:latest
+  script:
+    - apk add --no-cache git openssh-client python3 py3-yaml
+
+    - git config --global user.name "GitLab CI"
+    - git config --global user.email "ci@${CI_SERVER_HOST}"
+    - git config --global push.default simple
+
+    - git config --global url."https://oauth2:${CI_PROJECTS_ACCESS_TOKEN}@${CI_SERVER_HOST}/".insteadOf "git@${CI_SERVER_HOST}:"
+    - git config --global --add url."https://oauth2:${CI_PROJECTS_ACCESS_TOKEN}@${CI_SERVER_HOST}/".insteadOf "ssh://git@${CI_SERVER_HOST}/"
+    - git config --global --add url."https://oauth2:${CI_PROJECTS_ACCESS_TOKEN}@${CI_SERVER_HOST}/".insteadOf "https://${CI_SERVER_HOST}/"
+
+    - python3 ci/set_creation_dates.py
+
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web" && $TRIGGER_TASK == "manual_set_creation_dates"'

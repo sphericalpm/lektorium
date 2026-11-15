@@ -1,0 +1,69 @@
+[project]
+name = "lektorium"
+dynamic = ["version"]
+description = "a pragmatic web content management solution for those with way too many little sites"
+license = { text = "MIT" }
+authors = [{ name = "Anton Patrushev", email = "ap@spherical.pm" }]
+maintainers = [{ name = "spherical.pm", email = "support@spherical.pm" }]
+dependencies = [
+    "Flask==1.1.4",
+    "aiodocker",
+    "aiohttp==3.6.3",
+    "aiohttp-graphql<1.1",
+    "appdirs",
+    "authlib",
+    "beautifulsoup4",
+    "bidict",
+    "boto3",
+    "cached-property",
+    "decorator",
+    "graphene<3",
+    "graphql-core<3",
+    "graphql-server-core<1.1.2",
+    'importlib-resources ; python_version < "3.7"',
+    "invoke",
+    "lektor==3.2.0",
+    "markupsafe==2.0.1",
+    "more-itertools",
+    "python-dateutil<2.8.1",
+    "pytz",
+    "pyyaml",
+    'spherical-dev>=0.2.2,<0.3.0; python_version < "3.7"',
+    'spherical-dev>=0.3.6.1,<0.4.0; python_version >= "3.7"',
+    "unsync",
+    "wrapt",
+]
+
+[project.optional-dependencies]
+dev = [
+    "aiohttp-devtools",
+    "aioresponses",
+    "aresponses",
+    "async-timeout",
+    "coverage<5",
+    "mypy",
+    "pep8-naming",
+    "pydocstyle",
+    "pytest-aiohttp",
+    "pytest-asyncio",
+    "pytest-cov",
+    "requests-mock",
+    'spherical-dev[dev]>=0.2.2,<0.3.0; python_version < "3.7"',
+    'spherical-dev[dev]>=0.3.6.1,<0.4.0; python_version >= "3.7"',
+    "wheel",
+]
+
+[build-system]
+requires = ["setuptools>=61", "setuptools-scm[toml]>=6.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["lektorium", "lektorium.repo", "lektorium.repo.local"]
+package-dir = { "" = "src" }
+include-package-data = false
+zip-safe = false
+
+[tool.setuptools.package-data]
+lektorium = ["client/*", "client/*/*", "client/*/*/*"]
+
+[tool.setuptools_scm]

@@ -43,6 +43,18 @@ def client():
     )
 
 
+def test_site_creation_date_nullable():
+    class Query(graphene.ObjectType):
+        sites = graphene.List(lektorium.schema.Site)
+
+    result = graphene.Schema(query=Query).execute(
+        '{ sites { created } }',
+        root_value={'sites': [lektorium.schema.Site(created=2200000000), lektorium.schema.Site()]},
+    )
+    assert result.errors is None
+    assert result.data == {'sites': [{'created': 2200000000.0}, {'created': None}]}
+
+
 @permission_query_todo
 def test_query_sites(client):
     result = client.execute(r'''{

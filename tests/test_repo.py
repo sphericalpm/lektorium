@@ -148,10 +148,16 @@ def test_sessions_in_site(repo):
 
 
 @pytest.mark.asyncio
-async def test_create_site(repo):
+async def test_create_site(repo, monkeypatch):
+    monkeypatch.setattr('time.time', lambda: 2200000000.75)
     site_count_before = len(list(repo.sites))
     await repo.create_site('cri', 'Common Redundant Idioms')
     assert len(list(repo.sites)) == site_count_before + 1
+    site = next(site for site in repo.sites if site['site_id'] == 'cri')
+    assert site['created'] == 2200000000
+    assert isinstance(site['created'], int)
+    if hasattr(repo, 'storage') and not isinstance(repo.storage, GitStorage):
+        assert FileStorage(repo.storage.root).config['cri']['created'] == 2200000000
 
 
 @pytest.mark.asyncio
